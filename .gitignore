@@ -8,3 +8,4 @@ out
 !.env.example
 CLAUDE.md
 AGENTS.md
+.gstack/

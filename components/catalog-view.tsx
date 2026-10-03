@@ -1,49 +1,61 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { StoreProduct } from "@/lib/store-data";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { catalogHref } from "@/lib/catalog-params";
+import { priceRanges, type CatalogQuery, type CatalogResult, type CatalogSort } from "@/lib/catalog-types";
 import { ProductCard } from "./product-card";
 
-const tabs = ["Todas", "Monohidrato", "Micronizada", "Con sabor", "Packs y combos", "Veganas"];
-const filterGroups = [
-  { title: "Objetivo", options: ["Masa muscular", "Rendimiento", "Recuperación"] },
-  { title: "Tipo de producto", options: ["Creatina", "Proteína", "Pre-entreno"] },
-  { title: "Marca", options: ["Star Nutrition", "ENA", "Gold Nutrition"] },
-  { title: "Precio", options: ["$0 – $30.000", "$30.000 – $50.000", "Más de $50.000"] },
-  { title: "Sabor", options: ["Sin sabor", "Chocolate", "Vainilla"] },
-  { title: "Presentación", options: ["Pote", "Sachet", "Pack"] },
-  { title: "Disponibilidad", options: ["En stock", "Últimas unidades"] },
-];
+export function CatalogView({ result, query }: { result: CatalogResult; query: CatalogQuery }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const totalProducts = result.categories.reduce((sum, item) => sum + item.count, 0);
 
-export function CatalogView({ products }: { products: StoreProduct[] }) {
-  const [tab, setTab] = useState("Monohidrato");
-  const [selected, setSelected] = useState<string[]>(["Creatina", "En stock"]);
-  const [sort, setSort] = useState("relevant");
-
-  const visibleProducts = useMemo(() => {
-    const base = products.filter((product) => selected.includes("Creatina") ? product.category === "Creatina" : true);
-    return sort === "price-low" ? [...base].sort((a, b) => a.priceValue - b.priceValue) : sort === "price-high" ? [...base].sort((a, b) => b.priceValue - a.priceValue) : base;
-  }, [products, selected, sort]);
-
-  function toggleFilter(option: string) {
-    setSelected((current) => current.includes(option) ? current.filter((item) => item !== option) : [...current, option]);
+  function navigate(changes: Partial<CatalogQuery>) {
+    startTransition(() => router.push(catalogHref(query, changes), { scroll: false }));
   }
+
+  function toggleBrand(slug: string) {
+    navigate({ brands: query.brands.includes(slug) ? query.brands.filter((item) => item !== slug) : [...query.brands, slug] });
+  }
+
+  const brandName = (slug: string) => result.brands.find((item) => item.slug === slug)?.name ?? slug;
+  const chips = [
+    ...(query.q ? [{ label: `“${query.q}”`, remove: { q: undefined } }] : []),
+    ...query.brands.map((slug) => ({ label: brandName(slug), remove: { brands: query.brands.filter((item) => item !== slug) } })),
+    ...(query.price ? [{ label: priceRanges.find((range) => range.slug === query.price)!.label, remove: { price: undefined } }] : []),
+    ...(query.inStockOnly ? [{ label: "En stock", remove: { inStockOnly: false } }] : []),
+  ];
 
   return (
     <>
-      <div className="catalog-tabs" role="tablist" aria-label="Tipos de creatina">
-        {tabs.map((item) => <button type="button" role="tab" aria-selected={tab === item} className={tab === item ? "is-active" : ""} onClick={() => setTab(item)} key={item}><span>⌘</span>{item}</button>)}
-      </div>
+      <nav className="catalog-tabs" aria-label="Categorías">
+        <Link href={catalogHref(query, { category: undefined, brands: [] })} className={!query.category ? "is-active" : ""} aria-current={!query.category ? "page" : undefined}><span>{totalProducts}</span>Todas</Link>
+        {result.categories.map((item) => <Link href={catalogHref(query, { category: item.slug, brands: [] })} className={query.category === item.slug ? "is-active" : ""} aria-current={query.category === item.slug ? "page" : undefined} key={item.slug}><span>{item.count}</span>{item.name}</Link>)}
+      </nav>
       <div className="catalog-toolbar">
-        <div className="filter-chips">{selected.map((item) => <button type="button" key={item} onClick={() => toggleFilter(item)}>{item} ×</button>)}{selected.length > 0 ? <button type="button" className="clear-filters" onClick={() => setSelected([])}>Limpiar filtros</button> : null}</div>
-        <label>Ordenar:<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="relevant">Más relevantes</option><option value="price-low">Menor precio</option><option value="price-high">Mayor precio</option></select></label>
+        <div className="filter-chips">
+          {chips.map((chip) => <button type="button" key={chip.label} onClick={() => navigate(chip.remove)} aria-label={`Quitar filtro ${chip.label}`}>{chip.label} ×</button>)}
+          {chips.length > 0 ? <button type="button" className="clear-filters" onClick={() => navigate({ q: undefined, brands: [], price: undefined, inStockOnly: false })}>Limpiar filtros</button> : null}
+        </div>
+        <label>Ordenar:<select value={query.sort} onChange={(event) => navigate({ sort: event.target.value as CatalogSort })}><option value="relevancia">Más relevantes</option><option value="menor-precio">Menor precio</option><option value="mayor-precio">Mayor precio</option><option value="nombre">Nombre (A–Z)</option></select></label>
       </div>
       <div className="catalog-layout">
         <aside className="filters-panel">
-          <div className="filters-title"><h2>Filtros</h2><span>{selected.length} activos</span></div>
-          {filterGroups.map((group) => <fieldset key={group.title}><legend>{group.title}<span>⌄</span></legend>{group.options.map((option, index) => <label key={option}><input type="checkbox" checked={selected.includes(option)} onChange={() => toggleFilter(option)} /><span>{option}</span><small>{17 - index * 4}</small></label>)}</fieldset>)}
+          <div className="filters-title"><h2>Filtros</h2><span>{chips.length} activos</span></div>
+          <fieldset><legend>Disponibilidad</legend><label><input type="checkbox" checked={query.inStockOnly} onChange={() => navigate({ inStockOnly: !query.inStockOnly })}/><span>Solo en stock</span></label></fieldset>
+          {result.brands.length > 0 ? <fieldset><legend>Marca</legend>{result.brands.map((item) => <label key={item.slug}><input type="checkbox" checked={query.brands.includes(item.slug)} onChange={() => toggleBrand(item.slug)}/><span>{item.name}</span><small>{item.count}</small></label>)}</fieldset> : null}
+          <fieldset><legend>Precio</legend>{priceRanges.map((range) => <label key={range.slug}><input type="radio" name="precio" checked={query.price === range.slug} onChange={() => navigate({ price: range.slug })}/><span>{range.label}</span></label>)}{query.price ? <button type="button" className="filters-reset" onClick={() => navigate({ price: undefined })}>Cualquier precio</button> : null}</fieldset>
         </aside>
-        <div><div className="catalog-product-grid">{visibleProducts.concat(visibleProducts).slice(0, 8).map((product, index) => <ProductCard key={`${product.slug}-${index}`} product={product} priority={index < 3} />)}</div><nav className="pagination" aria-label="Páginas del catálogo"><button type="button">←</button><button type="button" className="is-active">1</button><button type="button">2</button><button type="button">3</button><button type="button">4</button><button type="button">→</button></nav></div>
+        <div aria-busy={isPending} className={isPending ? "catalog-results is-pending" : "catalog-results"}>
+          {result.products.length === 0 ? <div className="catalog-empty"><h2>No hay productos con estos filtros</h2><p>Probá quitar algún filtro o buscar otra categoría.</p><Link className="button button--dark" href="/productos">Ver todos los productos</Link></div> : <div className="catalog-product-grid">{result.products.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 3}/>)}</div>}
+          {result.pageCount > 1 ? <nav className="pagination" aria-label="Páginas del catálogo">
+            {result.page > 1 ? <Link href={catalogHref(query, { page: result.page - 1 })} aria-label="Página anterior">←</Link> : null}
+            {Array.from({ length: result.pageCount }, (_, index) => index + 1).map((page) => <Link href={catalogHref(query, { page })} className={page === result.page ? "is-active" : ""} aria-current={page === result.page ? "page" : undefined} key={page}>{page}</Link>)}
+            {result.page < result.pageCount ? <Link href={catalogHref(query, { page: result.page + 1 })} aria-label="Página siguiente">→</Link> : null}
+          </nav> : null}
+        </div>
       </div>
     </>
   );

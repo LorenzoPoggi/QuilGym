@@ -3,7 +3,7 @@ import { CardIcon, CheckIcon, ShieldIcon, TruckIcon } from "./icons";
 const items = [
   { icon: TruckIcon, label: "Envíos nacionales" },
   { icon: ShieldIcon, label: "Pago seguro" },
-  { icon: CardIcon, label: "3 cuotas sin interés" },
+  { icon: CardIcon, label: "Todos los medios de pago" },
   { icon: CheckIcon, label: "Productos originales" },
 ];
 

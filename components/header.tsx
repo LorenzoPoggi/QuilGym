@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { commerce, formatArs } from "@/lib/commerce";
 import { BagIcon, SearchIcon, UserIcon } from "./icons";
 
 export function Header() {
   return (
     <>
-      <div className="shipping-banner">⚡ ENVÍO GRATIS DESDE $75.000 A TODO EL PAÍS</div>
+      <div className="shipping-banner">{commerce.freeShippingFromArs ? `⚡ ENVÍO GRATIS DESDE ${formatArs(commerce.freeShippingFromArs)} A TODO EL PAÍS` : `⚡ ENVÍOS A TODO EL PAÍS · RETIRO EN ${commerce.pickupLocation.toUpperCase()}`}</div>
       <header className="site-header">
         <div className="container header-inner">
           <Link href="/" className="wordmark" aria-label="QuilGym, inicio">QUILGYM</Link>

@@ -1,45 +1,30 @@
+import Link from "next/link";
 import homeReference from "@/design-reference/01-home.png";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ArrowIcon, CardIcon, CheckIcon, ShieldIcon, SparkIcon, TruckIcon } from "@/components/icons";
-import { ProductCard, type Product } from "@/components/product-card";
+import { ProductCard } from "@/components/product-card";
+import { getBrands, getFeaturedProducts, getProductsByCategory } from "@/lib/catalog";
 import { ReferenceCrop } from "@/components/reference-crop";
 
-const products: Product[] = [
-  { brand: "STAR NUTRITION", name: "Proteína STAR 2 lb", detail: "24 g de proteína por porción · sabor chocolate", price: "$39.920", oldPrice: "$43.900", badge: "-10%", stock: "En stock", cropX: 361 },
-  { brand: "STAR NUTRITION", name: "Creatina STAR 300 g", detail: "Creatina monohidrato micronizada · 60 porciones", price: "$31.680", oldPrice: "$35.200", badge: "-10%", stock: "En stock", cropX: 361 },
-  { brand: "GOLD NUTRITION", name: "Creatina GOLD", detail: "100% creatina monohidrato · 50 porciones", price: "$29.890", oldPrice: "$33.100", badge: "NUEVO", stock: "Últimas unidades", cropX: 621 },
-  { brand: "MUTANT", name: "Mutant Mass", detail: "Ganador de peso · 52 g de proteína por servicio", price: "$69.700", oldPrice: "$75.000", badge: "MÁS VENDIDO", stock: "En stock", cropX: 1143 },
-];
-
-const combos: Product[] = [
-  { brand: "COMBO ENERGÍA", name: "Pre-entreno STAR + Shaker", detail: "Energía y foco para entrenar", price: "$48.700", oldPrice: "$53.000", badge: "-8%", stock: "En stock", cropX: 881 },
-  { brand: "COMBO RECUPERACIÓN", name: "ZMA + Omega 3", detail: "Una dupla para tu recuperación", price: "$35.900", oldPrice: "$42.000", badge: "-15%", stock: "Últimas unidades", cropX: 621 },
-  { brand: "COMBO FUERZA", name: "Creatina STAR + Shaker", detail: "La base para sumar rendimiento", price: "$40.900", oldPrice: "$46.500", badge: "-12%", stock: "En stock", cropX: 361 },
-  { brand: "COMBO BIENESTAR", name: "Omega 3 + Shaker QG", detail: "Esenciales para todos los días", price: "$30.900", oldPrice: "$35.300", badge: "-13%", stock: "En stock", cropX: 1143 },
-];
-
 const objectives = [
-  { title: "Masa muscular", text: "Proteínas y ganadores de peso", tone: "orange", icon: "⚭" },
-  { title: "Rendimiento", text: "Creatina y soporte diario", tone: "blue", icon: "◉" },
-  { title: "Energía", text: "Pre-entrenos para tu rutina", tone: "cyan", icon: "ϟ" },
-  { title: "Recuperación", text: "Aminoácidos y descanso", tone: "amber", icon: "◌" },
-  { title: "Definición", text: "Opciones para acompañar tu plan", tone: "teal", icon: "♙" },
-  { title: "Bienestar", text: "Omega, vitaminas y minerales", tone: "red", icon: "♡" },
+  { title: "Masa muscular", text: "Proteínas y ganadores de peso", tone: "orange", icon: "⚭", href: "/productos?categoria=proteinas" },
+  { title: "Rendimiento", text: "Creatina y soporte diario", tone: "blue", icon: "◉", href: "/productos?categoria=creatinas" },
+  { title: "Energía", text: "Pre-entrenos para tu rutina", tone: "cyan", icon: "ϟ", href: "/productos?categoria=pre-entrenos" },
+  { title: "Recuperación", text: "Aminoácidos y descanso", tone: "amber", icon: "◌", href: "/productos?categoria=aminoacidos" },
+  { title: "Definición", text: "Opciones para acompañar tu plan", tone: "teal", icon: "♙", href: "/productos?categoria=colageno" },
+  { title: "Bienestar", text: "Omega, vitaminas y minerales", tone: "red", icon: "♡", href: "/productos?categoria=vitaminas-y-minerales" },
 ];
 
 const benefits = [
   { icon: TruckIcon, title: "Envíos nacionales", text: "Seguimiento de punta a punta" },
   { icon: ShieldIcon, title: "Pago seguro", text: "Datos siempre protegidos" },
-  { icon: CardIcon, title: "3 cuotas sin interés", text: "Con tarjetas seleccionadas" },
+  { icon: CardIcon, title: "Todos los medios de pago", text: "Tarjeta, Mercado Pago o transferencia" },
   { icon: CheckIcon, title: "100% originales", text: "Trazabilidad garantizada" },
   { icon: SparkIcon, title: "Asesoramiento", text: "Te ayudamos a elegir bien" },
 ];
 
-const brands = [
-  ["STAR NUTRITION", "PROTEÍNA Y CREATINA", "peach"], ["GOLD", "NUTRICIÓN", "yellow"], ["MUTANT", "SPORTS NUTRITION", "pink"],
-  ["ENA", "SPORT", "blue"], ["UNIVERSAL", "SINCE 1977", "green"], ["QG LAB", "ACCESORIOS", "gray"],
-];
+const brandTones = ["peach", "yellow", "pink", "blue", "green", "gray"];
 
 const articles = [
   { tag: "GUÍA DE INICIO", title: "Creatina: qué es y cómo incorporarla a tu rutina", crop: { x: 71, y: 4520, width: 421, height: 154 } },
@@ -47,11 +32,13 @@ const articles = [
   { tag: "ENTRENAMIENTO", title: "Pre-entreno: ingredientes y momentos de uso", crop: { x: 946, y: 4520, width: 421, height: 154 } },
 ];
 
-function SectionHeading({ eyebrow, title, copy, link }: { eyebrow: string; title: string; copy: string; link?: string }) {
-  return <div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2><p>{copy}</p></div>{link ? <a href="#">{link} <ArrowIcon/></a> : null}</div>;
+function SectionHeading({ eyebrow, title, copy, link, href = "/productos" }: { eyebrow: string; title: string; copy: string; link?: string; href?: string }) {
+  return <div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2><p>{copy}</p></div>{link ? <Link href={href}>{link} <ArrowIcon/></Link> : null}</div>;
 }
 
-export default function Home() {
+export default async function Home() {
+  const [featured, combos, brands] = await Promise.all([getFeaturedProducts(4), getProductsByCategory("combos", 4), getBrands()]);
+
   return (
     <>
       <Header />
@@ -72,22 +59,22 @@ export default function Home() {
         <section className="benefits-section"><div className="container benefits-grid">{benefits.map(({ icon: Icon, title, text }) => <div className="benefit" key={title}><span><Icon/></span><div><strong>{title}</strong><small>{text}</small></div></div>)}</div></section>
 
         <section id="objetivos" className="section-pad container">
-          <SectionHeading eyebrow="ENCONTRÁ TU CAMINO" title="Elegí tu objetivo" copy="Navegá por una selección pensada para acompañar tu tipo de entrenamiento y tus preferencias." link="Ver todos los objetivos" />
-          <div className="objectives-grid">{objectives.map((item) => <a className={`objective objective--${item.tone}`} href="#productos" key={item.title}><span className="objective-icon">{item.icon}</span><div><h3>{item.title}</h3><p>{item.text}</p></div><ArrowIcon/></a>)}</div>
+          <SectionHeading eyebrow="ENCONTRÁ TU CAMINO" title="Elegí tu objetivo" copy="Navegá por una selección pensada para acompañar tu tipo de entrenamiento y tus preferencias." link="Ver todos los productos" />
+          <div className="objectives-grid">{objectives.map((item) => <Link className={`objective objective--${item.tone}`} href={item.href} key={item.title}><span className="objective-icon">{item.icon}</span><div><h3>{item.title}</h3><p>{item.text}</p></div><ArrowIcon/></Link>)}</div>
         </section>
 
         <section id="productos" className="section-pad section-soft">
           <div className="container">
-            <SectionHeading eyebrow="FAVORITOS DE LA COMUNIDAD" title="Más vendidos" copy="Productos elegidos una y otra vez por quienes entrenan. Stock actualizado y compra segura." link="Ver todos los productos" />
-            <div className="product-grid">{products.map((product) => <ProductCard key={product.name} product={product} />)}</div>
-            <div className="advisor-banner"><div className="advisor-icon"><SparkIcon/></div><div><p className="eyebrow">TE ORIENTAMOS EN 3 MINUTOS</p><h3>¿No sabés qué suplemento elegir?</h3><p>Respondé preguntas simples sobre tu objetivo, alimentación y rutina.</p></div><a className="button button--light" href="#">Encontrá mis suplementos <ArrowIcon/></a></div>
+            <SectionHeading eyebrow="SELECCIÓN QUILGYM" title="Destacados" copy="Una selección de básicos para empezar. Precios y stock actualizados." link="Ver todos los productos" />
+            <div className="product-grid">{featured.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} />)}</div>
+            <div className="advisor-banner"><div className="advisor-icon"><SparkIcon/></div><div><p className="eyebrow">TE ORIENTAMOS EN 3 MINUTOS</p><h3>¿No sabés qué suplemento elegir?</h3><p>Respondé preguntas simples sobre tu objetivo, alimentación y rutina.</p></div><Link className="button button--light" href="/asesor">Encontrá mis suplementos <ArrowIcon/></Link></div>
           </div>
         </section>
 
         <section id="combos" className="section-pad container">
-          <SectionHeading eyebrow="MÁS POR MENOS" title="Combos por objetivo y ahorro" copy="Armamos selecciones prácticas para simplificar tu compra. Cada combo muestra claramente qué incluye y cuánto ahorrás." link="Explorar combos" />
-          <div className="product-grid">{combos.map((product) => <ProductCard key={product.name} product={product} compact />)}</div>
-          <div className="brands-block"><SectionHeading eyebrow="SELECCIÓN CONFIABLE" title="Marcas disponibles" copy="Trabajamos con marcas reconocidas y productos con trazabilidad." link="" /><div className="brands-grid">{brands.map(([name, category, tone]) => <a className={`brand-card brand-card--${tone}`} href="#productos" key={name}><strong>{name}</strong><span>{category}</span></a>)}</div></div>
+          <SectionHeading eyebrow="MÁS POR MENOS" title="Combos por objetivo y ahorro" copy="Armamos selecciones prácticas para simplificar tu compra. Cada combo muestra claramente qué incluye y cuánto ahorrás." link="Explorar combos" href="/productos?categoria=combos" />
+          <div className="product-grid">{combos.map((product) => <ProductCard key={product.slug} product={product} compact />)}</div>
+          <div className="brands-block"><SectionHeading eyebrow="SELECCIÓN CONFIABLE" title="Marcas disponibles" copy="Trabajamos con marcas reconocidas y productos con trazabilidad." link="" /><div className="brands-grid">{brands.slice(0, 6).map((brand, index) => <Link className={`brand-card brand-card--${brandTones[index % brandTones.length]}`} href={`/productos?marca=${brand.slug}`} key={brand.slug}><strong>{brand.name}</strong><span>{brand.count} {brand.count === 1 ? "producto" : "productos"}</span></Link>)}</div></div>
         </section>
 
         <section className="section-pad section-soft reviews-section"><div className="container"><SectionHeading eyebrow="EXPERIENCIAS REALES" title="Reseñas verificadas" copy="Opiniones de personas que compraron en QuilGym. Publicamos la experiencia completa, sin editar el sentido." link="" /><div className="reviews-grid"><article className="rating-card"><strong>4,9</strong><span>★★★★★</span><p>Promedio general de 1.240 reseñas verificadas</p><div className="rating-bars"><i/><i/><i/><i/></div></article>{["Llegó antes de lo esperado y todo perfectamente sellado. La creatina tenía lote y vencimiento bien visibles.", "Me ayudaron por WhatsApp a comparar opciones sin apurarme. Elegí el combo que mejor encajaba con mi rutina.", "La web es clara, pude pagar en cuotas y el seguimiento del envío funcionó perfecto. Volvería a comprar."].map((quote, index) => <article className="review-card" key={quote}><span className="verified"><CheckIcon/> COMPRA VERIFICADA</span><p>“{quote}”</p><strong>{["Martina R.", "Nicolás P.", "Sofía L."][index]}</strong><small>Quilmes, Buenos Aires</small></article>)}</div></div></section>

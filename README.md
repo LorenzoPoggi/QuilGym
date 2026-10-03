@@ -1,78 +1,67 @@
 # QuilGym
 
-E-commerce de suplementos deportivos construido con Next.js, TypeScript y Tailwind CSS. La experiencia incluye descubrimiento de productos, búsqueda predictiva, comparación, asesor guiado y un recorrido completo de compra.
+E-commerce de suplementos deportivos construido con Next.js, TypeScript y Postgres. La experiencia incluye catálogo con filtros, búsqueda predictiva, fichas de producto, comparador, asesor guiado y un recorrido de compra.
 
-> Estado actual: prototipo frontend navegable. La interfaz y las interacciones locales están implementadas, pero todavía no existen backend comercial, persistencia, pagos reales, inventario ni logística integrada.
+> Estado actual: el catálogo (68 productos, precios y disponibilidad) se lee desde Postgres. Carrito, checkout, pagos, órdenes y logística todavía son demostrativos.
 
-## Funcionalidades implementadas
+## Funcionalidades
 
-- Home comercial responsive.
-- Catálogo con filtros visuales y ordenamiento por precio.
-- Búsqueda predictiva con estados inicial, resultados y sin coincidencias.
-- Ocho fichas de producto generadas estáticamente.
-- Comparador de tres productos.
-- Asesor interactivo de seis pasos.
-- Página de recomendaciones.
-- Carrito con cantidades, eliminación, cupón y totales locales.
-- Checkout con entrega, retiro, medios de pago y validación básica.
-- Confirmación de compra simulada.
-- Componentes compartidos para header, footer, tarjetas, botones, imágenes y confianza.
-- Layouts responsive para escritorio, tablet y móvil.
+- Home con destacados, combos y marcas leídos de la base.
+- Catálogo con categorías, filtros por marca, precio y stock, orden y paginación; todo en la URL para poder compartirlo.
+- Búsqueda predictiva sin distinción de acentos, por varias palabras, con historial local.
+- Fichas de producto estáticas con revalidación cada 5 minutos y datos estructurados `Product`.
+- Comparador, asesor, carrito, checkout y confirmación: interfaz completa, lógica pendiente.
 
 ## Stack
 
-- Next.js 16 con App Router
-- React 19
+- Next.js 16 (App Router) y React 19
 - TypeScript
-- Tailwind CSS 4
-- ESLint
+- Tailwind CSS 4 y CSS propio en `app/globals.css`
+- Postgres en Neon con Drizzle ORM
+- Despliegue previsto en Vercel
 
-El proyecto utiliza Server Components por defecto. Solo las interfaces que necesitan estado en el navegador están marcadas como Client Components.
+Server Components por defecto; solo las zonas con estado del navegador son Client Components.
 
 ## Inicio rápido
 
-Requisitos:
-
-- Node.js compatible con Next.js 16.
-- npm.
-
-Instalar dependencias:
+Requisitos: Node.js 20 o superior y npm.
 
 ```bash
 npm install
-```
-
-Iniciar el servidor de desarrollo:
-
-```bash
+cp .env.example .env.local   # completar DATABASE_URL
+npm run db:migrate           # crea las tablas
+npm run db:seed              # carga el catálogo inicial
 npm run dev
 ```
 
 Abrir [http://localhost:3000](http://localhost:3000).
 
-Crear y ejecutar un build de producción:
+## Scripts
 
-```bash
-npm run build
-npm run start
-```
+| Script | Uso |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` / `npm run start` | Build y servidor de producción |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript sin emitir |
+| `npm run db:generate` | Genera una migración a partir de `lib/db/schema.ts` |
+| `npm run db:migrate` | Aplica las migraciones pendientes |
+| `npm run db:seed` | Carga o actualiza el catálogo desde `data/tiendanube-catalog.json` |
+| `npm run db:studio` | Explorador visual de la base |
 
-## Comprobaciones
+## Datos
 
-```bash
-npm run lint
-npx tsc --noEmit --incremental false
-npm run build
-```
-
-Estas tres comprobaciones pasaban correctamente al finalizar la implementación documentada.
+- `lib/db/schema.ts`: marcas, categorías, productos y variantes. Los importes se guardan en pesos enteros. `stock = null` significa que el inventario todavía no se controla y el producto se vende como disponible; `0` es sin stock.
+- `lib/catalog.ts`: lecturas del catálogo, cacheadas con la etiqueta `catalog` (5 minutos).
+- `lib/commerce.ts`: políticas visibles (cuotas sin interés, descuento por transferencia, envío gratis). Un valor en 0 o `null` oculta el mensaje.
+- `data/tiendanube-catalog.json`: lista y precios relevados de la tienda anterior el 3/10/2026, con marca y categoría normalizadas.
 
 ## Rutas
 
 | Ruta | Descripción |
 | --- | --- |
 | `/` | Página principal |
-| `/productos` | Catálogo |
+| `/productos` | Catálogo (`categoria`, `marca`, `precio`, `stock`, `q`, `orden`, `pagina`) |
 | `/productos/[slug]` | Ficha de producto |
 | `/buscar` | Búsqueda predictiva |
 | `/comparar` | Comparador |
@@ -82,125 +71,30 @@ Estas tres comprobaciones pasaban correctamente al finalizar la implementación 
 | `/checkout` | Finalización de compra |
 | `/checkout/confirmacion` | Confirmación simulada |
 
-Ejemplos de productos:
+## Limitaciones actuales
 
-- `/productos/creatina-star-300-g`
-- `/productos/creatina-gold-250-g`
-- `/productos/creatina-micronizada-ena-300-g`
-- `/productos/whey-protein-star-2-lb`
-
-## Estructura principal
-
-```text
-QuilGym/
-├── app/
-│   ├── page.tsx
-│   ├── globals.css
-│   ├── productos/
-│   ├── buscar/
-│   ├── comparar/
-│   ├── asesor/
-│   ├── carrito/
-│   └── checkout/
-├── components/
-│   ├── header.tsx
-│   ├── footer.tsx
-│   ├── product-card.tsx
-│   ├── catalog-view.tsx
-│   ├── predictive-search.tsx
-│   ├── advisor-wizard.tsx
-│   ├── cart-drawer.tsx
-│   └── checkout-form.tsx
-├── lib/
-│   └── store-data.ts
-├── design-reference/
-├── public/
-├── AGENTS.md
-└── claude.md
-```
-
-## Datos y estado
-
-El catálogo actual vive en `lib/store-data.ts` y contiene datos demostrativos de ocho productos.
-
-Las siguientes funciones trabajan solo en memoria:
-
-- filtros y orden del catálogo;
-- respuestas del asesor;
-- cantidades del carrito;
-- opciones del checkout.
-
-Al recargar la página esos estados pueden perderse. Precios, stock, promociones, reseñas, información de clientes, pedidos y fechas son fixtures.
-
-## Diseño y assets
-
-Los diseños originales están en `design-reference/` y no deben modificarse ni eliminarse.
-
-`public/assets/` está vacío. Para conservar fidelidad visual durante el prototipo, el componente `ReferenceCrop` recorta fragmentos de las capturas de referencia mediante `next/image`.
-
-Antes de producción hay que sustituir esos recortes por:
-
-- fotografías reales por producto y variante;
-- logos autorizados;
-- recursos del hero;
-- imágenes de comunidad;
-- thumbnails y videos;
-- Open Graph y favicon definitivos;
-- tipografía oficial servida mediante `next/font`.
-
-## Limitaciones importantes
-
-- Los botones “Agregar” de las tarjetas todavía no actualizan el carrito.
-- El carrito comienza con productos de ejemplo y no persiste.
-- Solo algunos filtros afectan realmente el catálogo.
-- La paginación y varios enlaces son visuales.
-- Las recomendaciones del asesor no cambian según las respuestas.
-- El comparador usa tres productos preseleccionados.
-- El checkout no crea una orden ni procesa un pago.
+- No hay fotos de producto: se muestra un placeholder con marca y categoría.
+- Los botones “Agregar” todavía no actualizan el carrito.
+- Carrito, checkout y confirmación usan importes y datos de ejemplo; no crean órdenes ni procesan pagos.
 - No deben introducirse datos financieros reales en el formulario actual.
-- La confirmación contiene datos ficticios y no demuestra que exista un pago aprobado.
+- Comparador y asesor muestran una selección fija.
 
-## Próximos pasos para producción
+## Próximos pasos
 
-Prioridad recomendada:
-
-1. Elegir plataforma de comercio/backend, proveedor de pagos y logística.
-2. Incorporar catálogo, variantes, imágenes, precios y stock reales.
-3. Implementar carrito persistente y cálculos server-side.
-4. Conectar checkout, órdenes, pagos tokenizados y webhooks firmados.
-5. Implementar cotización de envío, retiro y tracking.
-6. Volver dinámicos el comparador y el asesor.
-7. Añadir autenticación, historial de pedidos y favoritos si se aprueban.
-8. Completar SEO, accesibilidad WCAG 2.2 AA, seguridad y legales.
-9. Añadir pruebas unitarias, integración, E2E y regresión visual.
-10. Configurar staging, CI/CD, observabilidad, backups y rollback.
-
-El detalle completo, los riesgos y los criterios de salida por fase están documentados en [claude.md](./claude.md).
+1. Carrito persistente con precios y stock recalculados en el servidor.
+2. Checkout con Mercado Pago (tarjetas, cuotas, dinero en cuenta y efectivo en redes de cobranza), transferencia bancaria y efectivo solo para retiro en el local de Quilmes. Webhooks firmados e idempotencia.
+3. Panel de administración de productos, precios, stock e imágenes.
+4. Comparador y asesor conectados al catálogo.
+5. Legales, accesibilidad WCAG 2.2 AA, seguridad, pruebas E2E y observabilidad.
 
 ## Reglas de contribución
 
-- Leer `AGENTS.md` y la documentación local de la versión instalada de Next.js antes de modificar código.
 - No modificar ni eliminar `design-reference/`.
-- Reutilizar componentes y tokens antes de crear nuevas variantes.
+- Reutilizar componentes y tokens antes de crear variantes.
 - Mantener Server Components como opción predeterminada.
-- No tratar fixtures como datos comerciales reales.
+- No mostrar promociones, reseñas ni métricas que no sean reales.
 - No almacenar números de tarjeta ni CVV.
-- Ejecutar lint, TypeScript y build después de cambios relevantes.
-- Actualizar `claude.md` cuando cambie el estado funcional o la arquitectura.
-
-## Documentación extendida
-
-Consultar [claude.md](./claude.md) para:
-
-- contexto completo del proyecto;
-- explicación detallada de cada pantalla y componente;
-- decisiones de arquitectura y diseño;
-- limitaciones actuales;
-- modelo de datos sugerido;
-- plan de pagos, órdenes y logística;
-- seguridad, privacidad, SEO y accesibilidad;
-- roadmap hasta producción;
-- Definition of Done.
+- Ejecutar lint, typecheck y build después de cambios relevantes.
 
 ## Licencia
 

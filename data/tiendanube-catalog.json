@@ -1,0 +1,619 @@
+{
+  "source": "https://quilgymsuplementos.mitiendanube.com/productos/",
+  "capturedAt": "2026-10-03",
+  "note": "Lista y precios copiados de la tienda actual. Marca y categoría normalizadas a partir del nombre.",
+  "products": [
+    {
+      "slug": "proteina-star-nutrition",
+      "name": "PROTEÍNA STAR 2lb",
+      "brand": "Star Nutrition",
+      "category": "Proteínas",
+      "priceArs": 75990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/proteina-star-nutrition/"
+    },
+    {
+      "slug": "creatina-doypack-star-nutricion",
+      "name": "Creatina STAR 300gr Doypack",
+      "brand": "Star Nutrition",
+      "category": "Creatinas",
+      "priceArs": 30990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-doypack-star-nutricion/"
+    },
+    {
+      "slug": "mutant-mass-builder-1-5-kg",
+      "name": "MUTANT MASS 1.5 KG",
+      "brand": "Star Nutrition",
+      "category": "Ganadores de peso",
+      "priceArs": 52160,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/mutant-mass-builder-1-5-kg/"
+    },
+    {
+      "slug": "omega-3-star-nutricion",
+      "name": "Omega 3 Star Nutrition",
+      "brand": "Star Nutrition",
+      "category": "Vitaminas y minerales",
+      "priceArs": 33640,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/omega-3-star-nutricion/"
+    },
+    {
+      "slug": "combo-classic",
+      "name": "COMBO CLASSIC",
+      "brand": "Star Nutrition",
+      "category": "Combos",
+      "priceArs": 89990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/combo-classic/"
+    },
+    {
+      "slug": "citrato-de-magnesio-ena-s3uo1",
+      "name": "Citrato De Magnesio ENA",
+      "brand": "ENA Sport",
+      "category": "Vitaminas y minerales",
+      "priceArs": 13500,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/citrato-de-magnesio-ena-s3uo1/"
+    },
+    {
+      "slug": "proteina-body-advance-1kg-gh8n8",
+      "name": "Proteina Body Advance 1kg",
+      "brand": "Body Advance",
+      "category": "Proteínas",
+      "priceArs": 39900,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/proteina-body-advance-1kg-gh8n8/"
+    },
+    {
+      "slug": "creatina-monohidratada-micronizada-star-nutricion-300-gr",
+      "name": "Creatina STAR 300gr Clásica",
+      "brand": "Star Nutrition",
+      "category": "Creatinas",
+      "priceArs": 34800,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-monohidratada-micronizada-star-nutricion-300-gr/"
+    },
+    {
+      "slug": "proteina-star-platinum-yulxv",
+      "name": "Proteina STAR Platinum 2lb",
+      "brand": "Star Nutrition",
+      "category": "Proteínas",
+      "priceArs": 81990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/proteina-star-platinum-yulxv/"
+    },
+    {
+      "slug": "creatina-gold-nutricion",
+      "name": "Creatina GOLD 300 gr",
+      "brand": "Gold Nutrition",
+      "category": "Creatinas",
+      "priceArs": 29000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-gold-nutricion/"
+    },
+    {
+      "slug": "creatina-xtrenght-ip92b",
+      "name": "Creatina XTRENGHT 250 gr",
+      "brand": "Xtrenght",
+      "category": "Creatinas",
+      "priceArs": 24990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-xtrenght-ip92b/"
+    },
+    {
+      "slug": "proteina-xtrenght-su3o1",
+      "name": "Proteina Xtrenght 2LB",
+      "brand": "Xtrenght",
+      "category": "Proteínas",
+      "priceArs": 72000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/proteina-xtrenght-su3o1/"
+    },
+    {
+      "slug": "quilgymsuplementos-mitiendanube-com",
+      "name": "Creatina STAR 500 gr",
+      "brand": "Star Nutrition",
+      "category": "Creatinas",
+      "priceArs": 50990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/quilgymsuplementos-mitiendanube-com/"
+    },
+    {
+      "slug": "pancakes-proteicos-granger-vai-1ye27",
+      "name": "Pancakes proteicos - Granger VAINILLA",
+      "brand": "Granger",
+      "category": "Snacks",
+      "priceArs": 13800,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/pancakes-proteicos-granger-vai-1ye27/"
+    },
+    {
+      "slug": "creatina-one-fit-200g-tnch1",
+      "name": "Creatina One Fit 200 gr",
+      "brand": "One Fit",
+      "category": "Creatinas",
+      "priceArs": 16900,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-one-fit-200g-tnch1/"
+    },
+    {
+      "slug": "creatina-body-advance-300gr-monohidratada-micronizada-is9of",
+      "name": "Creatina Body Advance 300 gr",
+      "brand": "Body Advance",
+      "category": "Creatinas",
+      "priceArs": 23990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-body-advance-300gr-monohidratada-micronizada-is9of/"
+    },
+    {
+      "slug": "shacker-growsbar-ovhm5",
+      "name": "Shaker GROWSBAR",
+      "brand": "GrowsBar",
+      "category": "Accesorios",
+      "priceArs": 9990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/shacker-growsbar-ovhm5/"
+    },
+    {
+      "slug": "pancakes-proteicos-granger-b0deg",
+      "name": "Pancakes proteicos - CHOCOLATE",
+      "brand": "Granger",
+      "category": "Snacks",
+      "priceArs": 13800,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/pancakes-proteicos-granger-b0deg/"
+    },
+    {
+      "slug": "citrato-de-magnesio",
+      "name": "Citrato De Magnesio STAR",
+      "brand": "Star Nutrition",
+      "category": "Vitaminas y minerales",
+      "priceArs": 15700,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/citrato-de-magnesio/"
+    },
+    {
+      "slug": "creatina-monohidratada-micronizada-ena",
+      "name": "CREATINA ENA SPORT 300 gr",
+      "brand": "ENA Sport",
+      "category": "Creatinas",
+      "priceArs": 27990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-monohidratada-micronizada-ena/"
+    },
+    {
+      "slug": "proteina-body-advance-3-kg-20cur",
+      "name": "Proteina Body Advance 3 KG",
+      "brand": "Body Advance",
+      "category": "Proteínas",
+      "priceArs": 110049,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/proteina-body-advance-3-kg-20cur/"
+    },
+    {
+      "slug": "proteina-star-3-kg-gz9bk",
+      "name": "Proteina STAR PLATINUM 3 kg",
+      "brand": "Star Nutrition",
+      "category": "Proteínas",
+      "priceArs": 205000,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/proteina-star-3-kg-gz9bk/"
+    },
+    {
+      "slug": "colageno-sport-naranja-360-gr-1kscw",
+      "name": "Colageno SPORT Naranja 360 Gr",
+      "brand": null,
+      "category": "Colágeno",
+      "priceArs": 30581,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/colageno-sport-naranja-360-gr-1kscw/"
+    },
+    {
+      "slug": "proteina-gold-nutricion-1kg",
+      "name": "Proteina Gold Nutrition 2lb",
+      "brand": "Gold Nutrition",
+      "category": "Proteínas",
+      "priceArs": 71480,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/proteina-gold-nutricion-1kg/"
+    },
+    {
+      "slug": "creatina-star-de-1-kg",
+      "name": "Creatina STAR 1 Kg",
+      "brand": "Star Nutrition",
+      "category": "Creatinas",
+      "priceArs": 95000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-star-de-1-kg/"
+    },
+    {
+      "slug": "pre-entreno-star-nutricion",
+      "name": "PRE-ENTRENO STAR NUTRICION",
+      "brand": "Star Nutrition",
+      "category": "Pre-entrenos",
+      "priceArs": 30200,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/pre-entreno-star-nutricion/"
+    },
+    {
+      "slug": "creatina-star-nutricion-150gr-creapure-og2vr",
+      "name": "Creatina STAR 150 gr",
+      "brand": "Star Nutrition",
+      "category": "Creatinas",
+      "priceArs": 18400,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-star-nutricion-150gr-creapure-og2vr/"
+    },
+    {
+      "slug": "combo-arnold",
+      "name": "COMBO ARNOLD",
+      "brand": "Star Nutrition",
+      "category": "Combos",
+      "priceArs": 54100,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/combo-arnold/"
+    },
+    {
+      "slug": "combo-body-advance-6fly3",
+      "name": "COMBO BODY ADVANCE",
+      "brand": "Body Advance",
+      "category": "Combos",
+      "priceArs": 48990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/combo-body-advance-6fly3/"
+    },
+    {
+      "slug": "colageno-ena-sport-407g-1wc3e",
+      "name": "Colageno ENA SPORT 407g",
+      "brand": "ENA Sport",
+      "category": "Colágeno",
+      "priceArs": 28990,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/colageno-ena-sport-407g-1wc3e/"
+    },
+    {
+      "slug": "creatina-doypack-star-nutrition-sabor-frutos-rojos-vo3h8",
+      "name": "Creatina STAR 300 gr- Frutos Rojos",
+      "brand": "Star Nutrition",
+      "category": "Creatinas",
+      "priceArs": 30990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-doypack-star-nutrition-sabor-frutos-rojos-vo3h8/"
+    },
+    {
+      "slug": "resveratrol-star-nutrition-1d723",
+      "name": "Resveratrol Star Nutrition",
+      "brand": "Star Nutrition",
+      "category": "Vitaminas y minerales",
+      "priceArs": 18990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/resveratrol-star-nutrition-1d723/"
+    },
+    {
+      "slug": "shacker-x-strenght-ojvof",
+      "name": "Shaker Xtrenght",
+      "brand": "Xtrenght",
+      "category": "Accesorios",
+      "priceArs": 10990,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/shacker-x-strenght-ojvof/"
+    },
+    {
+      "slug": "combo-gold-nutricion",
+      "name": "COMBO GOLD NUTRITION",
+      "brand": "Gold Nutrition",
+      "category": "Combos",
+      "priceArs": 92000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/combo-gold-nutricion/"
+    },
+    {
+      "slug": "shaker-ena",
+      "name": "Shaker ENA",
+      "brand": "ENA Sport",
+      "category": "Accesorios",
+      "priceArs": 9990,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/shaker-ena/"
+    },
+    {
+      "slug": "combo-dino",
+      "name": "COMBO DINO",
+      "brand": "Star Nutrition",
+      "category": "Combos",
+      "priceArs": 141000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/combo-dino/"
+    },
+    {
+      "slug": "cafeina-ena",
+      "name": "CAFEINA ENA",
+      "brand": "ENA Sport",
+      "category": "Pre-entrenos",
+      "priceArs": 13990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/cafeina-ena/"
+    },
+    {
+      "slug": "magnesio-body-500g-8k168",
+      "name": "Citrato de Magnesio Body 500g",
+      "brand": "Body Advance",
+      "category": "Vitaminas y minerales",
+      "priceArs": 20900,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/magnesio-body-500g-8k168/"
+    },
+    {
+      "slug": "combo-one-fit-10su0",
+      "name": "COMBO ONE FIT",
+      "brand": "One Fit",
+      "category": "Combos",
+      "priceArs": 51250,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/combo-one-fit-10su0/"
+    },
+    {
+      "slug": "proteina-one-fit-classic-2lb-1fl33",
+      "name": "Proteina One Fit 2LB",
+      "brand": "One Fit",
+      "category": "Proteínas",
+      "priceArs": 48000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/proteina-one-fit-classic-2lb-1fl33/"
+    },
+    {
+      "slug": "shacker-gentech",
+      "name": "Shaker Gentech",
+      "brand": "Gentech",
+      "category": "Accesorios",
+      "priceArs": 9900,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/shacker-gentech/"
+    },
+    {
+      "slug": "bcaa-star-nutricion",
+      "name": "BCAA - Star Nutrition",
+      "brand": "Star Nutrition",
+      "category": "Aminoácidos",
+      "priceArs": 28900,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/bcaa-star-nutricion/"
+    },
+    {
+      "slug": "shaker-star-500-ml-r1zt3",
+      "name": "Shaker Star 500 ml",
+      "brand": "Star Nutrition",
+      "category": "Accesorios",
+      "priceArs": 8990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/shaker-star-500-ml-r1zt3/"
+    },
+    {
+      "slug": "zma-star-nutricion",
+      "name": "ZMA - Star Nutrition",
+      "brand": "Star Nutrition",
+      "category": "Vitaminas y minerales",
+      "priceArs": 18990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/zma-star-nutricion/"
+    },
+    {
+      "slug": "creatina-star-300gr-doypack-uva-yd3q7",
+      "name": "Creatina STAR 300gr- UVA",
+      "brand": "Star Nutrition",
+      "category": "Creatinas",
+      "priceArs": 30990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-star-300gr-doypack-uva-yd3q7/"
+    },
+    {
+      "slug": "creatina-star-300gr-doypack-limon-dvzvx",
+      "name": "Creatina STAR 300gr - Limón",
+      "brand": "Star Nutrition",
+      "category": "Creatinas",
+      "priceArs": 30990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-star-300gr-doypack-limon-dvzvx/"
+    },
+    {
+      "slug": "creatina-natural-nutrition-150g-1dzl7",
+      "name": "Creatina Natural nutrition 150gr",
+      "brand": "Natural Nutrition",
+      "category": "Creatinas",
+      "priceArs": 13500,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/creatina-natural-nutrition-150g-1dzl7/"
+    },
+    {
+      "slug": "colageno-hidrolizado-star-210g-puvob",
+      "name": "Colágeno Hidrolizado Star 210g",
+      "brand": "Star Nutrition",
+      "category": "Colágeno",
+      "priceArs": 23900,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/colageno-hidrolizado-star-210g-puvob/"
+    },
+    {
+      "slug": "oxido-nitrico-ena-1klgj",
+      "name": "Oxido nitrico ena",
+      "brand": "ENA Sport",
+      "category": "Pre-entrenos",
+      "priceArs": 21600,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/oxido-nitrico-ena-1klgj/"
+    },
+    {
+      "slug": "glutamina-200g-1fosm",
+      "name": "Glutamina One fit 200g",
+      "brand": "One Fit",
+      "category": "Aminoácidos",
+      "priceArs": 15000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/glutamina-200g-1fosm/"
+    },
+    {
+      "slug": "barritas-mervick-65g-banana-158hx",
+      "name": "Barritas Mervick 65g- Banana",
+      "brand": "Mervick",
+      "category": "Snacks",
+      "priceArs": 27000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/barritas-mervick-65g-banana-158hx/"
+    },
+    {
+      "slug": "barritas-mervick-65g-frutos-rojos-1047t",
+      "name": "Barritas Mervick 65g- Frutos rojos",
+      "brand": "Mervick",
+      "category": "Snacks",
+      "priceArs": 27000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/barritas-mervick-65g-frutos-rojos-1047t/"
+    },
+    {
+      "slug": "barritas-mervick-65g-yn2re",
+      "name": "Barritas Mervick 65g- Chocolate",
+      "brand": "Mervick",
+      "category": "Snacks",
+      "priceArs": 27000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/barritas-mervick-65g-yn2re/"
+    },
+    {
+      "slug": "barritas-proteicas-bravas-lgw5r",
+      "name": "Barritas Proteicas Bravas- Arandanos",
+      "brand": "Bravas",
+      "category": "Snacks",
+      "priceArs": 18900,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/barritas-proteicas-bravas-lgw5r/"
+    },
+    {
+      "slug": "barritas-proteicas-bravas-15gvl",
+      "name": "Barritas Proteicas Bravas- Datiles",
+      "brand": "Bravas",
+      "category": "Snacks",
+      "priceArs": 18900,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/barritas-proteicas-bravas-15gvl/"
+    },
+    {
+      "slug": "omega-3-landerfit-ih87x",
+      "name": "Omega 3 Landerfit",
+      "brand": "Landerfit",
+      "category": "Vitaminas y minerales",
+      "priceArs": 74000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/omega-3-landerfit-ih87x/"
+    },
+    {
+      "slug": "preentreno-beast-blood-y6xxg",
+      "name": "Preentreno Beast Blood",
+      "brand": "Beast Blood",
+      "category": "Pre-entrenos",
+      "priceArs": 23000,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/preentreno-beast-blood-y6xxg/"
+    },
+    {
+      "slug": "combo-laid-1hltw",
+      "name": "Combo Laid",
+      "brand": null,
+      "category": "Combos",
+      "priceArs": 50940,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/combo-laid-1hltw/"
+    },
+    {
+      "slug": "combo-mentzer-1cysj",
+      "name": "Combo Mentzer",
+      "brand": null,
+      "category": "Combos",
+      "priceArs": 42600,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/combo-mentzer-1cysj/"
+    },
+    {
+      "slug": "multivitaminico-star-l9lpr",
+      "name": "Multivitaminico STAR",
+      "brand": "Star Nutrition",
+      "category": "Vitaminas y minerales",
+      "priceArs": 28600,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/multivitaminico-star-l9lpr/"
+    },
+    {
+      "slug": "beta-alanine-star-1o6q0",
+      "name": "Beta Alanine STAR",
+      "brand": "Star Nutrition",
+      "category": "Aminoácidos",
+      "priceArs": 25900,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/beta-alanine-star-1o6q0/"
+    },
+    {
+      "slug": "just-plant-2lb-1cjaa",
+      "name": "Proteína Just Plant 2lb",
+      "brand": "Just Plant",
+      "category": "Proteínas",
+      "priceArs": 42990,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/just-plant-2lb-1cjaa/"
+    },
+    {
+      "slug": "eaas",
+      "name": "EAA's - Star Nutrition",
+      "brand": "Star Nutrition",
+      "category": "Aminoácidos",
+      "priceArs": 34800,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/eaas/"
+    },
+    {
+      "slug": "pre-entreno-painlabs",
+      "name": "Pre Entreno - Painlabs",
+      "brand": "Painlabs",
+      "category": "Pre-entrenos",
+      "priceArs": 36500,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/pre-entreno-painlabs/"
+    },
+    {
+      "slug": "ganador-de-peso-5kg-star-nutricion",
+      "name": "MUTANT MASS 5 KG",
+      "brand": "Star Nutrition",
+      "category": "Ganadores de peso",
+      "priceArs": 99100,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/ganador-de-peso-5kg-star-nutricion/"
+    },
+    {
+      "slug": "shaker-ena-plus",
+      "name": "Shaker ENA PLUS",
+      "brand": "ENA Sport",
+      "category": "Accesorios",
+      "priceArs": 12990,
+      "inStock": false,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/shaker-ena-plus/"
+    },
+    {
+      "slug": "shaker-got-600-ml",
+      "name": "Shaker Got 600 ml",
+      "brand": "Got",
+      "category": "Accesorios",
+      "priceArs": 9990,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/shaker-got-600-ml/"
+    },
+    {
+      "slug": "combo-popeye",
+      "name": "COMBO POPEYE",
+      "brand": "Star Nutrition",
+      "category": "Combos",
+      "priceArs": 121500,
+      "inStock": true,
+      "sourceUrl": "https://quilgymsuplementos.mitiendanube.com/productos/combo-popeye/"
+    }
+  ]
+}
