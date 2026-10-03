@@ -13,6 +13,7 @@
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "images:fetch": "node scripts/fetch-product-images.mjs",
     "images:build": "node scripts/build-product-images.mjs",
     "images:hero": "node scripts/build-hero.mjs"
@@ -26,6 +27,8 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.1.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",

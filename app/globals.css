@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* Checkout transaccional y simulador local. */
+.checkout-demo-banner { display: grid; gap: 5px; margin-bottom: 22px; padding: 16px 20px; color: #583d0a; background: #fff4d6; border: 1px solid #e4c97f; border-radius: 12px; }
+.checkout-demo-banner span { font-size: .85rem; }
+.checkout-delivery-detail, .checkout-quote { margin: 18px 0; padding: 16px; background: var(--soft); border-radius: 12px; }
+.checkout-layout .form-grid { margin-bottom: 18px; }
+.checkout-layout input[aria-invalid="true"] { border-color: #b42a44; }
+.checkout-layout button:disabled, .demo-payment button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.checkout-choices label:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.checkout-payment-note { margin-bottom: 0; color: var(--muted); font-size: .85rem; }
+.confirmation-hero .order-id { max-width: 240px; overflow-wrap: anywhere; font-size: .9rem; }
+.order-detail article.order-snapshot-line { grid-template-columns: 1fr auto; }
+.transfer-details { margin-top: 20px; overflow-wrap: anywhere; }
+.transfer-details dt { font-weight: 750; margin-top: 12px; }
+.transfer-details dd { margin: 4px 0; }
+.demo-payment { margin-top: 24px; }
+.demo-payment-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
 :root {
   --ink: #1d2022;
   --muted: #747b80;

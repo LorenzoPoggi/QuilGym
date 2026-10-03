@@ -21,6 +21,7 @@ type CartContextValue = {
   applyCoupon: (code: string) => Promise<CartActionResult>;
   removeCoupon: () => Promise<CartActionResult>;
   acknowledgeChanges: () => Promise<CartActionResult>;
+  refreshCart: () => Promise<void>;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -36,6 +37,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch("/api/cart", { cache: "no-store" });
       if (response.ok) setCart(await response.json());
+    } catch {
+      setFeedback({ tone: "error", text: "No pudimos actualizar el carrito. Intentá nuevamente." });
     } finally {
       setLoaded(true);
     }
@@ -84,7 +87,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     applyCoupon: (code) => run(() => applyCoupon(code)),
     removeCoupon: () => run(() => removeCoupon()),
     acknowledgeChanges: () => run(() => acknowledgeCartChanges()),
-  }), [cart, loaded, pendingCount, feedback, isOpen, run]);
+    refreshCart: refresh,
+  }), [cart, loaded, pendingCount, feedback, isOpen, run, refresh]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

@@ -1,29 +1,148 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import type { Cart } from "@/lib/cart-types";
+import type { CheckoutConfig, CheckoutInput, CheckoutQuote, DeliveryMethod, PaymentMethod } from "@/lib/checkout-types";
+import { getCheckoutQuote, submitCheckout } from "@/lib/checkout-actions";
+import { validateCheckout } from "@/lib/checkout-validation";
 import { formatArs } from "@/lib/commerce";
 import { useCart } from "./cart-provider";
 import { ProductImage } from "./product-image";
 
-export function CheckoutForm({ initialCart }: { initialCart: Cart }) {
+export function CheckoutForm({ initialCart, config }: { initialCart: Cart; config: CheckoutConfig }) {
   const router = useRouter();
-  const { cart: liveCart, loaded, acknowledgeChanges } = useCart();
-  // El servidor ya recalculó el carrito al cargar la página; luego manda el estado vivo.
+  const { cart: liveCart, loaded, acknowledgeChanges, refreshCart } = useCart();
   const cart = loaded ? liveCart : initialCart;
-  const [delivery, setDelivery] = useState("shipping");
-  const [payment, setPayment] = useState("card");
+  const [delivery, setDelivery] = useState<DeliveryMethod>(config.pickup ? "pickup" : "shipping");
+  const [payment, setPayment] = useState<PaymentMethod>(config.payments.mercadopago ? "mercadopago" : config.payments.transfer ? "transfer" : "cash");
   const [accepted, setAccepted] = useState(false);
+  const [quote, setQuote] = useState<CheckoutQuote | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [quoting, setQuoting] = useState(false);
+  const [error, setError] = useState("");
+  const [fields, setFields] = useState<Record<string, string>>({});
+  const formRef = useRef<HTMLFormElement>(null);
+  const requestKey = useRef<string | null>(null);
+  const submitting = useRef(false);
+  const quoteVersion = useRef(0);
+  const allowed = config.payments[payment] && (payment !== "cash" || delivery === "pickup");
+  const canSubmit = accepted && quote && cart.lines.length > 0 && !cart.hasBlockingIssues && !cart.hasPriceChanges && allowed && !busy && !quoting;
 
-  const canSubmit = accepted && cart.lines.length > 0 && !cart.hasBlockingIssues && !cart.hasPriceChanges;
-
-  function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    // Fase 3: crear la orden en el servidor y pagar. Hoy solo navega a la confirmación demostrativa.
-    if (canSubmit) router.push("/checkout/confirmacion");
+  function invalidateQuote() { quoteVersion.current += 1; setQuote(null); }
+  function changeDelivery(value: DeliveryMethod) {
+    setDelivery(value);
+    invalidateQuote();
+    if (value === "shipping" && payment === "cash") setPayment(config.payments.mercadopago ? "mercadopago" : "transfer");
   }
 
-  return <form className="checkout-layout" onSubmit={submit}><div className="checkout-main"><section className="checkout-card checkout-contact"><header><span>✓</span><h2>Datos y contacto</h2><button type="button">Editar</button></header><p><strong>Martina Ruiz</strong><span>martina.ruiz@email.com</span><span>+54 9 11 6482–1137</span></p></section><section className="checkout-card"><header><span>2</span><h2>Entrega o retiro</h2></header><div className="checkout-choices"><label className={delivery === "shipping" ? "is-active" : ""}><input type="radio" name="delivery" checked={delivery === "shipping"} onChange={() => setDelivery("shipping")}/><b>▣</b><span><strong>Envío a domicilio</strong><small>Recibí el pedido en la dirección indicada.</small></span></label><label className={delivery === "pickup" ? "is-active" : ""}><input type="radio" name="delivery" checked={delivery === "pickup"} onChange={() => setDelivery("pickup")}/><b>▤</b><span><strong>Retiro en Quilmes Centro</strong><small>Gratis · te avisamos cuando esté listo.</small></span></label></div><h3>Dirección de entrega</h3><div className="form-grid"><label className="span-2">Calle<input required defaultValue="Alvear"/></label><label>Número<input required defaultValue="742"/></label><label>Piso / Depto.<input placeholder="Opcional"/></label><label>Código postal<input required defaultValue="1878"/></label><label className="span-2">Localidad<input required defaultValue="Quilmes"/></label><label>Provincia<input required defaultValue="Buenos Aires"/></label><label className="span-4">Indicaciones para el envío<input placeholder="Ej.: timbre 2, dejar en portería"/></label></div><h3>Método de envío</h3><div className="checkout-choices"><label className="is-active"><input type="radio" defaultChecked/><b>◇</b><span><strong>Envío estándar</strong><small>Llega martes 6 o miércoles 7</small></span><em>Gratis</em></label><label><input type="radio"/><b>ϟ</b><span><strong>Envío prioritario</strong><small>Llega lunes 5, de 9 a 18 h</small></span><em>$4.200</em></label></div></section><section className="checkout-card"><header><span>3</span><h2>Pago</h2></header><div className="checkout-choices payment-choices">{[["card","▣","Tarjeta de crédito o débito","Hasta 3 cuotas sin interés"],["transfer","▥","Transferencia bancaria","10% OFF · recibís los datos por mail"],["mp","▤","Mercado Pago","Pagá con saldo o tarjetas guardadas"]].map(([value,icon,title,copy]) => <label className={payment === value ? "is-active" : ""} key={value}><input type="radio" name="payment" checked={payment === value} onChange={() => setPayment(value)}/><b>{icon}</b><span><strong>{title}</strong><small>{copy}</small></span></label>)}</div><div className="form-grid card-fields"><label className="span-2">Número de tarjeta<input required inputMode="numeric" placeholder="4509 9536 1482 7391"/></label><label className="span-2">Nombre en la tarjeta<input required placeholder="MARTINA RUIZ"/></label><label>Vencimiento<input required placeholder="08/29"/></label><label>Código de seguridad<input required inputMode="numeric" placeholder="123"/></label><label className="span-2">DNI del titular<input required placeholder="38.426.119"/></label><label className="span-4">Cuotas<select><option>1 pago de {formatArs(cart.totalArs)}</option></select></label></div></section><div className="checkout-trust"><span>♢ Pago protegido</span><span>↻ Cambios simples</span><span>⌾ Productos originales</span></div></div><aside className="checkout-summary"><header><h2>Resumen</h2><Link href="/carrito">Editar carrito</Link></header>{cart.lines.map((line) => <article key={line.variantId}><ProductImage product={line} sizes="66px" decorative/><div><strong>{line.name}</strong><small>{line.available ? `${line.quantity} × ${formatArs(line.unitPriceArs)}` : "Sin stock"}</small></div><b>{line.available ? formatArs(line.lineTotalArs) : "—"}</b></article>)}{cart.coupon ? <p className="coupon-applied">⌘ {cart.coupon.code} aplicado</p> : null}<div role="status" aria-live="polite">{cart.notices.map((notice) => <p className="cart-feedback cart-feedback--warning" key={notice}>{notice}</p>)}{cart.hasPriceChanges ? <button type="button" className="cart-acknowledge" onClick={() => acknowledgeChanges()}>Entendido, continuar con los precios actuales</button> : null}</div><div className="summary-lines"><p><span>Subtotal</span><strong>{formatArs(cart.subtotalArs)}</strong></p>{cart.coupon ? <p><span>Cupón</span><strong>− {formatArs(cart.discountArs)}</strong></p> : null}<p><span>Envío</span><strong>A calcular</strong></p><div><span>Total</span><strong>{formatArs(cart.totalArs)}</strong></div></div><label className="terms"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)}/>Acepto los términos y condiciones y la política de privacidad.</label>{cart.hasPriceChanges ? <p className="form-error">Confirmá los precios actualizados para continuar.</p> : cart.hasBlockingIssues ? <p className="form-error">Hay productos sin stock en tu carrito. <Link href="/carrito">Revisalo</Link> para continuar.</p> : !accepted ? <p className="form-error">Necesitás aceptar para continuar.</p> : null}<button className="button button--dark button--full" type="submit" disabled={!canSubmit}>♙ Confirmar y pagar {formatArs(cart.totalArs)}</button><small className="secure-note">No se realizará ningún cobro hasta que confirmes. Operación cifrada.</small></aside></form>;
+  async function calculate() {
+    if (!formRef.current || quoting) return;
+    setQuoting(true); setError("");
+    const version = ++quoteVersion.current;
+    const data = new FormData(formRef.current);
+    try {
+      const result = await getCheckoutQuote(delivery, String(data.get("postalCode") ?? ""));
+      if (version !== quoteVersion.current) return;
+      if (result.ok) setQuote(result.quote);
+      else { setQuote(null); setError(result.error); }
+    } catch { setError("No pudimos conectar. Volvé a calcular la entrega."); }
+    finally { setQuoting(false); }
+  }
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canSubmit || !quote || submitting.current) return;
+    submitting.current = true; setBusy(true); setError(""); setFields({});
+    const data = new FormData(event.currentTarget);
+    // Solo se persiste una clave aleatoria; no contacto ni información de pago.
+    if (!requestKey.current) {
+      try { requestKey.current = sessionStorage.getItem("qg_checkout_key") || crypto.randomUUID(); sessionStorage.setItem("qg_checkout_key", requestKey.current); }
+      catch { requestKey.current = crypto.randomUUID(); }
+    }
+    const input = { ...Object.fromEntries(data), delivery, payment, accepted, quoteToken: quote.token, checkoutKey: requestKey.current } as CheckoutInput;
+    const parsed = validateCheckout(input);
+    if (!parsed.ok) { setFields(parsed.fields); setError("Revisá los campos marcados."); submitting.current = false; setBusy(false); return; }
+    try {
+      const result = await submitCheckout(parsed.value);
+      if (result.ok) {
+        try { sessionStorage.removeItem("qg_checkout_key"); } catch { /* Storage opcional. */ }
+        await refreshCart();
+        router.push(`/checkout/confirmacion/${result.orderId}`);
+        router.refresh();
+      } else { setError(result.error); setFields(result.fields ?? {}); invalidateQuote(); }
+    } catch { setError("No pudimos recibir la respuesta. Reintentá: conservamos la clave para evitar duplicar el pedido."); }
+    finally { setBusy(false); submitting.current = false; }
+  }
+
+  function field(name: string, label: string, options: { required?: boolean; type?: string; autoComplete?: string; maxLength?: number; className?: string } = {}) {
+    return <label className={options.className} key={name}>{label}
+      <input name={name} type={options.type ?? "text"} required={options.required} autoComplete={options.autoComplete} maxLength={options.maxLength ?? 120}
+        aria-invalid={!!fields[name]} aria-describedby={fields[name] ? `error-${name}` : undefined}
+        onChange={name === "postalCode" ? invalidateQuote : undefined}/>
+      {fields[name] ? <small className="form-error" id={`error-${name}`}>{fields[name]}</small> : null}
+    </label>;
+  }
+
+  return <>
+    {config.demo ? <div className="checkout-demo-banner" role="note"><strong>Modo de prueba local</strong><span>Los pedidos son de prueba. No se cobra dinero, no se envían emails y no se descuenta stock real. Usá datos ficticios.</span></div> : null}
+    <form className="checkout-layout" ref={formRef} onSubmit={submit}>
+      <div className="checkout-main">
+        <section className="checkout-card"><header><span>1</span><h2>Datos y contacto</h2></header>
+          <div className="form-grid">
+            {field("name", "Nombre y apellido", { required: true, autoComplete: "name", className: "span-4" })}
+            {field("email", "Email", { required: true, type: "email", autoComplete: "email", maxLength: 254, className: "span-2" })}
+            {field("phone", "Teléfono", { required: true, type: "tel", autoComplete: "tel", maxLength: 30, className: "span-2" })}
+          </div>
+        </section>
+        <section className="checkout-card"><header><span>2</span><h2>Entrega o retiro</h2></header>
+          <div className="checkout-choices">
+            <label className={delivery === "shipping" ? "is-active" : ""}><input type="radio" name="delivery" value="shipping" checked={delivery === "shipping"} disabled={!config.shippingRates.length || busy} onChange={() => changeDelivery("shipping")}/><span><strong>Envío a domicilio</strong><small>{config.shippingRates.length ? "Calculá el costo con tu código postal." : "Envíos aún no disponibles."}</small></span></label>
+            <label className={delivery === "pickup" ? "is-active" : ""}><input type="radio" name="delivery" value="pickup" checked={delivery === "pickup"} disabled={!config.pickup || busy} onChange={() => changeDelivery("pickup")}/><span><strong>Retiro en Quilmes</strong><small>{config.pickup ? "Sin costo de entrega." : "Retiro aún no disponible."}</small></span></label>
+          </div>
+          {delivery === "pickup" ? <div className="checkout-delivery-detail"><strong>{config.pickup?.address}</strong><p>{config.pickup?.hours}</p><p>Esperá el aviso de preparación antes de acercarte.</p></div> : <><h3>Dirección de entrega</h3><div className="form-grid">
+            {field("street", "Calle", { required: true, autoComplete: "address-line1", maxLength: 160, className: "span-2" })}
+            {field("streetNumber", "Número", { required: true, maxLength: 12 })}
+            {field("apartment", "Piso / Depto.", { autoComplete: "address-line2", maxLength: 60 })}
+            {field("postalCode", "Código postal", { required: true, autoComplete: "postal-code", maxLength: 8 })}
+            {field("city", "Localidad", { required: true, autoComplete: "address-level2", maxLength: 100, className: "span-2" })}
+            {field("province", "Provincia", { required: true, autoComplete: "address-level1", maxLength: 100 })}
+          </div></>}
+          <div className="form-grid">{field("notes", "Indicaciones (opcional)", { maxLength: 400, className: "span-4" })}</div>
+          <button type="button" className="button button--outline" disabled={quoting || busy} onClick={calculate}>{quoting ? "Calculando…" : delivery === "pickup" ? "Confirmar retiro y total" : "Calcular envío"}</button>
+          {quote ? <p className="checkout-quote" role="status"><strong>{quote.label} · {formatArs(quote.shippingArs)}</strong><br/>{quote.estimate}</p> : null}
+        </section>
+        <section className="checkout-card"><header><span>3</span><h2>Medio de pago</h2></header>
+          <div className="checkout-choices payment-choices">
+            {([
+              ["mercadopago", "Mercado Pago", "Tarjetas, cuotas, saldo en cuenta, Rapipago y Pago Fácil."],
+              ["transfer", "Transferencia bancaria", "El pedido queda pendiente hasta verificar el pago."],
+              ["cash", "Efectivo al retirar", "Disponible únicamente con retiro en el local."],
+            ] as const).map(([value, title, copy]) => <label key={value} className={payment === value ? "is-active" : ""}>
+              <input type="radio" name="payment" value={value} checked={payment === value} disabled={busy || !config.payments[value] || (value === "cash" && delivery !== "pickup")} onChange={() => setPayment(value)}/>
+              <span><strong>{title}</strong><small>{config.payments[value] ? copy : "Próximamente disponible."}</small></span>
+            </label>)}
+          </div>
+          <p className="checkout-payment-note">{payment === "mercadopago" ? "Después de guardar el pedido podrás completar el pago. Las cuotas y sus costos se muestran en Mercado Pago." : payment === "transfer" ? "Al confirmar verás las instrucciones. Crear el pedido no acredita la transferencia." : "El pago queda pendiente hasta que retires y abones."}</p>
+        </section>
+      </div>
+      <aside className="checkout-summary"><header><h2>Resumen</h2><Link href="/carrito">Editar carrito</Link></header>
+        {cart.lines.map((line) => <article key={line.variantId}><ProductImage product={line} sizes="66px" decorative/><div><strong>{line.name}</strong><small>{line.quantity} × {formatArs(line.unitPriceArs)}</small></div><b>{line.available ? formatArs(line.lineTotalArs) : "Sin stock"}</b></article>)}
+        <div role="status" aria-live="polite">{cart.notices.map((notice) => <p className="cart-feedback cart-feedback--warning" key={notice}>{notice}</p>)}
+          {cart.hasPriceChanges ? <button type="button" className="cart-acknowledge" onClick={() => { invalidateQuote(); void acknowledgeChanges(); }}>Entendido, continuar con los precios actuales</button> : null}
+        </div>
+        <div className="summary-lines"><p><span>Subtotal</span><strong>{formatArs(cart.subtotalArs)}</strong></p>
+          {cart.coupon ? <p><span>Cupón {cart.coupon.code}</span><strong>− {formatArs(cart.discountArs)}</strong></p> : null}
+          <p><span>Entrega</span><strong>{quote ? formatArs(quote.shippingArs) : "A confirmar"}</strong></p>
+          <div><span>Total</span><strong>{formatArs(quote?.totalArs ?? cart.totalArs)}</strong></div>
+          {!quote ? <small>Confirmá la entrega para obtener el total final.</small> : null}
+        </div>
+        <label className="terms"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)}/>Confirmo que los datos, productos y forma de entrega son correctos.</label>
+        {error ? <p className="form-error" role="alert">{error}</p> : null}
+        <button className="button button--dark button--full" type="submit" disabled={!canSubmit}>{busy ? "Guardando pedido…" : config.demo ? "Crear pedido de prueba" : "Confirmar pedido"}</button>
+        <small className="secure-note">{config.demo ? "Simulación local. No ingreses datos de tarjetas reales." : "No se realiza ningún cobro al guardar el pedido."}</small>
+      </aside>
+    </form>
+  </>;
 }

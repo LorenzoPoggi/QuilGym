@@ -10,3 +10,5 @@ CLAUDE.md
 AGENTS.md
 .gstack/
 .cache/
+test-results/
+playwright-report/
