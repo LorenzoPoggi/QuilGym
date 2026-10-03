@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { boolean, check, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -62,7 +62,54 @@ export const productVariants = pgTable("product_variants", {
   check("product_variants_stock_check", sql`${table.stock} is null or ${table.stock} >= 0`),
 ]);
 
-export const brandsRelations = relations(brands, ({ many }) => ({ products: many(products) }));
+/** Carrito de invitado; el id (uuid aleatorio) viaja en una cookie HttpOnly. */
+export const carts = pgTable("carts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  couponCode: text("coupon_code"),
+  ...timestamps,
+});
+
+export const cartItems = pgTable("cart_items", {
+  id: serial("id").primaryKey(),
+  cartId: uuid("cart_id").notNull().references(() => carts.id, { onDelete: "cascade" }),
+  variantId: integer("variant_id").notNull().references(() => productVariants.id, { onDelete: "cascade" }),
+  quantity: integer("quantity").notNull(),
+  /** Precio unitario que vio el cliente; sirve solo para avisar cambios, nunca para cobrar. */
+  seenPriceArs: integer("seen_price_ars").notNull(),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("cart_items_cart_variant_idx").on(table.cartId, table.variantId),
+  check("cart_items_quantity_check", sql`${table.quantity} > 0`),
+]);
+
+export const couponKind = pgEnum("coupon_kind", ["percent", "fixed"]);
+
+export const coupons = pgTable("coupons", {
+  id: serial("id").primaryKey(),
+  /** Siempre en mayúsculas. */
+  code: text("code").notNull().unique(),
+  description: text("description"),
+  kind: couponKind("kind").notNull(),
+  /** Porcentaje (1–100) o monto fijo en ARS según `kind`. */
+  value: integer("value").notNull(),
+  minSubtotalArs: integer("min_subtotal_ars"),
+  startsAt: timestamp("starts_at", { withTimezone: true }),
+  endsAt: timestamp("ends_at", { withTimezone: true }),
+  maxRedemptions: integer("max_redemptions"),
+  redemptions: integer("redemptions").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  ...timestamps,
+}, (table) => [
+  check("coupons_value_check", sql`${table.value} > 0 and (${table.kind} = 'fixed' or ${table.value} <= 100)`),
+]);
+
+export const cartsRelations = relations(carts, ({ many }) => ({ items: many(cartItems) }));
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  cart: one(carts, { fields: [cartItems.cartId], references: [carts.id] }),
+  variant: one(productVariants, { fields: [cartItems.variantId], references: [productVariants.id] }),
+}));
+
+export const brandsRelations =relations(brands, ({ many }) => ({ products: many(products) }));
 export const categoriesRelations = relations(categories, ({ many }) => ({ products: many(products) }));
 export const productsRelations = relations(products, ({ one, many }) => ({
   brand: one(brands, { fields: [products.brandId], references: [brands.id] }),

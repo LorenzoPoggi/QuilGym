@@ -5,6 +5,8 @@ import { db } from "./db";
 import { brands, categories, products, productVariants } from "./db/schema";
 import { priceRanges, type CatalogQuery, type CatalogResult, type CatalogSort, type Facet, type ProductDetail, type ProductSummary } from "./catalog-types";
 import { normalizeText } from "./slugify";
+import { MAX_QUANTITY_PER_LINE } from "./cart-types";
+import { maxQuantityFor } from "./pricing";
 
 export const CATALOG_TAG = "catalog";
 export const PAGE_SIZE = 12;
@@ -26,6 +28,7 @@ const getActiveProducts = unstable_cache(async (): Promise<CatalogRow[]> => {
       slug: products.slug,
       name: products.name,
       isFeatured: products.isFeatured,
+      variantId: productVariants.id,
       brandSlug: brands.slug,
       brandName: brands.name,
       categorySlug: categories.slug,
@@ -44,6 +47,7 @@ const getActiveProducts = unstable_cache(async (): Promise<CatalogRow[]> => {
 
   return rows.map((row) => ({
     id: row.id,
+    variantId: row.variantId,
     slug: row.slug,
     name: row.name,
     brand: row.brandSlug && row.brandName ? { slug: row.brandSlug, name: row.brandName } : null,
@@ -58,8 +62,8 @@ const getActiveProducts = unstable_cache(async (): Promise<CatalogRow[]> => {
 }, ["catalog:active-products"], { tags: [CATALOG_TAG], revalidate: 300 });
 
 function toSummary(row: CatalogRow): ProductSummary {
-  const { id, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl } = row;
-  return { id, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl };
+  const { id, variantId, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl } = row;
+  return { id, variantId, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl };
 }
 
 function matchesQuery(product: ProductSummary, q: string) {
@@ -153,6 +157,7 @@ export const getProduct = unstable_cache(async (slug: string): Promise<ProductDe
   const main = product.variants.find((variant) => variant.isDefault) ?? product.variants[0];
   return {
     id: product.id,
+    variantId: main.id,
     slug: product.slug,
     name: product.name,
     description: product.description,
@@ -162,6 +167,6 @@ export const getProduct = unstable_cache(async (slug: string): Promise<ProductDe
     compareAtPriceArs: main.compareAtPriceArs,
     inStock: product.variants.some((variant) => isAvailable(variant.stock)),
     imageUrl: null,
-    variants: product.variants.map((variant) => ({ id: variant.id, sku: variant.sku, label: variant.label, priceArs: variant.priceArs, inStock: isAvailable(variant.stock) })),
+    variants: product.variants.map((variant) => ({ id: variant.id, sku: variant.sku, label: variant.label, priceArs: variant.priceArs, inStock: isAvailable(variant.stock), maxQuantity: maxQuantityFor(variant.stock, MAX_QUANTITY_PER_LINE) })),
   };
 }, ["catalog:product"], { tags: [CATALOG_TAG], revalidate: 300 });

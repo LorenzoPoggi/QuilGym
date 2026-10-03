@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { commerce, formatArs } from "@/lib/commerce";
-import { BagIcon, SearchIcon, UserIcon } from "./icons";
+import { CartPill } from "./cart-buttons";
+import { SearchIcon, UserIcon } from "./icons";
 
 export function Header() {
   return (
@@ -21,7 +22,7 @@ export function Header() {
             <kbd>⌘ K</kbd>
           </form>
           <a className="account-link" href="#footer"><UserIcon/><span>Hola<br/><strong>Ingresar</strong></span></a>
-          <Link className="cart-pill" href="/carrito" aria-label="Carrito, cero pesos"><BagIcon/><strong>$0</strong></Link>
+          <CartPill/>
         </div>
       </header>
     </>

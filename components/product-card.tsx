@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ProductSummary } from "@/lib/catalog-types";
 import { formatArs, paymentHighlights } from "@/lib/commerce";
-import { BagIcon } from "./icons";
+import { AddToCartButton } from "./cart-buttons";
 import { ProductImage } from "./product-image";
 
 export function ProductCard({ product, compact = false, priority = false }: { product: ProductSummary; compact?: boolean; priority?: boolean }) {
@@ -19,7 +19,7 @@ export function ProductCard({ product, compact = false, priority = false }: { pr
       <p className="price">{formatArs(product.priceArs)} {product.compareAtPriceArs ? <del>{formatArs(product.compareAtPriceArs)}</del> : null}</p>
       {highlights ? <p className="installments">{highlights}</p> : null}
       <p className={`stock ${product.inStock ? "" : "stock--out"}`}><span/> {product.inStock ? "En stock" : "Sin stock"}</p>
-      <button type="button" className="button button--outline button--full" disabled={!product.inStock}><BagIcon/> {product.inStock ? "Agregar" : "Sin stock"}</button>
+      <AddToCartButton variantId={product.variantId} name={product.name} inStock={product.inStock}/>
     </article>
   );
 }

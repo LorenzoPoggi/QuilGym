@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { CartDialog } from "@/components/cart-drawer";
+import { CartProvider } from "@/components/cart-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" data-scroll-behavior="smooth">
-      <body>{children}</body>
+      <body><CartProvider>{children}<CartDialog/></CartProvider></body>
     </html>
   );
 }

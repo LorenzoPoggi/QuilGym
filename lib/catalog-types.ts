@@ -5,6 +5,8 @@ export type BrandRef = { slug: string; name: string };
 
 export type ProductSummary = {
   id: number;
+  /** Variante por defecto: la que agregan las tarjetas al carrito. */
+  variantId: number;
   slug: string;
   name: string;
   brand: BrandRef | null;
@@ -17,7 +19,7 @@ export type ProductSummary = {
 
 export type ProductDetail = ProductSummary & {
   description: string | null;
-  variants: { id: number; sku: string; label: string | null; priceArs: number; inStock: boolean }[];
+  variants: { id: number; sku: string; label: string | null; priceArs: number; inStock: boolean; maxQuantity: number }[];
 };
 
 export type CatalogSort = "relevancia" | "menor-precio" | "mayor-precio" | "nombre";

@@ -6,7 +6,8 @@ import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
 import { ProductImage } from "@/components/product-image";
 import { TrustStrip } from "@/components/trust-strip";
-import { BagIcon, CheckIcon } from "@/components/icons";
+import { ProductPurchase } from "@/components/cart-buttons";
+import { CheckIcon } from "@/components/icons";
 import { getAllProducts, getProduct, getProductsByCategory } from "@/lib/catalog";
 import { commerce, formatArs, transferPrice } from "@/lib/commerce";
 
@@ -27,7 +28,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
   const related = await getProductsByCategory(product.category.slug, 4, product.slug);
-  const hasVariants = product.variants.length > 1;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -52,8 +52,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {commerce.interestFreeInstallments > 1 ? <strong className="payment-copy">{commerce.interestFreeInstallments} cuotas sin interés de {formatArs(product.priceArs / commerce.interestFreeInstallments)}</strong> : null}
         {commerce.transferDiscountPercent > 0 ? <p className="transfer-price">{formatArs(transferPrice(product.priceArs))} con transferencia bancaria</p> : null}
         <p className={`stock ${product.inStock ? "" : "stock--out"}`}><span/> {product.inStock ? "En stock" : "Sin stock por el momento"}</p>
-        {hasVariants ? <div className="option-group"><span>Variante</span><div>{product.variants.map((variant) => <button type="button" disabled={!variant.inStock} key={variant.id}>{variant.label ?? variant.sku} · {variant.inStock ? formatArs(variant.priceArs) : "Sin stock"}</button>)}</div></div> : null}
-        <div className="buy-actions buy-actions--single"><div><button type="button" className="button button--dark" disabled={!product.inStock}><BagIcon/> {product.inStock ? "Agregar al carrito" : "Sin stock"}</button></div></div>
+        <ProductPurchase product={product}/>
         <div className="shipping-calculator"><strong>Entrega</strong><p><CheckIcon/> Envíos a todo el país.</p><p><CheckIcon/> Retiro en nuestro local de {commerce.pickupLocation}.</p></div>
       </div>
     </section>
