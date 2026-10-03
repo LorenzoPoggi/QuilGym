@@ -12,7 +12,10 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit --incremental false",
-    "test": "vitest run"
+    "test": "vitest run",
+    "images:fetch": "node scripts/fetch-product-images.mjs",
+    "images:build": "node scripts/build-product-images.mjs",
+    "images:hero": "node scripts/build-hero.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
@@ -30,6 +33,7 @@
     "drizzle-kit": "^0.31.11",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.1.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.0",

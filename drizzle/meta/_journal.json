@@ -15,6 +15,13 @@
       "when": 1791058891265,
       "tag": "0001_fair_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791061111217,
+      "tag": "0002_funny_scourge",
+      "breakpoints": true
     }
   ]
 }

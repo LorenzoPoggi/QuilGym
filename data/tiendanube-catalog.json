@@ -1,7 +1,7 @@
 {
   "source": "https://quilgymsuplementos.mitiendanube.com/productos/",
   "capturedAt": "2026-10-03",
-  "note": "Lista y precios copiados de la tienda actual. Marca y categoría normalizadas a partir del nombre.",
+  "note": "Lista y precios copiados de la tienda actual. Marca y categoría normalizadas a partir del nombre. Marcas de Colageno SPORT Naranja (Star Nutrition) y Beast Blood (Body Advance) verificadas en sitios oficiales y descripciones.",
   "products": [
     {
       "slug": "proteina-star-nutrition",
@@ -204,7 +204,7 @@
     {
       "slug": "colageno-sport-naranja-360-gr-1kscw",
       "name": "Colageno SPORT Naranja 360 Gr",
-      "brand": null,
+      "brand": "Star Nutrition",
       "category": "Colágeno",
       "priceArs": 30581,
       "inStock": true,
@@ -510,7 +510,7 @@
     {
       "slug": "preentreno-beast-blood-y6xxg",
       "name": "Preentreno Beast Blood",
-      "brand": "Beast Blood",
+      "brand": "Body Advance",
       "category": "Pre-entrenos",
       "priceArs": 23000,
       "inStock": true,

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
-import { ProductImage } from "@/components/product-image";
+import { ProductGallery } from "@/components/product-gallery";
+import { RichText } from "@/components/rich-text";
 import { TrustStrip } from "@/components/trust-strip";
 import { ProductPurchase } from "@/components/cart-buttons";
 import { CheckIcon } from "@/components/icons";
@@ -28,6 +30,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
   const related = await getProductsByCategory(product.category.slug, 4, product.slug);
+  const nutrition = product.images.filter((image) => image.kind === "nutrition");
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -36,7 +39,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     sku: product.variants[0].sku,
     category: product.category.name,
     ...(product.brand ? { brand: { "@type": "Brand", name: product.brand.name } } : {}),
-    ...(product.description ? { description: product.description } : {}),
+    ...(product.description ? { description: product.description.replace(/^(## |- )/gm, "").replace(/s+/g, " ").trim() } : {}),
     offers: { "@type": "Offer", priceCurrency: "ARS", price: product.priceArs, availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" },
   };
 
@@ -44,7 +47,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/>
     <p className="breadcrumb"><Link href="/">Inicio</Link> / <Link href={`/productos?categoria=${product.category.slug}`}>{product.category.name}</Link>{product.brand ? <> / <Link href={`/productos?categoria=${product.category.slug}&marca=${product.brand.slug}`}>{product.brand.name}</Link></> : null} / {product.name}</p>
     <section className="product-hero">
-      <div className="product-gallery product-gallery--single"><ProductImage product={product} className="product-main-image" sizes="(max-width: 1100px) 100vw, 50vw" priority/></div>
+      <ProductGallery product={product}/>
       <div className="product-buybox">
         <div className="buybox-brand">{product.brand?.name ?? product.category.name}</div>
         <h1>{product.name}</h1>
@@ -58,8 +61,22 @@ export default async function ProductPage({ params }: ProductPageProps) {
     </section>
     <TrustStrip/>
     <section className="product-info-section">
-      <div className="section-heading"><div><h2>Información del producto</h2><p>{product.description ?? "Consultá el rótulo del envase para ver ingredientes, porción recomendada, información nutricional y advertencias."}</p></div></div>
-      <p className="compare-disclaimer">ⓘ La información nutricional puede variar por lote. Los suplementos no reemplazan una alimentación variada; ante dudas, consultá a un profesional de la salud.</p>
+      <div className="section-heading"><div><h2>Información del producto</h2></div></div>
+      <div className={nutrition.length ? "product-facts-grid" : ""}>
+        {product.description ? <RichText source={product.description} className="product-description"/> : <p>Consultá el rótulo del envase para ver ingredientes, porción recomendada, información nutricional y advertencias.</p>}
+        {nutrition.length ? (
+          <aside className="nutrition-panel" id="informacion-nutricional">
+            <h3>Información nutricional</h3>
+            <p>Rótulo del envase. Tocá la imagen para verla en tamaño completo.</p>
+            {nutrition.map((image, index) => (
+              <a href={image.url} target="_blank" rel="noopener" className="nutrition-label" key={image.url}>
+                <Image src={image.url} alt={`Información nutricional de ${product.name}${nutrition.length > 1 ? ` (${index + 1} de ${nutrition.length})` : ""}`} width={image.width} height={image.height} sizes="(max-width: 1100px) 100vw, 40vw"/>
+              </a>
+            ))}
+          </aside>
+        ) : null}
+      </div>
+      <p className="compare-disclaimer">ⓘ La información nutricional puede variar por lote: ante cualquier diferencia, vale lo que dice el envase que recibís. Los suplementos no reemplazan una alimentación variada; ante dudas, consultá a un profesional de la salud.</p>
     </section>
     {related.length > 0 ? <section className="similar-products"><div className="section-heading"><div><h2>Más {product.category.name.toLowerCase()}</h2><p>Otras opciones de la misma categoría para comparar.</p></div></div><div className="product-grid">{related.map((item) => <ProductCard product={item} key={item.slug}/>)}</div></section> : null}
   </div></main><Footer/></>;

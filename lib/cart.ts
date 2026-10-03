@@ -5,6 +5,7 @@ import { emptyCart, MAX_QUANTITY_PER_LINE, type Cart, type CartLine } from "./ca
 import { commerce, formatArs } from "./commerce";
 import { db } from "./db";
 import { brands, cartItems, carts, categories, coupons, products, productVariants } from "./db/schema";
+import { getPrimaryImages } from "./catalog";
 import { evaluateCoupon, maxQuantityFor } from "./pricing";
 
 const CART_COOKIE = "qg_cart";
@@ -69,6 +70,7 @@ export async function getCart(cartId?: string | null): Promise<Cart> {
       priceArs: productVariants.priceArs,
       stock: productVariants.stock,
       variantLabel: productVariants.label,
+      productId: products.id,
       slug: products.slug,
       name: products.name,
       status: products.status,
@@ -85,6 +87,7 @@ export async function getCart(cartId?: string | null): Promise<Cart> {
     .where(eq(cartItems.cartId, id))
     .orderBy(asc(cartItems.createdAt), asc(cartItems.id));
 
+  const primaryImages = await getPrimaryImages(rows.map((row) => row.productId));
   const notices: string[] = [];
   const fixes: Promise<unknown>[] = [];
   let hasBlockingIssues = false;
@@ -117,7 +120,7 @@ export async function getCart(cartId?: string | null): Promise<Cart> {
       variantLabel: row.variantLabel,
       brand: row.brandSlug && row.brandName ? { slug: row.brandSlug, name: row.brandName } : null,
       category: { slug: row.categorySlug, name: row.categoryName },
-      imageUrl: null,
+      imageUrl: primaryImages.get(row.productId) ?? null,
       unitPriceArs: row.priceArs,
       quantity,
       lineTotalArs: available ? row.priceArs * quantity : 0,

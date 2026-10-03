@@ -1,8 +1,8 @@
 import "server-only";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { db } from "./db";
-import { brands, categories, products, productVariants } from "./db/schema";
+import { brands, categories, productImages, products, productVariants } from "./db/schema";
 import { priceRanges, type CatalogQuery, type CatalogResult, type CatalogSort, type Facet, type ProductDetail, type ProductSummary } from "./catalog-types";
 import { normalizeText } from "./slugify";
 import { MAX_QUANTITY_PER_LINE } from "./cart-types";
@@ -12,6 +12,19 @@ export const CATALOG_TAG = "catalog";
 export const PAGE_SIZE = 12;
 
 const isAvailable = (stock: number | null) => stock === null || stock > 0;
+
+/** Primera foto de producto (no rótulo) de cada id. */
+export async function getPrimaryImages(productIds: number[]) {
+  if (productIds.length === 0) return new Map<number, string>();
+  const rows = await db
+    .select({ productId: productImages.productId, url: productImages.url })
+    .from(productImages)
+    .where(and(inArray(productImages.productId, productIds), eq(productImages.kind, "product")))
+    .orderBy(asc(productImages.productId), asc(productImages.position));
+  const primary = new Map<number, string>();
+  for (const row of rows) if (!primary.has(row.productId)) primary.set(row.productId, row.url);
+  return primary;
+}
 
 type CatalogRow = ProductSummary & { isFeatured: boolean; categoryPosition: number };
 
@@ -45,6 +58,8 @@ const getActiveProducts = unstable_cache(async (): Promise<CatalogRow[]> => {
     .where(eq(products.status, "active"))
     .orderBy(asc(categories.position), asc(products.name));
 
+  const primaryImages = await getPrimaryImages(rows.map((row) => row.id));
+
   return rows.map((row) => ({
     id: row.id,
     variantId: row.variantId,
@@ -55,7 +70,7 @@ const getActiveProducts = unstable_cache(async (): Promise<CatalogRow[]> => {
     priceArs: row.priceArs,
     compareAtPriceArs: row.compareAtPriceArs,
     inStock: isAvailable(row.stock),
-    imageUrl: null,
+    imageUrl: primaryImages.get(row.id) ?? null,
     isFeatured: row.isFeatured,
     categoryPosition: row.categoryPosition,
   }));
@@ -150,7 +165,7 @@ export async function getCategories() {
 export const getProduct = unstable_cache(async (slug: string): Promise<ProductDetail | null> => {
   const product = await db.query.products.findFirst({
     where: and(eq(products.slug, slug), eq(products.status, "active")),
-    with: { brand: true, category: true, variants: { orderBy: [asc(productVariants.position), asc(productVariants.id)] } },
+    with: { brand: true, category: true, variants: { orderBy: [asc(productVariants.position), asc(productVariants.id)] }, images: { orderBy: [asc(productImages.position)] } },
   });
   if (!product || product.variants.length === 0) return null;
 
@@ -166,7 +181,8 @@ export const getProduct = unstable_cache(async (slug: string): Promise<ProductDe
     priceArs: main.priceArs,
     compareAtPriceArs: main.compareAtPriceArs,
     inStock: product.variants.some((variant) => isAvailable(variant.stock)),
-    imageUrl: null,
+    imageUrl: product.images.find((image) => image.kind === "product")?.url ?? null,
+    images: product.images.map(({ url, kind, width, height }) => ({ url, kind, width, height })),
     variants: product.variants.map((variant) => ({ id: variant.id, sku: variant.sku, label: variant.label, priceArs: variant.priceArs, inStock: isAvailable(variant.stock), maxQuantity: maxQuantityFor(variant.stock, MAX_QUANTITY_PER_LINE) })),
   };
 }, ["catalog:product"], { tags: [CATALOG_TAG], revalidate: 300 });

@@ -51,6 +51,9 @@ Abrir [http://localhost:3000](http://localhost:3000).
 | `npm run db:migrate` | Aplica las migraciones pendientes |
 | `npm run db:seed` | Carga o actualiza el catálogo desde `data/tiendanube-catalog.json` |
 | `npm run db:studio` | Explorador visual de la base |
+| `npm run images:fetch` | Descarga las fotos de la tienda anterior a `.cache/` |
+| `npm run images:build` | Genera las imágenes finales de producto según la curaduría |
+| `npm run images:hero` | Genera la imagen del hero de la home |
 
 ## Datos
 
@@ -59,6 +62,8 @@ Abrir [http://localhost:3000](http://localhost:3000).
 - `lib/cart.ts` y `lib/cart-actions.ts`: lectura recalculada del carrito y Server Actions. El cliente solo envía IDs de variante y cantidades; nunca precios.
 - `lib/pricing.ts`: reglas puras de cupones y cantidades, con tests.
 - `lib/commerce.ts`: políticas visibles (cuotas sin interés, descuento por transferencia, envío gratis). Un valor en 0 o `null` oculta el mensaje.
+- `data/product-content.json`: descripciones de los 68 productos (párrafos, `## ` subtítulos y `- ` listas; sin HTML).
+- `data/product-gallery-curation.json`: qué fotos usa cada producto (tienda anterior o sitio oficial de la marca) y cuáles son rótulos nutricionales. `npm run images:build` la procesa a `public/assets/products/` y escribe `data/product-images.json`, que lee el seed.
 - `data/tiendanube-catalog.json`: lista y precios relevados de la tienda anterior el 3/10/2026, con marca y categoría normalizadas.
 
 ## Rutas
@@ -78,7 +83,8 @@ Abrir [http://localhost:3000](http://localhost:3000).
 
 ## Limitaciones actuales
 
-- No hay fotos de producto: se muestra un placeholder con marca y categoría.
+- La información nutricional se muestra como foto del rótulo (todavía no transcripta a texto accesible).
+- Algunos productos no tienen rótulo disponible (combos, shakers, barras Mervick/Brava, Landerfit, Beast Blood, Body Advance 3 kg y magnesio, óxido nítrico y colágeno ENA).
 - No hay cupones cargados: se crean en la tabla `coupons` (todavía sin panel).
 - El envío se calcula en la Fase 3; hoy figura “A calcular”.
 - Datos de contacto, pago y confirmación son de ejemplo; no crean órdenes ni procesan pagos.

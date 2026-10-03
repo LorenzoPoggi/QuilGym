@@ -17,8 +17,11 @@ export type ProductSummary = {
   imageUrl: string | null;
 };
 
+export type ProductImage = { url: string; kind: "product" | "nutrition"; width: number; height: number };
+
 export type ProductDetail = ProductSummary & {
   description: string | null;
+  images: ProductImage[];
   variants: { id: number; sku: string; label: string | null; priceArs: number; inStock: boolean; maxQuantity: number }[];
 };
 

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import homeReference from "@/design-reference/01-home.png";
 import { Footer } from "@/components/footer";
@@ -52,7 +53,7 @@ export default async function Home() {
               <div className="hero-actions"><a className="button button--dark" href="#objetivos">Comprar por objetivo <ArrowIcon/></a><a className="button button--outline" href="#productos">Ver productos</a></div>
               <div className="hero-meta"><span>◉ Compra protegida</span><span>★ 4,9 en 1.240 reseñas</span></div>
             </div>
-            <ReferenceCrop source={homeReference} crop={{ x: 702, y: 145, width: 665, height: 485 }} alt="Selección de suplementos QuilGym sobre pedestales" className="hero-art" priority />
+            <Image src="/assets/hero/hero-productos.webp" alt="Mutant Mass, Platinum Whey Protein, Creatine Monohydrate y PUMP V8 de Star Nutrition sobre pedestales" width={2200} height={1600} sizes="(max-width: 1100px) 100vw, 55vw" className="hero-art" priority />
           </div>
         </section>
 

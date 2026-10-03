@@ -62,6 +62,21 @@ export const productVariants = pgTable("product_variants", {
   check("product_variants_stock_check", sql`${table.stock} is null or ${table.stock} >= 0`),
 ]);
 
+export const productImageKind = pgEnum("product_image_kind", ["product", "nutrition"]);
+
+/** Galería del producto: fotos del envase y rótulos de información nutricional. */
+export const productImages = pgTable("product_images", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  /** Ruta pública (p. ej. /assets/products/<slug>/01.webp) o URL absoluta de un storage. */
+  url: text("url").notNull(),
+  kind: productImageKind("kind").notNull().default("product"),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  position: integer("position").notNull().default(0),
+  ...timestamps,
+}, (table) => [index("product_images_product_idx").on(table.productId, table.position)]);
+
 /** Carrito de invitado; el id (uuid aleatorio) viaja en una cookie HttpOnly. */
 export const carts = pgTable("carts", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -115,6 +130,10 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   brand: one(brands, { fields: [products.brandId], references: [brands.id] }),
   category: one(categories, { fields: [products.categoryId], references: [categories.id] }),
   variants: many(productVariants),
+  images: many(productImages),
+}));
+export const productImagesRelations = relations(productImages, ({ one }) => ({
+  product: one(products, { fields: [productImages.productId], references: [products.id] }),
 }));
 export const productVariantsRelations = relations(productVariants, ({ one }) => ({
   product: one(products, { fields: [productVariants.productId], references: [products.id] }),
@@ -124,3 +143,4 @@ export type Brand = typeof brands.$inferSelect;
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductVariant = typeof productVariants.$inferSelect;
+export type ProductImageRow = typeof productImages.$inferSelect;

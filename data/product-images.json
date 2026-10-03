@@ -1,0 +1,1202 @@
+{
+  "proteina-star-2lb": [
+    {
+      "path": "/assets/products/proteina-star-2lb/01.webp",
+      "kind": "product",
+      "width": 1194,
+      "height": 1194,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/proteina-star-2lb/02.webp",
+      "kind": "product",
+      "width": 936,
+      "height": 936,
+      "source": "t2"
+    },
+    {
+      "path": "/assets/products/proteina-star-2lb/03.webp",
+      "kind": "nutrition",
+      "width": 1004,
+      "height": 1097,
+      "source": "t1"
+    }
+  ],
+  "creatina-star-300gr-doypack": [
+    {
+      "path": "/assets/products/creatina-star-300gr-doypack/01.webp",
+      "kind": "product",
+      "width": 1098,
+      "height": 1098,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-star-300gr-doypack/02.webp",
+      "kind": "nutrition",
+      "width": 890,
+      "height": 987,
+      "source": "t1"
+    }
+  ],
+  "mutant-mass-1-5-kg": [
+    {
+      "path": "/assets/products/mutant-mass-1-5-kg/01.webp",
+      "kind": "product",
+      "width": 1161,
+      "height": 1161,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/mutant-mass-1-5-kg/02.webp",
+      "kind": "product",
+      "width": 1370,
+      "height": 1370,
+      "source": "o4"
+    },
+    {
+      "path": "/assets/products/mutant-mass-1-5-kg/03.webp",
+      "kind": "nutrition",
+      "width": 646,
+      "height": 1049,
+      "source": "t3"
+    }
+  ],
+  "omega-3-star-nutrition": [
+    {
+      "path": "/assets/products/omega-3-star-nutrition/01.webp",
+      "kind": "product",
+      "width": 1174,
+      "height": 1174,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/omega-3-star-nutrition/02.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "o1"
+    },
+    {
+      "path": "/assets/products/omega-3-star-nutrition/03.webp",
+      "kind": "nutrition",
+      "width": 704,
+      "height": 856,
+      "source": "o2"
+    }
+  ],
+  "combo-classic": [
+    {
+      "path": "/assets/products/combo-classic/01.webp",
+      "kind": "product",
+      "width": 600,
+      "height": 600,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/combo-classic/02.webp",
+      "kind": "product",
+      "width": 600,
+      "height": 710,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/combo-classic/03.webp",
+      "kind": "product",
+      "width": 1093,
+      "height": 1093,
+      "source": "t2"
+    }
+  ],
+  "citrato-de-magnesio-ena": [
+    {
+      "path": "/assets/products/citrato-de-magnesio-ena/01.webp",
+      "kind": "product",
+      "width": 1047,
+      "height": 1047,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/citrato-de-magnesio-ena/02.webp",
+      "kind": "nutrition",
+      "width": 972,
+      "height": 1089,
+      "source": "t1"
+    }
+  ],
+  "proteina-body-advance-1kg": [
+    {
+      "path": "/assets/products/proteina-body-advance-1kg/01.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/proteina-body-advance-1kg/02.webp",
+      "kind": "nutrition",
+      "width": 766,
+      "height": 1096,
+      "source": "t1"
+    }
+  ],
+  "creatina-star-300gr-clasica": [
+    {
+      "path": "/assets/products/creatina-star-300gr-clasica/01.webp",
+      "kind": "product",
+      "width": 1043,
+      "height": 1043,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/creatina-star-300gr-clasica/02.webp",
+      "kind": "product",
+      "width": 564,
+      "height": 564,
+      "source": "t3"
+    },
+    {
+      "path": "/assets/products/creatina-star-300gr-clasica/03.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t2"
+    },
+    {
+      "path": "/assets/products/creatina-star-300gr-clasica/04.webp",
+      "kind": "nutrition",
+      "width": 998,
+      "height": 1101,
+      "source": "t1"
+    }
+  ],
+  "proteina-star-platinum-2lb": [
+    {
+      "path": "/assets/products/proteina-star-platinum-2lb/01.webp",
+      "kind": "product",
+      "width": 1366,
+      "height": 1366,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/proteina-star-platinum-2lb/02.webp",
+      "kind": "product",
+      "width": 502,
+      "height": 502,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/proteina-star-platinum-2lb/03.webp",
+      "kind": "nutrition",
+      "width": 501,
+      "height": 704,
+      "source": "o6"
+    }
+  ],
+  "creatina-gold-300-gr": [
+    {
+      "path": "/assets/products/creatina-gold-300-gr/01.webp",
+      "kind": "product",
+      "width": 951,
+      "height": 951,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-gold-300-gr/02.webp",
+      "kind": "nutrition",
+      "width": 608,
+      "height": 951,
+      "source": "t1"
+    }
+  ],
+  "creatina-xtrenght-250-gr": [
+    {
+      "path": "/assets/products/creatina-xtrenght-250-gr/01.webp",
+      "kind": "product",
+      "width": 930,
+      "height": 930,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-xtrenght-250-gr/02.webp",
+      "kind": "nutrition",
+      "width": 1106,
+      "height": 1085,
+      "source": "t1"
+    }
+  ],
+  "proteina-xtrenght-2lb": [
+    {
+      "path": "/assets/products/proteina-xtrenght-2lb/01.webp",
+      "kind": "product",
+      "width": 1103,
+      "height": 1103,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/proteina-xtrenght-2lb/02.webp",
+      "kind": "nutrition",
+      "width": 476,
+      "height": 393,
+      "source": "t1"
+    }
+  ],
+  "creatina-star-500-gr": [
+    {
+      "path": "/assets/products/creatina-star-500-gr/01.webp",
+      "kind": "product",
+      "width": 1030,
+      "height": 1030,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-star-500-gr/02.webp",
+      "kind": "nutrition",
+      "width": 962,
+      "height": 1555,
+      "source": "o1"
+    }
+  ],
+  "pancakes-proteicos-granger-vainilla": [
+    {
+      "path": "/assets/products/pancakes-proteicos-granger-vainilla/01.webp",
+      "kind": "product",
+      "width": 1025,
+      "height": 1025,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/pancakes-proteicos-granger-vainilla/02.webp",
+      "kind": "product",
+      "width": 225,
+      "height": 225,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/pancakes-proteicos-granger-vainilla/03.webp",
+      "kind": "nutrition",
+      "width": 692,
+      "height": 692,
+      "source": "t2"
+    }
+  ],
+  "creatina-one-fit-200-gr": [
+    {
+      "path": "/assets/products/creatina-one-fit-200-gr/01.webp",
+      "kind": "product",
+      "width": 1064,
+      "height": 1064,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-one-fit-200-gr/02.webp",
+      "kind": "nutrition",
+      "width": 692,
+      "height": 688,
+      "source": "t1"
+    }
+  ],
+  "creatina-body-advance-300-gr": [
+    {
+      "path": "/assets/products/creatina-body-advance-300-gr/01.webp",
+      "kind": "product",
+      "width": 953,
+      "height": 953,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-body-advance-300-gr/02.webp",
+      "kind": "nutrition",
+      "width": 255,
+      "height": 300,
+      "source": "t1"
+    }
+  ],
+  "shaker-growsbar": [
+    {
+      "path": "/assets/products/shaker-growsbar/01.webp",
+      "kind": "product",
+      "width": 1046,
+      "height": 1046,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/shaker-growsbar/02.webp",
+      "kind": "product",
+      "width": 1065,
+      "height": 1065,
+      "source": "t1"
+    }
+  ],
+  "pancakes-proteicos-chocolate": [
+    {
+      "path": "/assets/products/pancakes-proteicos-chocolate/01.webp",
+      "kind": "product",
+      "width": 1025,
+      "height": 1025,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/pancakes-proteicos-chocolate/02.webp",
+      "kind": "product",
+      "width": 512,
+      "height": 512,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/pancakes-proteicos-chocolate/03.webp",
+      "kind": "nutrition",
+      "width": 1106,
+      "height": 1106,
+      "source": "t2"
+    }
+  ],
+  "citrato-de-magnesio-star": [
+    {
+      "path": "/assets/products/citrato-de-magnesio-star/01.webp",
+      "kind": "product",
+      "width": 1111,
+      "height": 1111,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/citrato-de-magnesio-star/02.webp",
+      "kind": "nutrition",
+      "width": 824,
+      "height": 1030,
+      "source": "t1"
+    }
+  ],
+  "creatina-ena-sport-300-gr": [
+    {
+      "path": "/assets/products/creatina-ena-sport-300-gr/01.webp",
+      "kind": "product",
+      "width": 978,
+      "height": 978,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-ena-sport-300-gr/02.webp",
+      "kind": "nutrition",
+      "width": 192,
+      "height": 220,
+      "source": "t1"
+    }
+  ],
+  "proteina-body-advance-3-kg": [
+    {
+      "path": "/assets/products/proteina-body-advance-3-kg/01.webp",
+      "kind": "product",
+      "width": 1082,
+      "height": 1082,
+      "source": "t0"
+    }
+  ],
+  "proteina-star-platinum-3-kg": [
+    {
+      "path": "/assets/products/proteina-star-platinum-3-kg/01.webp",
+      "kind": "product",
+      "width": 1327,
+      "height": 1327,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/proteina-star-platinum-3-kg/02.webp",
+      "kind": "nutrition",
+      "width": 503,
+      "height": 714,
+      "source": "o5"
+    }
+  ],
+  "colageno-sport-naranja-360-gr": [
+    {
+      "path": "/assets/products/colageno-sport-naranja-360-gr/01.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/colageno-sport-naranja-360-gr/02.webp",
+      "kind": "product",
+      "width": 900,
+      "height": 1600,
+      "source": "o1"
+    },
+    {
+      "path": "/assets/products/colageno-sport-naranja-360-gr/03.webp",
+      "kind": "nutrition",
+      "width": 918,
+      "height": 1621,
+      "source": "o2"
+    }
+  ],
+  "proteina-gold-nutrition-2lb": [
+    {
+      "path": "/assets/products/proteina-gold-nutrition-2lb/01.webp",
+      "kind": "product",
+      "width": 1058,
+      "height": 1058,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/proteina-gold-nutrition-2lb/02.webp",
+      "kind": "nutrition",
+      "width": 1029,
+      "height": 1010,
+      "source": "t1"
+    }
+  ],
+  "creatina-star-1-kg": [
+    {
+      "path": "/assets/products/creatina-star-1-kg/01.webp",
+      "kind": "product",
+      "width": 991,
+      "height": 991,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-star-1-kg/02.webp",
+      "kind": "nutrition",
+      "width": 998,
+      "height": 1101,
+      "source": "t1"
+    }
+  ],
+  "pre-entreno-star-nutricion": [
+    {
+      "path": "/assets/products/pre-entreno-star-nutricion/01.webp",
+      "kind": "product",
+      "width": 961,
+      "height": 961,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/pre-entreno-star-nutricion/02.webp",
+      "kind": "nutrition",
+      "width": 593,
+      "height": 1065,
+      "source": "t1"
+    }
+  ],
+  "creatina-star-150-gr": [
+    {
+      "path": "/assets/products/creatina-star-150-gr/01.webp",
+      "kind": "product",
+      "width": 1038,
+      "height": 1038,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-star-150-gr/02.webp",
+      "kind": "product",
+      "width": 1147,
+      "height": 1147,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/creatina-star-150-gr/03.webp",
+      "kind": "nutrition",
+      "width": 815,
+      "height": 1026,
+      "source": "t2"
+    }
+  ],
+  "combo-arnold": [
+    {
+      "path": "/assets/products/combo-arnold/01.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/combo-arnold/02.webp",
+      "kind": "product",
+      "width": 1093,
+      "height": 1093,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/combo-arnold/03.webp",
+      "kind": "product",
+      "width": 510,
+      "height": 510,
+      "source": "t2"
+    }
+  ],
+  "combo-body-advance": [
+    {
+      "path": "/assets/products/combo-body-advance/01.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t0"
+    }
+  ],
+  "colageno-ena-sport-407g": [
+    {
+      "path": "/assets/products/colageno-ena-sport-407g/01.webp",
+      "kind": "product",
+      "width": 983,
+      "height": 983,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/colageno-ena-sport-407g/02.webp",
+      "kind": "product",
+      "width": 843,
+      "height": 843,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/colageno-ena-sport-407g/03.webp",
+      "kind": "product",
+      "width": 1000,
+      "height": 1000,
+      "source": "o2"
+    },
+    {
+      "path": "/assets/products/colageno-ena-sport-407g/04.webp",
+      "kind": "product",
+      "width": 1600,
+      "height": 1600,
+      "source": "o3"
+    }
+  ],
+  "creatina-star-300-gr-frutos-rojos": [
+    {
+      "path": "/assets/products/creatina-star-300-gr-frutos-rojos/01.webp",
+      "kind": "product",
+      "width": 1100,
+      "height": 1100,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-star-300-gr-frutos-rojos/02.webp",
+      "kind": "nutrition",
+      "width": 546,
+      "height": 767,
+      "source": "o4"
+    }
+  ],
+  "resveratrol-star-nutrition": [
+    {
+      "path": "/assets/products/resveratrol-star-nutrition/01.webp",
+      "kind": "product",
+      "width": 1081,
+      "height": 1081,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/resveratrol-star-nutrition/02.webp",
+      "kind": "nutrition",
+      "width": 582,
+      "height": 428,
+      "source": "o1"
+    }
+  ],
+  "shaker-xtrenght": [
+    {
+      "path": "/assets/products/shaker-xtrenght/01.webp",
+      "kind": "product",
+      "width": 1045,
+      "height": 1045,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/shaker-xtrenght/02.webp",
+      "kind": "product",
+      "width": 1012,
+      "height": 1012,
+      "source": "t1"
+    }
+  ],
+  "combo-gold-nutrition": [
+    {
+      "path": "/assets/products/combo-gold-nutrition/01.webp",
+      "kind": "product",
+      "width": 600,
+      "height": 600,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/combo-gold-nutrition/02.webp",
+      "kind": "product",
+      "width": 1058,
+      "height": 1058,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/combo-gold-nutrition/03.webp",
+      "kind": "product",
+      "width": 951,
+      "height": 951,
+      "source": "t3"
+    },
+    {
+      "path": "/assets/products/combo-gold-nutrition/04.webp",
+      "kind": "nutrition",
+      "width": 1029,
+      "height": 1010,
+      "source": "t2"
+    },
+    {
+      "path": "/assets/products/combo-gold-nutrition/05.webp",
+      "kind": "nutrition",
+      "width": 608,
+      "height": 951,
+      "source": "t4"
+    }
+  ],
+  "shaker-ena": [
+    {
+      "path": "/assets/products/shaker-ena/01.webp",
+      "kind": "product",
+      "width": 1058,
+      "height": 1058,
+      "source": "t0"
+    }
+  ],
+  "combo-dino": [
+    {
+      "path": "/assets/products/combo-dino/01.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/combo-dino/02.webp",
+      "kind": "product",
+      "width": 800,
+      "height": 800,
+      "source": "t1"
+    }
+  ],
+  "cafeina-ena": [
+    {
+      "path": "/assets/products/cafeina-ena/01.webp",
+      "kind": "product",
+      "width": 968,
+      "height": 968,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/cafeina-ena/02.webp",
+      "kind": "nutrition",
+      "width": 688,
+      "height": 1011,
+      "source": "t1"
+    }
+  ],
+  "citrato-de-magnesio-body-500g": [
+    {
+      "path": "/assets/products/citrato-de-magnesio-body-500g/01.webp",
+      "kind": "product",
+      "width": 1055,
+      "height": 1055,
+      "source": "t0"
+    }
+  ],
+  "combo-one-fit": [
+    {
+      "path": "/assets/products/combo-one-fit/01.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/combo-one-fit/02.webp",
+      "kind": "nutrition",
+      "width": 692,
+      "height": 688,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/combo-one-fit/03.webp",
+      "kind": "nutrition",
+      "width": 692,
+      "height": 688,
+      "source": "t2"
+    }
+  ],
+  "proteina-one-fit-2lb": [
+    {
+      "path": "/assets/products/proteina-one-fit-2lb/01.webp",
+      "kind": "product",
+      "width": 1079,
+      "height": 1079,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/proteina-one-fit-2lb/02.webp",
+      "kind": "nutrition",
+      "width": 692,
+      "height": 688,
+      "source": "t1"
+    }
+  ],
+  "shaker-gentech": [
+    {
+      "path": "/assets/products/shaker-gentech/01.webp",
+      "kind": "product",
+      "width": 568,
+      "height": 568,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/shaker-gentech/02.webp",
+      "kind": "product",
+      "width": 233,
+      "height": 233,
+      "source": "t1"
+    }
+  ],
+  "bcaa-star-nutrition": [
+    {
+      "path": "/assets/products/bcaa-star-nutrition/01.webp",
+      "kind": "product",
+      "width": 968,
+      "height": 968,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/bcaa-star-nutrition/02.webp",
+      "kind": "nutrition",
+      "width": 655,
+      "height": 1098,
+      "source": "t1"
+    }
+  ],
+  "shaker-star-500-ml": [
+    {
+      "path": "/assets/products/shaker-star-500-ml/01.webp",
+      "kind": "product",
+      "width": 1056,
+      "height": 1056,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/shaker-star-500-ml/02.webp",
+      "kind": "product",
+      "width": 859,
+      "height": 859,
+      "source": "t1"
+    }
+  ],
+  "zma-star-nutrition": [
+    {
+      "path": "/assets/products/zma-star-nutrition/01.webp",
+      "kind": "product",
+      "width": 1175,
+      "height": 1175,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/zma-star-nutrition/02.webp",
+      "kind": "product",
+      "width": 800,
+      "height": 800,
+      "source": "o1"
+    },
+    {
+      "path": "/assets/products/zma-star-nutrition/03.webp",
+      "kind": "nutrition",
+      "width": 693,
+      "height": 1543,
+      "source": "o2"
+    }
+  ],
+  "creatina-star-300gr-uva": [
+    {
+      "path": "/assets/products/creatina-star-300gr-uva/01.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "o1"
+    },
+    {
+      "path": "/assets/products/creatina-star-300gr-uva/02.webp",
+      "kind": "nutrition",
+      "width": 546,
+      "height": 767,
+      "source": "o4"
+    }
+  ],
+  "creatina-star-300gr-limon": [
+    {
+      "path": "/assets/products/creatina-star-300gr-limon/01.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/creatina-star-300gr-limon/02.webp",
+      "kind": "nutrition",
+      "width": 546,
+      "height": 767,
+      "source": "o4"
+    }
+  ],
+  "creatina-natural-nutrition-150gr": [
+    {
+      "path": "/assets/products/creatina-natural-nutrition-150gr/01.webp",
+      "kind": "product",
+      "width": 544,
+      "height": 544,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/creatina-natural-nutrition-150gr/02.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1366,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/creatina-natural-nutrition-150gr/03.webp",
+      "kind": "product",
+      "width": 240,
+      "height": 320,
+      "source": "t2"
+    }
+  ],
+  "colageno-hidrolizado-star-210g": [
+    {
+      "path": "/assets/products/colageno-hidrolizado-star-210g/01.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/colageno-hidrolizado-star-210g/02.webp",
+      "kind": "product",
+      "width": 937,
+      "height": 1600,
+      "source": "o2"
+    },
+    {
+      "path": "/assets/products/colageno-hidrolizado-star-210g/03.webp",
+      "kind": "nutrition",
+      "width": 571,
+      "height": 1089,
+      "source": "o3"
+    }
+  ],
+  "oxido-nitrico-ena": [
+    {
+      "path": "/assets/products/oxido-nitrico-ena/01.webp",
+      "kind": "product",
+      "width": 924,
+      "height": 924,
+      "source": "t0"
+    }
+  ],
+  "glutamina-one-fit-200g": [
+    {
+      "path": "/assets/products/glutamina-one-fit-200g/01.webp",
+      "kind": "product",
+      "width": 937,
+      "height": 937,
+      "source": "t0"
+    }
+  ],
+  "barritas-mervick-65g-banana": [
+    {
+      "path": "/assets/products/barritas-mervick-65g-banana/01.webp",
+      "kind": "product",
+      "width": 999,
+      "height": 999,
+      "source": "t0"
+    }
+  ],
+  "barritas-mervick-65g-frutos-rojos": [
+    {
+      "path": "/assets/products/barritas-mervick-65g-frutos-rojos/01.webp",
+      "kind": "product",
+      "width": 986,
+      "height": 986,
+      "source": "t0"
+    }
+  ],
+  "barritas-mervick-65g-chocolate": [
+    {
+      "path": "/assets/products/barritas-mervick-65g-chocolate/01.webp",
+      "kind": "product",
+      "width": 969,
+      "height": 969,
+      "source": "t0"
+    }
+  ],
+  "barritas-proteicas-bravas-arandanos": [
+    {
+      "path": "/assets/products/barritas-proteicas-bravas-arandanos/01.webp",
+      "kind": "product",
+      "width": 881,
+      "height": 881,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/barritas-proteicas-bravas-arandanos/02.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t1"
+    }
+  ],
+  "barritas-proteicas-bravas-datiles": [
+    {
+      "path": "/assets/products/barritas-proteicas-bravas-datiles/01.webp",
+      "kind": "product",
+      "width": 881,
+      "height": 881,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/barritas-proteicas-bravas-datiles/02.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t1"
+    }
+  ],
+  "omega-3-landerfit": [
+    {
+      "path": "/assets/products/omega-3-landerfit/01.webp",
+      "kind": "product",
+      "width": 909,
+      "height": 909,
+      "source": "t0"
+    }
+  ],
+  "preentreno-beast-blood": [
+    {
+      "path": "/assets/products/preentreno-beast-blood/01.webp",
+      "kind": "product",
+      "width": 196,
+      "height": 196,
+      "source": "t0"
+    }
+  ],
+  "combo-laid": [
+    {
+      "path": "/assets/products/combo-laid/01.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t0"
+    }
+  ],
+  "combo-mentzer": [
+    {
+      "path": "/assets/products/combo-mentzer/01.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t0"
+    }
+  ],
+  "multivitaminico-star": [
+    {
+      "path": "/assets/products/multivitaminico-star/01.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/multivitaminico-star/02.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "o1"
+    },
+    {
+      "path": "/assets/products/multivitaminico-star/03.webp",
+      "kind": "nutrition",
+      "width": 572,
+      "height": 1058,
+      "source": "o2"
+    }
+  ],
+  "beta-alanine-star": [
+    {
+      "path": "/assets/products/beta-alanine-star/01.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/beta-alanine-star/02.webp",
+      "kind": "nutrition",
+      "width": 547,
+      "height": 768,
+      "source": "o1"
+    }
+  ],
+  "proteina-just-plant-2lb": [
+    {
+      "path": "/assets/products/proteina-just-plant-2lb/01.webp",
+      "kind": "product",
+      "width": 1195,
+      "height": 1195,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/proteina-just-plant-2lb/02.webp",
+      "kind": "product",
+      "width": 1200,
+      "height": 1200,
+      "source": "o1"
+    },
+    {
+      "path": "/assets/products/proteina-just-plant-2lb/03.webp",
+      "kind": "product",
+      "width": 1200,
+      "height": 1200,
+      "source": "o2"
+    },
+    {
+      "path": "/assets/products/proteina-just-plant-2lb/04.webp",
+      "kind": "product",
+      "width": 615,
+      "height": 1200,
+      "source": "o3"
+    },
+    {
+      "path": "/assets/products/proteina-just-plant-2lb/05.webp",
+      "kind": "nutrition",
+      "width": 625,
+      "height": 771,
+      "source": "o4"
+    }
+  ],
+  "eaa-s-star-nutrition": [
+    {
+      "path": "/assets/products/eaa-s-star-nutrition/01.webp",
+      "kind": "product",
+      "width": 965,
+      "height": 965,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/eaa-s-star-nutrition/02.webp",
+      "kind": "product",
+      "width": 1100,
+      "height": 1466,
+      "source": "o1"
+    },
+    {
+      "path": "/assets/products/eaa-s-star-nutrition/03.webp",
+      "kind": "nutrition",
+      "width": 568,
+      "height": 1084,
+      "source": "t1"
+    }
+  ],
+  "pre-entreno-painlabs": [
+    {
+      "path": "/assets/products/pre-entreno-painlabs/01.webp",
+      "kind": "product",
+      "width": 1119,
+      "height": 1119,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/pre-entreno-painlabs/02.webp",
+      "kind": "nutrition",
+      "width": 1102,
+      "height": 1106,
+      "source": "t1"
+    }
+  ],
+  "mutant-mass-5-kg": [
+    {
+      "path": "/assets/products/mutant-mass-5-kg/01.webp",
+      "kind": "product",
+      "width": 1320,
+      "height": 1320,
+      "source": "o0"
+    },
+    {
+      "path": "/assets/products/mutant-mass-5-kg/02.webp",
+      "kind": "nutrition",
+      "width": 636,
+      "height": 1073,
+      "source": "o5"
+    },
+    {
+      "path": "/assets/products/mutant-mass-5-kg/03.webp",
+      "kind": "nutrition",
+      "width": 1106,
+      "height": 924,
+      "source": "t1"
+    }
+  ],
+  "shaker-ena-plus": [
+    {
+      "path": "/assets/products/shaker-ena-plus/01.webp",
+      "kind": "product",
+      "width": 1004,
+      "height": 1004,
+      "source": "t0"
+    }
+  ],
+  "shaker-got-600-ml": [
+    {
+      "path": "/assets/products/shaker-got-600-ml/01.webp",
+      "kind": "product",
+      "width": 1005,
+      "height": 1005,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/shaker-got-600-ml/02.webp",
+      "kind": "product",
+      "width": 908,
+      "height": 908,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/shaker-got-600-ml/03.webp",
+      "kind": "product",
+      "width": 1071,
+      "height": 1071,
+      "source": "t2"
+    },
+    {
+      "path": "/assets/products/shaker-got-600-ml/04.webp",
+      "kind": "product",
+      "width": 193,
+      "height": 193,
+      "source": "t3"
+    }
+  ],
+  "combo-popeye": [
+    {
+      "path": "/assets/products/combo-popeye/01.webp",
+      "kind": "product",
+      "width": 1024,
+      "height": 1024,
+      "source": "t0"
+    },
+    {
+      "path": "/assets/products/combo-popeye/02.webp",
+      "kind": "product",
+      "width": 800,
+      "height": 800,
+      "source": "t1"
+    },
+    {
+      "path": "/assets/products/combo-popeye/03.webp",
+      "kind": "product",
+      "width": 528,
+      "height": 528,
+      "source": "t2"
+    }
+  ]
+}
