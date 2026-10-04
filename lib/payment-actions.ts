@@ -6,15 +6,15 @@ import { findOwnedOrder } from "./order-service";
 import { paymentSetup, submitProviderPayment } from "./mercadopago";
 import { deliverOrderEmails } from "./order-email";
 
-export async function preparePayment(id: string) {
-  const order = await findOwnedOrder(id);
+export async function preparePayment(id: string, accessToken?: string | null) {
+  const order = await findOwnedOrder(id, accessToken);
   if (!order) return { ok: false as const, error: "Pedido no disponible." };
   try { return { ok: true as const, data: await paymentSetup(order) }; }
   catch { return { ok: false as const, error: "No pudimos abrir el pago. Reintentá en unos instantes." }; }
 }
 
-export async function payOrder(id: string, raw: unknown) {
-  const order = await findOwnedOrder(id);
+export async function payOrder(id: string, raw: unknown, accessToken?: string | null) {
+  const order = await findOwnedOrder(id, accessToken);
   if (!order) return { ok: false, error: "Pedido no disponible." };
   try {
     await submitProviderPayment(order, raw);

@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "checkout:check": "tsx scripts/check-checkout-config.ts",
     "images:fetch": "node scripts/fetch-product-images.mjs",
     "images:build": "node scripts/build-product-images.mjs",
     "images:hero": "node scripts/build-hero.mjs"

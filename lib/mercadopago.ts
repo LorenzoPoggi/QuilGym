@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { orders, payments } from "./db/schema";
 import { withOrderTransaction } from "./db/transaction";
-import { getCheckoutConfig, siteUrl } from "./checkout-config";
+import { getCheckoutConfig, orderPageUrl, siteUrl } from "./checkout-config";
 import { providerStatus } from "./order-state";
 import { transitionOrder } from "./order-service";
 
@@ -37,7 +37,8 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
     if (!payment) throw new Error("Pago no disponible.");
     let preferenceId = payment.preferenceId;
     if (!preferenceId) {
-      const returnUrl = `${siteUrl()}/checkout/confirmacion/${order.id}`;
+      // Incluye el link firmado: la vuelta desde la app de Mercado Pago puede abrir otro navegador sin la cookie.
+      const returnUrl = orderPageUrl(order.id) ?? `${siteUrl()}/checkout/confirmacion/${order.id}`;
       const preference = await request<{ id: string }>("/checkout/preferences", {
         items: [{ id: order.id, title: "Pedido QuilGym", quantity: 1, unit_price: order.totalArs, currency_id: "ARS" }],
         payer: { email: order.email }, external_reference: order.id,

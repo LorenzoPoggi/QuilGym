@@ -33,16 +33,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const refresh = useCallback(async () => {
-    try {
-      const response = await fetch("/api/cart", { cache: "no-store" });
-      if (response.ok) setCart(await response.json());
-    } catch {
-      setFeedback({ tone: "error", text: "No pudimos actualizar el carrito. Intentá nuevamente." });
-    } finally {
-      setLoaded(true);
-    }
-  }, []);
+  // Los setState van en callbacks de la promesa: el efecto de montaje solo dispara la carga.
+  const refresh = useCallback((): Promise<void> => fetch("/api/cart", { cache: "no-store" })
+    .then(async (response) => { if (response.ok) setCart(await response.json()); })
+    .catch(() => setFeedback({ tone: "error", text: "No pudimos actualizar el carrito. Intentá nuevamente." }))
+    .finally(() => setLoaded(true)), []);
 
   useEffect(() => {
     void refresh();

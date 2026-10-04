@@ -36,7 +36,7 @@ export function DemoPayment({ orderId, status }: { orderId: string; status: Orde
   </section>;
 }
 
-export function MercadoPagoPayment({ orderId }: { orderId: string }) {
+export function MercadoPagoPayment({ orderId, accessToken }: { orderId: string; accessToken?: string | null }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
@@ -50,7 +50,7 @@ export function MercadoPagoPayment({ orderId }: { orderId: string }) {
     container.current.id = id;
     async function mount() {
       try {
-        const result = await preparePayment(orderId);
+        const result = await preparePayment(orderId, accessToken);
         if (disposed) return;
         if (!result.ok) throw new Error(result.error);
         const MercadoPago = (window as unknown as { MercadoPago: MercadoPagoConstructor }).MercadoPago;
@@ -62,7 +62,7 @@ export function MercadoPagoPayment({ orderId }: { orderId: string }) {
             onReady: () => {},
             onError: () => { if (!disposed) setError("No pudimos cargar el formulario de pago. Recargá para reintentar."); },
             onSubmit: async ({ formData }: { formData: unknown }) => {
-              const result = await payOrder(orderId, formData);
+              const result = await payOrder(orderId, formData, accessToken);
               if (!result.ok) { setError(result.error ?? "No pudimos procesar el pago."); throw new Error("Payment failed"); }
               router.refresh();
             },
@@ -73,7 +73,7 @@ export function MercadoPagoPayment({ orderId }: { orderId: string }) {
     }
     void mount();
     return () => { disposed = true; void controller?.unmount(); };
-  }, [ready, orderId, router]);
+  }, [ready, orderId, accessToken, router]);
   return <section className="checkout-card"><h2>Completá el pago</h2><p>Los datos de tu tarjeta se procesan en Mercado Pago.</p>
     <Script src="https://sdk.mercadopago.com/js/v2" strategy="afterInteractive" onReady={() => setReady(true)} onError={() => setError("No pudimos cargar Mercado Pago.")}/>
     <div ref={container}/>{error ? <p role="alert" className="form-error">{error}</p> : null}

@@ -9,9 +9,12 @@ import { DemoPayment, MercadoPagoPayment, RefreshOrder } from "@/components/orde
 
 export const metadata: Metadata = { title: "Tu pedido | QuilGym", robots: { index: false, follow: false }, referrer: "no-referrer" };
 
-export default async function ConfirmationPage({ params }: { params: Promise<{ orderId: string }> }) {
+export default async function ConfirmationPage({ params, searchParams }: { params: Promise<{ orderId: string }>; searchParams: Promise<{ t?: string | string[] }> }) {
   const { orderId } = await params;
-  const details = await orderDetails(orderId);
+  const { t } = await searchParams;
+  // Link firmado del email o de la vuelta desde Mercado Pago; sin él, autoriza la cookie del carrito.
+  const accessToken = typeof t === "string" ? t : null;
+  const details = await orderDetails(orderId, accessToken);
   if (!details) notFound();
   const { order, items, payment, shipment } = details;
   const demoEnabled = getCheckoutConfig().demo;
@@ -38,6 +41,6 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ o
         {pending && payment?.ticketUrl ? <a className="button button--outline" href={payment.ticketUrl} target="_blank" rel="noopener noreferrer">Ver cupón de pago</a> : null}
       </aside></div>
       {order.isDemo && demoEnabled ? <DemoPayment orderId={order.id} status={order.status}/> : null}
-      {!order.isDemo && pending && order.paymentMethod === "mercadopago" && !payment?.providerId ? <MercadoPagoPayment orderId={order.id}/> : null}
+      {!order.isDemo && pending && order.paymentMethod === "mercadopago" && !payment?.providerId ? <MercadoPagoPayment orderId={order.id} accessToken={accessToken}/> : null}
     </div></main></>;
 }

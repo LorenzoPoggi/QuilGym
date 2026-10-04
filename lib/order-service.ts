@@ -6,7 +6,8 @@ import { withOrderTransaction, type OrderTransaction } from "./db/transaction";
 import { readCartId } from "./cart";
 import { evaluateCoupon } from "./pricing";
 import { MAX_QUANTITY_PER_LINE } from "./cart-types";
-import { bankDetails, getCheckoutConfig } from "./checkout-config";
+import { bankDetails, getCheckoutConfig, orderAccessSecret } from "./checkout-config";
+import { verifyOrderAccess } from "./order-access";
 import { checkoutFingerprint, readQuote } from "./checkout-security";
 import { quoteDelivery, UUID_PATTERN } from "./checkout-validation";
 import { canTransition } from "./order-state";
@@ -14,16 +15,21 @@ import type { CheckoutInput, OrderStatus } from "./checkout-types";
 
 export class CheckoutError extends Error {}
 
-export async function findOwnedOrder(id: string) {
+/** Autoriza por la cookie del carrito que creó el pedido o por el link firmado (`?t=`). */
+export async function findOwnedOrder(id: string, accessToken?: string | null) {
   if (!UUID_PATTERN.test(id)) return null;
+  if (verifyOrderAccess(id, accessToken, orderAccessSecret())) {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    return order ?? null;
+  }
   const cartId = await readCartId();
   if (!cartId) return null;
   const [order] = await db.select().from(orders).where(and(eq(orders.id, id), eq(orders.cartId, cartId))).limit(1);
   return order ?? null;
 }
 
-export async function orderDetails(id: string) {
-  const order = await findOwnedOrder(id);
+export async function orderDetails(id: string, accessToken?: string | null) {
+  const order = await findOwnedOrder(id, accessToken);
   if (!order) return null;
   const [items, payment, shipment] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, id)).orderBy(asc(orderItems.id)),

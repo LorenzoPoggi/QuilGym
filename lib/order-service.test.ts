@@ -13,8 +13,9 @@ vi.mock("server-only", () => ({}));
 vi.mock("./db", () => ({ db: mocks.db }));
 vi.mock("./cart", () => ({ readCartId: vi.fn() }));
 vi.mock("./db/transaction", () => ({ withOrderTransaction: mocks.transaction }));
-vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null }));
+vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null, orderAccessSecret: () => null, pendingOrderTtlHours: () => 72 }));
 import { createOrder, transitionOrder } from "./order-service";
+import { expirePendingOrders } from "./order-expiry";
 
 const pg = new PGlite();
 const database = drizzle(pg, { schema });
@@ -29,11 +30,11 @@ beforeEach(async () => {
   await database.execute(sql`truncate brands, categories, products, product_variants, carts, coupons, orders restart identity cascade`);
 });
 
-async function fixture({ demo = false, stock = 3, coupon = false } = {}) {
+async function fixture({ demo = false, stock = 3, coupon = false, key = "test" } = {}) {
   mocks.config.mockReturnValue({ ...config, demo });
-  const [category] = await database.insert(schema.categories).values({ slug: "test", name: "Test" }).returning();
-  const [product] = await database.insert(schema.products).values({ slug: "test", name: "Producto test", status: "active", categoryId: category.id }).returning();
-  const [variant] = await database.insert(schema.productVariants).values({ productId: product.id, sku: "TEST", priceArs: 1000, stock }).returning();
+  const [category] = await database.insert(schema.categories).values({ slug: key, name: "Test" }).returning();
+  const [product] = await database.insert(schema.products).values({ slug: key, name: "Producto test", status: "active", categoryId: category.id }).returning();
+  const [variant] = await database.insert(schema.productVariants).values({ productId: product.id, sku: key.toUpperCase(), priceArs: 1000, stock }).returning();
   const [cart] = await database.insert(schema.carts).values({ couponCode: coupon ? "TEST" : null }).returning();
   await database.insert(schema.cartItems).values({ cartId: cart.id, variantId: variant.id, quantity: 2, seenPriceArs: 1000 });
   if (coupon) await database.insert(schema.coupons).values({ code: "TEST", kind: "percent", value: 10, maxRedemptions: 1 });
@@ -104,5 +105,37 @@ describe("transacciones de órdenes en PostgreSQL aislado", () => {
     await database.update(schema.productVariants).set({ priceArs: 2000 }).where(eq(schema.productVariants.id, variant.id));
     await expect(createOrder(input, cart.id)).rejects.toThrow("precio");
     expect(await database.select().from(schema.orders)).toHaveLength(0);
+  });
+});
+
+describe("vencimiento de pedidos pendientes", () => {
+  const hours = (n: number) => n * 60 * 60_000;
+  it("cancela un pendiente vencido, repone stock y cupón una sola vez", async () => {
+    const { cart, input } = await fixture({ coupon: true });
+    const id = await createOrder(input, cart.id);
+    const later = new Date(Date.now() + hours(73));
+    expect((await expirePendingOrders(later, 72)).cancelled).toBe(1);
+    expect((await expirePendingOrders(later, 72)).cancelled).toBe(0);
+    const [order] = await database.select().from(schema.orders).where(eq(schema.orders.id, id));
+    expect(order.status).toBe("cancelled");
+    expect(order.resourcesReleasedAt).not.toBeNull();
+    expect((await database.select().from(schema.productVariants))[0].stock).toBe(3);
+    expect((await database.select().from(schema.coupons))[0].redemptions).toBe(0);
+    expect((await database.select().from(schema.orderEmails)).map((row) => row.event).sort()).toEqual(["cancelled", "created"]);
+  });
+  it("respeta los pedidos recientes", async () => {
+    const { cart, input } = await fixture();
+    await createOrder(input, cart.id);
+    expect((await expirePendingOrders(new Date(Date.now() + hours(71)), 72)).cancelled).toBe(0);
+    expect((await database.select().from(schema.orders))[0].status).toBe("pending");
+  });
+  it("no toca pedidos con un pago iniciado en Mercado Pago ni pedidos demo", async () => {
+    const { cart, input } = await fixture();
+    const id = await createOrder(input, cart.id);
+    await database.update(schema.payments).set({ providerId: "123456" }).where(eq(schema.payments.orderId, id));
+    const demo = await fixture({ demo: true, key: "demo" });
+    await createOrder(demo.input, demo.cart.id);
+    expect((await expirePendingOrders(new Date(Date.now() + hours(200)), 72)).cancelled).toBe(0);
+    expect((await database.select().from(schema.orders)).every((order) => order.status === "pending")).toBe(true);
   });
 });
