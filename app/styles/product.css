@@ -1,0 +1,145 @@
+/* Estilos de product: se cargan después de globals.css y lo sobrescriben donde hace falta. */
+
+/* Ficha: galería con panel gris, miniaturas de 80px y botón Ampliar */
+.product-hero { gap: 48px; }
+.product-gallery { grid-template-columns: 80px 1fr; gap: 16px; align-self: start; }
+.product-gallery--single { grid-template-columns: 1fr; }
+.gallery-thumbs { gap: 10px; }
+.gallery-thumbs button { width: 80px; background: var(--soft); border-radius: 12px; }
+.gallery-thumbs button img { padding: 6%; mix-blend-mode: multiply; }
+.gallery-thumbs button.is-nutrition { background: #fff; }
+.gallery-thumbs button.is-nutrition img { padding: 2px; mix-blend-mode: normal; }
+.product-thumb.product-main-image { background: var(--soft); border-radius: 24px; }
+.product-main-image.product-thumb img { padding: 6%; }
+.product-thumb.product-main-image.is-nutrition { background: #fff; border: 1px solid var(--line); }
+.product-main-image.is-nutrition img { padding: 12px; mix-blend-mode: normal; }
+.gallery-zoom { position: absolute; right: 16px; bottom: 16px; z-index: 1; display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; background: #fff; border-radius: 12px; box-shadow: 0 6px 16px rgba(31,35,37,.12); font-size: .82rem; font-weight: 600; }
+.gallery-zoom svg { width: 17px; height: 17px; }
+
+/* Bloque de compra */
+.buybox-brand { color: #4a5155; font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; }
+.product-buybox h1 { margin: 12px 0 10px; font-size: clamp(1.9rem, 2.8vw, 2.6rem); font-weight: 800; line-height: 1.08; letter-spacing: -.03em; }
+.buybox-price { margin-top: 16px; font-size: 2.3rem; letter-spacing: -.02em; }
+.product-buybox .stock { font-size: .84rem; }
+.buy-actions .button { min-height: 50px; border-radius: 12px; font-size: .9rem; }
+.shipping-calculator { margin-top: 16px; padding: 16px; border-radius: 16px; }
+.shipping-calculator strong { font-size: .95rem; }
+.shipping-calculator p { gap: 8px; color: #4f575b; font-size: .84rem; }
+.shipping-calculator p svg { width: 17px; height: 17px; color: #5d6468; }
+
+/* Información del producto: descripción en tarjeta y separadores */
+.product-description { align-self: start; padding: 24px; background: #fff; border: 1px solid var(--line); border-radius: 18px; }
+.product-description.rich-text h3 { margin: 18px 0 6px; padding-top: 16px; border-top: 1px solid var(--line); font-size: .98rem; font-weight: 700; }
+.product-description.rich-text > h3:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.nutrition-panel { border-radius: 18px; }
+.nutrition-panel h3 { font-size: 1.05rem; font-weight: 700; }
+.compare-disclaimer { display: flex; align-items: center; gap: 10px; margin: 24px 0 0; padding: 16px 20px; color: #3d4447; background: #e3e6e8; border-radius: 16px; font-size: .82rem; line-height: 1.5; }
+.compare-disclaimer svg { flex-shrink: 0; width: 18px; height: 18px; color: #5d6468; }
+.similar-products .section-heading > a svg { width: 17px; height: 17px; }
+
+/* Comparador */
+.compare-note { color: #3d4447; font-size: .84rem; }
+.compare-note > span { display: flex; align-items: center; gap: 10px; }
+.compare-note > span > svg { flex-shrink: 0; width: 18px; height: 18px; color: #4a5155; }
+.compare-note .button { min-height: 46px; border-radius: 12px; }
+.compare-note .button svg { width: 17px; height: 17px; }
+.compare-scroll-hint { display: none; }
+.compare-products { grid-template-columns: 190px repeat(var(--compare-count, 3), minmax(0, 1fr)); box-shadow: 0 16px 30px rgba(31,35,37,.08); }
+.compare-products > aside h2 { font-size: 1.35rem; font-weight: 800; }
+.compare-products > aside p { font-size: .8rem; line-height: 1.5; }
+.compare-table { margin-top: 16px; overflow: clip; }
+.compare-row { grid-template-columns: 190px repeat(var(--compare-count, 3), minmax(0, 1fr)); }
+.compare-row > div { background: #fff; font-size: .86rem; }
+.compare-row > div strong { font-weight: 600; }
+.compare-row > div:first-child strong { font-weight: 700; }
+.compare-row--diff > div:not(:first-child) { background: #f2f3f1; }
+.compare-row .is-out strong { color: #b4234a; }
+
+/* Asesor */
+.advisor-page { background: var(--paper); }
+.advisor-layout { grid-template-columns: 360px 1fr; gap: 28px; box-shadow: none; }
+.advisor-sidebar { border-radius: 28px; }
+.advisor-sidebar-icon svg { width: 26px; height: 26px; }
+.advisor-sidebar h1 { font-size: 2.35rem; font-weight: 800; letter-spacing: -.03em; }
+.advisor-sidebar > p:not(.eyebrow) { margin: 16px 0 28px; font-size: .92rem; line-height: 1.55; }
+.advisor-sidebar progress { appearance: none; width: 100%; height: 6px; margin: 10px 0 20px; border: 0; border-radius: 999px; background: #4b5154; overflow: hidden; }
+.advisor-sidebar progress::-webkit-progress-bar { background: #4b5154; border-radius: 999px; }
+.advisor-sidebar progress::-webkit-progress-value { background: #d5dade; border-radius: 999px; }
+.advisor-sidebar progress::-moz-progress-bar { background: #d5dade; border-radius: 999px; }
+.advisor-sidebar > small { display: flex; align-items: flex-start; gap: 10px; padding: 14px; color: #c4c9cb; background: #474d50; border-radius: 14px; font-size: .78rem; line-height: 1.45; }
+.advisor-sidebar > small svg { flex-shrink: 0; width: 18px; height: 18px; color: #fff; }
+.advisor-chat { border: 1px solid var(--line); border-radius: 28px; box-shadow: 0 16px 32px rgba(31,35,37,.08); }
+.advisor-chat > header > div > span svg { width: 20px; height: 20px; }
+.advisor-chat > header small { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; }
+.advisor-chat > header small i { width: 7px; height: 7px; background: #6b7276; border-radius: 50%; }
+.advisor-chat > header button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; border-radius: 12px; font-size: .88rem; font-weight: 600; cursor: pointer; }
+.advisor-chat > header button svg { width: 17px; height: 17px; }
+.chat-message { align-items: flex-start; }
+.chat-message > span { flex-shrink: 0; width: 28px; height: 28px; display: grid; place-items: center; background: #dcdfe0; border-radius: 8px; }
+.chat-message > span svg { width: 16px; height: 16px; }
+.chat-message p { font-size: .92rem; line-height: 1.5; }
+.advisor-options button { cursor: pointer; font-size: .9rem; }
+.advisor-options button > span svg { width: 18px; height: 18px; }
+.advisor-options button.is-active > span { color: #fff; background: #34393c; }
+.advisor-options .advisor-option-check { width: 18px; height: 18px; margin-left: auto; }
+.journey .eyebrow { color: #5d6468; }
+.journey span { display: inline-flex; align-items: center; gap: 4px; font-size: .68rem; }
+.journey span svg { width: 12px; height: 12px; }
+.advisor-chat > footer .button { min-height: 46px; border-radius: 12px; }
+.advisor-chat > footer .button svg { width: 17px; height: 17px; }
+
+/* Recomendaciones */
+.recommendation-hero h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.1; letter-spacing: -.025em; }
+.recommendation-hero > div:last-child .button { display: inline-flex; align-items: center; gap: 8px; }
+.recommendation-hero > div:last-child .button svg { width: 17px; height: 17px; }
+.recommendation-note { display: flex; align-items: center; gap: 10px; margin: 18px 0 0; color: #3d4447; font-size: .86rem; }
+.recommendation-note svg { flex-shrink: 0; width: 18px; height: 18px; color: #5d6468; }
+.recommendation-label { color: #3d4447; letter-spacing: .03em; text-transform: uppercase; }
+.recommendation-item > p { align-items: flex-start; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 14px; color: #3d4447; font-size: .82rem; line-height: 1.5; }
+.recommendation-item > p svg { flex-shrink: 0; width: 17px; height: 17px; margin-top: 1px; }
+.recommendation-item:first-child > p { background: #e4e7e9; border-color: #c9ced1; }
+.selection-adjust h2 { font-weight: 800; }
+
+@media (max-width: 1100px) {
+  .compare-scroll { overflow-x: auto; scroll-snap-type: x proximity; }
+  .compare-products, .compare-table { overflow: visible; }
+  .compare-products, .compare-row { grid-template-columns: 160px repeat(var(--compare-count, 3), minmax(240px, 1fr)); }
+  .compare-scroll > * { min-width: calc(160px + var(--compare-count, 3) * 254px); }
+  .compare-products > aside, .compare-row > div:first-child { position: sticky; left: 0; z-index: 2; }
+  .compare-products .product-card, .compare-row > div:not(:first-child) { scroll-snap-align: start; scroll-margin-left: 160px; }
+  .advisor-layout { grid-template-columns: 300px 1fr; gap: 20px; }
+}
+
+@media (max-width: 768px) {
+  .product-gallery { grid-template-columns: 1fr; }
+  .gallery-thumbs button { width: 64px; }
+  .compare-scroll-hint { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--muted); font-size: .8rem; }
+  .compare-scroll-hint svg { width: 17px; height: 17px; }
+  .compare-products, .compare-row { grid-template-columns: 110px repeat(var(--compare-count, 3), 220px); }
+  .compare-scroll > * { min-width: calc(110px + var(--compare-count, 3) * 234px); }
+  .compare-products > aside { padding: 12px; }
+  .compare-products > aside p, .compare-products > aside span { display: none; }
+  .compare-products > aside h2 { font-size: 1rem; }
+  .compare-row > div:first-child small { display: none; }
+  .compare-products .product-card, .compare-row > div:not(:first-child) { scroll-margin-left: 110px; }
+  .advisor-layout { grid-template-columns: 1fr; gap: 14px; }
+  .advisor-sidebar, .advisor-chat { border-radius: 22px; }
+  .advisor-sidebar { padding: 18px 20px; }
+  .advisor-sidebar-icon, .advisor-sidebar > p:not(.eyebrow), .advisor-sidebar > small { display: none; }
+  .advisor-sidebar h1 { font-size: 1.5rem; }
+  .advisor-sidebar > div { margin-top: 14px; }
+  .advisor-sidebar progress { margin-bottom: 0; }
+  .recommendation-hero h1 { font-size: 1.8rem; }
+}
+
+@media (max-width: 520px) {
+  .product-description { padding: 18px; }
+  .compare-disclaimer { align-items: flex-start; }
+  .advisor-options button { min-height: 56px; }
+  /* Recomendaciones: tarjeta horizontal para no apilar tres fotos enormes */
+  .recommendation-grid { gap: 40px; }
+  .recommendation-item .product-card { display: grid; grid-template-columns: 112px 1fr; column-gap: 12px; align-items: start; }
+  .recommendation-item .product-image { grid-row: 1 / span 6; margin: 0; }
+  .recommendation-item .product-card > :not(.product-image) { grid-column: 2; }
+  .recommendation-item .product-card h3 { min-height: 0; }
+}

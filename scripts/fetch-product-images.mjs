@@ -25,7 +25,7 @@ async function galleryUrls(pageUrl) {
 
 let total = 0;
 for (const product of catalog.products) {
-  const slug = slugify(product.name);
+  const slug = product.siteSlug ?? slugify(product.name);
   const dir = path.join(root, ".cache/tiendanube", slug);
   await mkdir(dir, { recursive: true });
 

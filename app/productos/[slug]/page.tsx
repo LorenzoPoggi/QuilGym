@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight, Info, Store, Truck } from "lucide-react";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
@@ -9,7 +10,6 @@ import { ProductGallery } from "@/components/product-gallery";
 import { RichText } from "@/components/rich-text";
 import { TrustStrip } from "@/components/trust-strip";
 import { ProductPurchase } from "@/components/cart-buttons";
-import { CheckIcon } from "@/components/icons";
 import { getAllProducts, getProduct, getProductsByCategory } from "@/lib/catalog";
 import { commerce, formatArs, transferPrice } from "@/lib/commerce";
 
@@ -31,6 +31,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product) notFound();
   const related = await getProductsByCategory(product.category.slug, 4, product.slug);
   const nutrition = product.images.filter((image) => image.kind === "nutrition");
+  const categoryHref = `/productos?categoria=${product.category.slug}`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -39,13 +40,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     sku: product.variants[0].sku,
     category: product.category.name,
     ...(product.brand ? { brand: { "@type": "Brand", name: product.brand.name } } : {}),
-    ...(product.description ? { description: product.description.replace(/^(## |- )/gm, "").replace(/s+/g, " ").trim() } : {}),
+    ...(product.description ? { description: product.description.replace(/^(## |- )/gm, "").replace(/\s+/g, " ").trim() } : {}),
     offers: { "@type": "Offer", priceCurrency: "ARS", price: product.priceArs, availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" },
   };
 
   return <><Header/><main className="product-page"><div className="container">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/>
-    <p className="breadcrumb"><Link href="/">Inicio</Link> / <Link href={`/productos?categoria=${product.category.slug}`}>{product.category.name}</Link>{product.brand ? <> / <Link href={`/productos?categoria=${product.category.slug}&marca=${product.brand.slug}`}>{product.brand.name}</Link></> : null} / {product.name}</p>
+    <p className="breadcrumb"><Link href="/">Inicio</Link> / <Link href={categoryHref}>{product.category.name}</Link>{product.brand ? <> / <Link href={`${categoryHref}&marca=${product.brand.slug}`}>{product.brand.name}</Link></> : null} / {product.name}</p>
     <section className="product-hero">
       <ProductGallery product={product}/>
       <div className="product-buybox">
@@ -56,14 +57,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {commerce.transferDiscountPercent > 0 ? <p className="transfer-price">{formatArs(transferPrice(product.priceArs))} con transferencia bancaria</p> : null}
         <p className={`stock ${product.inStock ? "" : "stock--out"}`}><span/> {product.inStock ? "En stock" : "Sin stock por el momento"}</p>
         <ProductPurchase product={product}/>
-        <div className="shipping-calculator"><strong>Entrega</strong><p><CheckIcon/> Envíos a todo el país.</p><p><CheckIcon/> Retiro en nuestro local de {commerce.pickupLocation}.</p></div>
+        <div className="shipping-calculator"><strong>Entrega</strong><p><Truck aria-hidden="true"/> Envíos a todo el país.</p><p><Store aria-hidden="true"/> Retiro en nuestro local de {commerce.pickupLocation}.</p></div>
       </div>
     </section>
     <TrustStrip/>
     <section className="product-info-section">
-      <div className="section-heading"><div><h2>Información del producto</h2></div></div>
+      <div className="section-heading"><div><h2>Información del producto</h2><p>Información clara para entender el producto y decidir según tu rutina.</p></div></div>
       <div className={nutrition.length ? "product-facts-grid" : ""}>
-        {product.description ? <RichText source={product.description} className="product-description"/> : <p>Consultá el rótulo del envase para ver ingredientes, porción recomendada, información nutricional y advertencias.</p>}
+        {product.description ? <RichText source={product.description} className="product-description"/> : <p className="product-description">Consultá el rótulo del envase para ver ingredientes, porción recomendada, información nutricional y advertencias.</p>}
         {nutrition.length ? (
           <aside className="nutrition-panel" id="informacion-nutricional">
             <h3>Información nutricional</h3>
@@ -76,8 +77,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </aside>
         ) : null}
       </div>
-      <p className="compare-disclaimer">ⓘ La información nutricional puede variar por lote: ante cualquier diferencia, vale lo que dice el envase que recibís. Los suplementos no reemplazan una alimentación variada; ante dudas, consultá a un profesional de la salud.</p>
+      <p className="compare-disclaimer"><Info aria-hidden="true"/><span>La información nutricional puede variar por lote: ante cualquier diferencia, vale lo que dice el envase que recibís. Los suplementos no reemplazan una alimentación variada; ante dudas, consultá a un profesional de la salud.</span></p>
     </section>
-    {related.length > 0 ? <section className="similar-products"><div className="section-heading"><div><h2>Más {product.category.name.toLowerCase()}</h2><p>Otras opciones de la misma categoría para comparar.</p></div></div><div className="product-grid">{related.map((item) => <ProductCard product={item} key={item.slug}/>)}</div></section> : null}
+    {related.length > 0 ? <section className="similar-products"><div className="section-heading"><div><h2>Más {product.category.name.toLowerCase()}</h2><p>Otras opciones de la misma categoría para comparar.</p></div><Link href={categoryHref}>Ver todas<ArrowRight aria-hidden="true"/></Link></div><div className="product-grid">{related.map((item) => <ProductCard product={item} key={item.slug}/>)}</div></section> : null}
   </div></main><Footer/></>;
 }

@@ -5,7 +5,8 @@
   "products": [
     {
       "slug": "proteina-star-nutrition",
-      "name": "PROTEÍNA STAR 2lb",
+      "siteSlug": "proteina-star-2lb",
+      "name": "Proteína STAR 2 lb",
       "brand": "Star Nutrition",
       "category": "Proteínas",
       "priceArs": 75990,
@@ -14,7 +15,8 @@
     },
     {
       "slug": "creatina-doypack-star-nutricion",
-      "name": "Creatina STAR 300gr Doypack",
+      "siteSlug": "creatina-star-300gr-doypack",
+      "name": "Creatina STAR 300 g Doypack",
       "brand": "Star Nutrition",
       "category": "Creatinas",
       "priceArs": 30990,
@@ -23,7 +25,8 @@
     },
     {
       "slug": "mutant-mass-builder-1-5-kg",
-      "name": "MUTANT MASS 1.5 KG",
+      "siteSlug": "mutant-mass-1-5-kg",
+      "name": "Mutant Mass 1,5 kg",
       "brand": "Star Nutrition",
       "category": "Ganadores de peso",
       "priceArs": 52160,
@@ -32,6 +35,7 @@
     },
     {
       "slug": "omega-3-star-nutricion",
+      "siteSlug": "omega-3-star-nutrition",
       "name": "Omega 3 Star Nutrition",
       "brand": "Star Nutrition",
       "category": "Vitaminas y minerales",
@@ -41,7 +45,8 @@
     },
     {
       "slug": "combo-classic",
-      "name": "COMBO CLASSIC",
+      "siteSlug": "combo-classic",
+      "name": "Combo Classic",
       "brand": "Star Nutrition",
       "category": "Combos",
       "priceArs": 89990,
@@ -50,7 +55,8 @@
     },
     {
       "slug": "citrato-de-magnesio-ena-s3uo1",
-      "name": "Citrato De Magnesio ENA",
+      "siteSlug": "citrato-de-magnesio-ena",
+      "name": "Citrato de magnesio ENA",
       "brand": "ENA Sport",
       "category": "Vitaminas y minerales",
       "priceArs": 13500,
@@ -59,7 +65,8 @@
     },
     {
       "slug": "proteina-body-advance-1kg-gh8n8",
-      "name": "Proteina Body Advance 1kg",
+      "siteSlug": "proteina-body-advance-1kg",
+      "name": "Proteína Body Advance 1 kg",
       "brand": "Body Advance",
       "category": "Proteínas",
       "priceArs": 39900,
@@ -68,7 +75,8 @@
     },
     {
       "slug": "creatina-monohidratada-micronizada-star-nutricion-300-gr",
-      "name": "Creatina STAR 300gr Clásica",
+      "siteSlug": "creatina-star-300gr-clasica",
+      "name": "Creatina STAR 300 g Clásica",
       "brand": "Star Nutrition",
       "category": "Creatinas",
       "priceArs": 34800,
@@ -77,7 +85,8 @@
     },
     {
       "slug": "proteina-star-platinum-yulxv",
-      "name": "Proteina STAR Platinum 2lb",
+      "siteSlug": "proteina-star-platinum-2lb",
+      "name": "Proteína STAR Platinum 2 lb",
       "brand": "Star Nutrition",
       "category": "Proteínas",
       "priceArs": 81990,
@@ -86,7 +95,8 @@
     },
     {
       "slug": "creatina-gold-nutricion",
-      "name": "Creatina GOLD 300 gr",
+      "siteSlug": "creatina-gold-300-gr",
+      "name": "Creatina GOLD 300 g",
       "brand": "Gold Nutrition",
       "category": "Creatinas",
       "priceArs": 29000,
@@ -95,7 +105,8 @@
     },
     {
       "slug": "creatina-xtrenght-ip92b",
-      "name": "Creatina XTRENGHT 250 gr",
+      "siteSlug": "creatina-xtrenght-250-gr",
+      "name": "Creatina Xtrenght 250 g",
       "brand": "Xtrenght",
       "category": "Creatinas",
       "priceArs": 24990,
@@ -104,7 +115,8 @@
     },
     {
       "slug": "proteina-xtrenght-su3o1",
-      "name": "Proteina Xtrenght 2LB",
+      "siteSlug": "proteina-xtrenght-2lb",
+      "name": "Proteína Xtrenght 2 lb",
       "brand": "Xtrenght",
       "category": "Proteínas",
       "priceArs": 72000,
@@ -113,7 +125,8 @@
     },
     {
       "slug": "quilgymsuplementos-mitiendanube-com",
-      "name": "Creatina STAR 500 gr",
+      "siteSlug": "creatina-star-500-gr",
+      "name": "Creatina STAR 500 g",
       "brand": "Star Nutrition",
       "category": "Creatinas",
       "priceArs": 50990,
@@ -122,7 +135,8 @@
     },
     {
       "slug": "pancakes-proteicos-granger-vai-1ye27",
-      "name": "Pancakes proteicos - Granger VAINILLA",
+      "siteSlug": "pancakes-proteicos-granger-vainilla",
+      "name": "Pancakes proteicos Granger Vainilla",
       "brand": "Granger",
       "category": "Snacks",
       "priceArs": 13800,
@@ -131,7 +145,8 @@
     },
     {
       "slug": "creatina-one-fit-200g-tnch1",
-      "name": "Creatina One Fit 200 gr",
+      "siteSlug": "creatina-one-fit-200-gr",
+      "name": "Creatina One Fit 200 g",
       "brand": "One Fit",
       "category": "Creatinas",
       "priceArs": 16900,
@@ -140,7 +155,8 @@
     },
     {
       "slug": "creatina-body-advance-300gr-monohidratada-micronizada-is9of",
-      "name": "Creatina Body Advance 300 gr",
+      "siteSlug": "creatina-body-advance-300-gr",
+      "name": "Creatina Body Advance 300 g",
       "brand": "Body Advance",
       "category": "Creatinas",
       "priceArs": 23990,
@@ -149,7 +165,8 @@
     },
     {
       "slug": "shacker-growsbar-ovhm5",
-      "name": "Shaker GROWSBAR",
+      "siteSlug": "shaker-growsbar",
+      "name": "Shaker GrowsBar",
       "brand": "GrowsBar",
       "category": "Accesorios",
       "priceArs": 9990,
@@ -158,7 +175,8 @@
     },
     {
       "slug": "pancakes-proteicos-granger-b0deg",
-      "name": "Pancakes proteicos - CHOCOLATE",
+      "siteSlug": "pancakes-proteicos-chocolate",
+      "name": "Pancakes proteicos Granger Chocolate",
       "brand": "Granger",
       "category": "Snacks",
       "priceArs": 13800,
@@ -167,7 +185,8 @@
     },
     {
       "slug": "citrato-de-magnesio",
-      "name": "Citrato De Magnesio STAR",
+      "siteSlug": "citrato-de-magnesio-star",
+      "name": "Citrato de magnesio STAR",
       "brand": "Star Nutrition",
       "category": "Vitaminas y minerales",
       "priceArs": 15700,
@@ -176,7 +195,8 @@
     },
     {
       "slug": "creatina-monohidratada-micronizada-ena",
-      "name": "CREATINA ENA SPORT 300 gr",
+      "siteSlug": "creatina-ena-sport-300-gr",
+      "name": "Creatina ENA Sport 300 g",
       "brand": "ENA Sport",
       "category": "Creatinas",
       "priceArs": 27990,
@@ -185,7 +205,8 @@
     },
     {
       "slug": "proteina-body-advance-3-kg-20cur",
-      "name": "Proteina Body Advance 3 KG",
+      "siteSlug": "proteina-body-advance-3-kg",
+      "name": "Proteína Body Advance 3 kg",
       "brand": "Body Advance",
       "category": "Proteínas",
       "priceArs": 110049,
@@ -194,7 +215,8 @@
     },
     {
       "slug": "proteina-star-3-kg-gz9bk",
-      "name": "Proteina STAR PLATINUM 3 kg",
+      "siteSlug": "proteina-star-platinum-3-kg",
+      "name": "Proteína STAR Platinum 3 kg",
       "brand": "Star Nutrition",
       "category": "Proteínas",
       "priceArs": 205000,
@@ -203,7 +225,8 @@
     },
     {
       "slug": "colageno-sport-naranja-360-gr-1kscw",
-      "name": "Colageno SPORT Naranja 360 Gr",
+      "siteSlug": "colageno-sport-naranja-360-gr",
+      "name": "Colágeno Sport Naranja 360 g",
       "brand": "Star Nutrition",
       "category": "Colágeno",
       "priceArs": 30581,
@@ -212,7 +235,8 @@
     },
     {
       "slug": "proteina-gold-nutricion-1kg",
-      "name": "Proteina Gold Nutrition 2lb",
+      "siteSlug": "proteina-gold-nutrition-2lb",
+      "name": "Proteína Gold Nutrition 2 lb",
       "brand": "Gold Nutrition",
       "category": "Proteínas",
       "priceArs": 71480,
@@ -221,7 +245,8 @@
     },
     {
       "slug": "creatina-star-de-1-kg",
-      "name": "Creatina STAR 1 Kg",
+      "siteSlug": "creatina-star-1-kg",
+      "name": "Creatina STAR 1 kg",
       "brand": "Star Nutrition",
       "category": "Creatinas",
       "priceArs": 95000,
@@ -230,7 +255,8 @@
     },
     {
       "slug": "pre-entreno-star-nutricion",
-      "name": "PRE-ENTRENO STAR NUTRICION",
+      "siteSlug": "pre-entreno-star-nutricion",
+      "name": "Pre-entreno Star Nutrition",
       "brand": "Star Nutrition",
       "category": "Pre-entrenos",
       "priceArs": 30200,
@@ -239,7 +265,8 @@
     },
     {
       "slug": "creatina-star-nutricion-150gr-creapure-og2vr",
-      "name": "Creatina STAR 150 gr",
+      "siteSlug": "creatina-star-150-gr",
+      "name": "Creatina STAR 150 g",
       "brand": "Star Nutrition",
       "category": "Creatinas",
       "priceArs": 18400,
@@ -248,7 +275,8 @@
     },
     {
       "slug": "combo-arnold",
-      "name": "COMBO ARNOLD",
+      "siteSlug": "combo-arnold",
+      "name": "Combo Arnold",
       "brand": "Star Nutrition",
       "category": "Combos",
       "priceArs": 54100,
@@ -257,7 +285,8 @@
     },
     {
       "slug": "combo-body-advance-6fly3",
-      "name": "COMBO BODY ADVANCE",
+      "siteSlug": "combo-body-advance",
+      "name": "Combo Body Advance",
       "brand": "Body Advance",
       "category": "Combos",
       "priceArs": 48990,
@@ -266,7 +295,8 @@
     },
     {
       "slug": "colageno-ena-sport-407g-1wc3e",
-      "name": "Colageno ENA SPORT 407g",
+      "siteSlug": "colageno-ena-sport-407g",
+      "name": "Colágeno ENA Sport 407 g",
       "brand": "ENA Sport",
       "category": "Colágeno",
       "priceArs": 28990,
@@ -275,7 +305,8 @@
     },
     {
       "slug": "creatina-doypack-star-nutrition-sabor-frutos-rojos-vo3h8",
-      "name": "Creatina STAR 300 gr- Frutos Rojos",
+      "siteSlug": "creatina-star-300-gr-frutos-rojos",
+      "name": "Creatina STAR 300 g Frutos rojos",
       "brand": "Star Nutrition",
       "category": "Creatinas",
       "priceArs": 30990,
@@ -284,6 +315,7 @@
     },
     {
       "slug": "resveratrol-star-nutrition-1d723",
+      "siteSlug": "resveratrol-star-nutrition",
       "name": "Resveratrol Star Nutrition",
       "brand": "Star Nutrition",
       "category": "Vitaminas y minerales",
@@ -293,6 +325,7 @@
     },
     {
       "slug": "shacker-x-strenght-ojvof",
+      "siteSlug": "shaker-xtrenght",
       "name": "Shaker Xtrenght",
       "brand": "Xtrenght",
       "category": "Accesorios",
@@ -302,7 +335,8 @@
     },
     {
       "slug": "combo-gold-nutricion",
-      "name": "COMBO GOLD NUTRITION",
+      "siteSlug": "combo-gold-nutrition",
+      "name": "Combo Gold Nutrition",
       "brand": "Gold Nutrition",
       "category": "Combos",
       "priceArs": 92000,
@@ -311,6 +345,7 @@
     },
     {
       "slug": "shaker-ena",
+      "siteSlug": "shaker-ena",
       "name": "Shaker ENA",
       "brand": "ENA Sport",
       "category": "Accesorios",
@@ -320,7 +355,8 @@
     },
     {
       "slug": "combo-dino",
-      "name": "COMBO DINO",
+      "siteSlug": "combo-dino",
+      "name": "Combo Dino",
       "brand": "Star Nutrition",
       "category": "Combos",
       "priceArs": 141000,
@@ -329,7 +365,8 @@
     },
     {
       "slug": "cafeina-ena",
-      "name": "CAFEINA ENA",
+      "siteSlug": "cafeina-ena",
+      "name": "Cafeína ENA",
       "brand": "ENA Sport",
       "category": "Pre-entrenos",
       "priceArs": 13990,
@@ -338,7 +375,8 @@
     },
     {
       "slug": "magnesio-body-500g-8k168",
-      "name": "Citrato de Magnesio Body 500g",
+      "siteSlug": "citrato-de-magnesio-body-500g",
+      "name": "Citrato de magnesio Body Advance 500 g",
       "brand": "Body Advance",
       "category": "Vitaminas y minerales",
       "priceArs": 20900,
@@ -347,7 +385,8 @@
     },
     {
       "slug": "combo-one-fit-10su0",
-      "name": "COMBO ONE FIT",
+      "siteSlug": "combo-one-fit",
+      "name": "Combo One Fit",
       "brand": "One Fit",
       "category": "Combos",
       "priceArs": 51250,
@@ -356,7 +395,8 @@
     },
     {
       "slug": "proteina-one-fit-classic-2lb-1fl33",
-      "name": "Proteina One Fit 2LB",
+      "siteSlug": "proteina-one-fit-2lb",
+      "name": "Proteína One Fit 2 lb",
       "brand": "One Fit",
       "category": "Proteínas",
       "priceArs": 48000,
@@ -365,6 +405,7 @@
     },
     {
       "slug": "shacker-gentech",
+      "siteSlug": "shaker-gentech",
       "name": "Shaker Gentech",
       "brand": "Gentech",
       "category": "Accesorios",
@@ -374,7 +415,8 @@
     },
     {
       "slug": "bcaa-star-nutricion",
-      "name": "BCAA - Star Nutrition",
+      "siteSlug": "bcaa-star-nutrition",
+      "name": "BCAA Star Nutrition",
       "brand": "Star Nutrition",
       "category": "Aminoácidos",
       "priceArs": 28900,
@@ -383,7 +425,8 @@
     },
     {
       "slug": "shaker-star-500-ml-r1zt3",
-      "name": "Shaker Star 500 ml",
+      "siteSlug": "shaker-star-500-ml",
+      "name": "Shaker STAR 500 ml",
       "brand": "Star Nutrition",
       "category": "Accesorios",
       "priceArs": 8990,
@@ -392,7 +435,8 @@
     },
     {
       "slug": "zma-star-nutricion",
-      "name": "ZMA - Star Nutrition",
+      "siteSlug": "zma-star-nutrition",
+      "name": "ZMA Star Nutrition",
       "brand": "Star Nutrition",
       "category": "Vitaminas y minerales",
       "priceArs": 18990,
@@ -401,7 +445,8 @@
     },
     {
       "slug": "creatina-star-300gr-doypack-uva-yd3q7",
-      "name": "Creatina STAR 300gr- UVA",
+      "siteSlug": "creatina-star-300gr-uva",
+      "name": "Creatina STAR 300 g Uva",
       "brand": "Star Nutrition",
       "category": "Creatinas",
       "priceArs": 30990,
@@ -410,7 +455,8 @@
     },
     {
       "slug": "creatina-star-300gr-doypack-limon-dvzvx",
-      "name": "Creatina STAR 300gr - Limón",
+      "siteSlug": "creatina-star-300gr-limon",
+      "name": "Creatina STAR 300 g Limón",
       "brand": "Star Nutrition",
       "category": "Creatinas",
       "priceArs": 30990,
@@ -419,7 +465,8 @@
     },
     {
       "slug": "creatina-natural-nutrition-150g-1dzl7",
-      "name": "Creatina Natural nutrition 150gr",
+      "siteSlug": "creatina-natural-nutrition-150gr",
+      "name": "Creatina Natural Nutrition 150 g",
       "brand": "Natural Nutrition",
       "category": "Creatinas",
       "priceArs": 13500,
@@ -428,7 +475,8 @@
     },
     {
       "slug": "colageno-hidrolizado-star-210g-puvob",
-      "name": "Colágeno Hidrolizado Star 210g",
+      "siteSlug": "colageno-hidrolizado-star-210g",
+      "name": "Colágeno hidrolizado STAR 210 g",
       "brand": "Star Nutrition",
       "category": "Colágeno",
       "priceArs": 23900,
@@ -437,7 +485,8 @@
     },
     {
       "slug": "oxido-nitrico-ena-1klgj",
-      "name": "Oxido nitrico ena",
+      "siteSlug": "oxido-nitrico-ena",
+      "name": "Óxido nítrico ENA",
       "brand": "ENA Sport",
       "category": "Pre-entrenos",
       "priceArs": 21600,
@@ -446,7 +495,8 @@
     },
     {
       "slug": "glutamina-200g-1fosm",
-      "name": "Glutamina One fit 200g",
+      "siteSlug": "glutamina-one-fit-200g",
+      "name": "Glutamina One Fit 200 g",
       "brand": "One Fit",
       "category": "Aminoácidos",
       "priceArs": 15000,
@@ -455,7 +505,8 @@
     },
     {
       "slug": "barritas-mervick-65g-banana-158hx",
-      "name": "Barritas Mervick 65g- Banana",
+      "siteSlug": "barritas-mervick-65g-banana",
+      "name": "Barritas Mervick 65 g Banana",
       "brand": "Mervick",
       "category": "Snacks",
       "priceArs": 27000,
@@ -464,7 +515,8 @@
     },
     {
       "slug": "barritas-mervick-65g-frutos-rojos-1047t",
-      "name": "Barritas Mervick 65g- Frutos rojos",
+      "siteSlug": "barritas-mervick-65g-frutos-rojos",
+      "name": "Barritas Mervick 65 g Frutos rojos",
       "brand": "Mervick",
       "category": "Snacks",
       "priceArs": 27000,
@@ -473,7 +525,8 @@
     },
     {
       "slug": "barritas-mervick-65g-yn2re",
-      "name": "Barritas Mervick 65g- Chocolate",
+      "siteSlug": "barritas-mervick-65g-chocolate",
+      "name": "Barritas Mervick 65 g Chocolate",
       "brand": "Mervick",
       "category": "Snacks",
       "priceArs": 27000,
@@ -482,7 +535,8 @@
     },
     {
       "slug": "barritas-proteicas-bravas-lgw5r",
-      "name": "Barritas Proteicas Bravas- Arandanos",
+      "siteSlug": "barritas-proteicas-bravas-arandanos",
+      "name": "Barritas proteicas Bravas Arándanos",
       "brand": "Bravas",
       "category": "Snacks",
       "priceArs": 18900,
@@ -491,7 +545,8 @@
     },
     {
       "slug": "barritas-proteicas-bravas-15gvl",
-      "name": "Barritas Proteicas Bravas- Datiles",
+      "siteSlug": "barritas-proteicas-bravas-datiles",
+      "name": "Barritas proteicas Bravas Dátiles",
       "brand": "Bravas",
       "category": "Snacks",
       "priceArs": 18900,
@@ -500,6 +555,7 @@
     },
     {
       "slug": "omega-3-landerfit-ih87x",
+      "siteSlug": "omega-3-landerfit",
       "name": "Omega 3 Landerfit",
       "brand": "Landerfit",
       "category": "Vitaminas y minerales",
@@ -509,7 +565,8 @@
     },
     {
       "slug": "preentreno-beast-blood-y6xxg",
-      "name": "Preentreno Beast Blood",
+      "siteSlug": "preentreno-beast-blood",
+      "name": "Pre-entreno Beast Blood",
       "brand": "Body Advance",
       "category": "Pre-entrenos",
       "priceArs": 23000,
@@ -518,6 +575,7 @@
     },
     {
       "slug": "combo-laid-1hltw",
+      "siteSlug": "combo-laid",
       "name": "Combo Laid",
       "brand": null,
       "category": "Combos",
@@ -527,6 +585,7 @@
     },
     {
       "slug": "combo-mentzer-1cysj",
+      "siteSlug": "combo-mentzer",
       "name": "Combo Mentzer",
       "brand": null,
       "category": "Combos",
@@ -536,7 +595,8 @@
     },
     {
       "slug": "multivitaminico-star-l9lpr",
-      "name": "Multivitaminico STAR",
+      "siteSlug": "multivitaminico-star",
+      "name": "Multivitamínico STAR",
       "brand": "Star Nutrition",
       "category": "Vitaminas y minerales",
       "priceArs": 28600,
@@ -545,6 +605,7 @@
     },
     {
       "slug": "beta-alanine-star-1o6q0",
+      "siteSlug": "beta-alanine-star",
       "name": "Beta Alanine STAR",
       "brand": "Star Nutrition",
       "category": "Aminoácidos",
@@ -554,7 +615,8 @@
     },
     {
       "slug": "just-plant-2lb-1cjaa",
-      "name": "Proteína Just Plant 2lb",
+      "siteSlug": "proteina-just-plant-2lb",
+      "name": "Proteína Just Plant 2 lb",
       "brand": "Just Plant",
       "category": "Proteínas",
       "priceArs": 42990,
@@ -563,7 +625,8 @@
     },
     {
       "slug": "eaas",
-      "name": "EAA's - Star Nutrition",
+      "siteSlug": "eaa-s-star-nutrition",
+      "name": "EAAs Star Nutrition",
       "brand": "Star Nutrition",
       "category": "Aminoácidos",
       "priceArs": 34800,
@@ -572,7 +635,8 @@
     },
     {
       "slug": "pre-entreno-painlabs",
-      "name": "Pre Entreno - Painlabs",
+      "siteSlug": "pre-entreno-painlabs",
+      "name": "Pre-entreno Painlabs",
       "brand": "Painlabs",
       "category": "Pre-entrenos",
       "priceArs": 36500,
@@ -581,7 +645,8 @@
     },
     {
       "slug": "ganador-de-peso-5kg-star-nutricion",
-      "name": "MUTANT MASS 5 KG",
+      "siteSlug": "mutant-mass-5-kg",
+      "name": "Mutant Mass 5 kg",
       "brand": "Star Nutrition",
       "category": "Ganadores de peso",
       "priceArs": 99100,
@@ -590,7 +655,8 @@
     },
     {
       "slug": "shaker-ena-plus",
-      "name": "Shaker ENA PLUS",
+      "siteSlug": "shaker-ena-plus",
+      "name": "Shaker ENA Plus",
       "brand": "ENA Sport",
       "category": "Accesorios",
       "priceArs": 12990,
@@ -599,6 +665,7 @@
     },
     {
       "slug": "shaker-got-600-ml",
+      "siteSlug": "shaker-got-600-ml",
       "name": "Shaker Got 600 ml",
       "brand": "Got",
       "category": "Accesorios",
@@ -608,7 +675,8 @@
     },
     {
       "slug": "combo-popeye",
-      "name": "COMBO POPEYE",
+      "siteSlug": "combo-popeye",
+      "name": "Combo Popeye",
       "brand": "Star Nutrition",
       "category": "Combos",
       "priceArs": 121500,

@@ -45,7 +45,8 @@ async function main() {
   let imageCount = 0;
 
   for (const item of source) {
-    const slug = slugify(item.name);
+    // El slug del sitio es fijo: renombrar un producto no cambia su URL, descripción ni imágenes.
+    const slug = item.siteSlug;
     const [product] = await db.insert(products)
       .values({ slug, name: item.name, description: descriptions[slug] ?? null, categoryId: categoryId.get(item.category)!, brandId: item.brand ? brandId.get(item.brand)! : null, status: "active", isFeatured: featured.has(slug) })
       .onConflictDoUpdate({ target: products.slug, set: { name: sql`excluded.name`, description: sql`excluded.description`, categoryId: sql`excluded.category_id`, brandId: sql`excluded.brand_id`, isFeatured: sql`excluded.is_featured` } })
