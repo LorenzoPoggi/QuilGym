@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Zap } from "lucide-react";
 import { commerce, formatArs } from "@/lib/commerce";
 import { CartPill } from "./cart-buttons";
-import { SearchIcon, UserIcon } from "./icons";
+import { SearchIcon } from "./icons";
+import { AccountLink } from "./account-controls";
 
 /** En /buscar la página tiene su propio buscador: `showSearch={false}` evita dos inputs superpuestos. */
 export function Header({ showSearch = true }: { showSearch?: boolean }) {
@@ -23,7 +24,7 @@ export function Header({ showSearch = true }: { showSearch?: boolean }) {
             <input id="site-search" name="q" placeholder="Buscá proteínas, creatinas, marcas..." />
             <kbd>⌘ K</kbd>
           </form> : null}
-          <a className="account-link" href="#footer"><UserIcon/><span>Hola<br/><strong>Ingresar</strong></span></a>
+          <AccountLink/>
           <CartPill/>
         </div>
       </header>

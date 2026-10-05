@@ -10,6 +10,7 @@ import { ProductGallery } from "@/components/product-gallery";
 import { RichText } from "@/components/rich-text";
 import { TrustStrip } from "@/components/trust-strip";
 import { ProductPurchase } from "@/components/cart-buttons";
+import { FavoriteButton } from "@/components/account-controls";
 import { getAllProducts, getProduct, getProductsByCategory } from "@/lib/catalog";
 import { commerce, formatArs, transferPrice } from "@/lib/commerce";
 
@@ -51,7 +52,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <ProductGallery product={product}/>
       <div className="product-buybox">
         <div className="buybox-brand">{product.brand?.name ?? product.category.name}</div>
-        <h1>{product.name}</h1>
+        <div className="product-title-row"><h1>{product.name}</h1><FavoriteButton productId={product.id} name={product.name}/></div>
         <p className="buybox-price">{formatArs(product.priceArs)} {product.compareAtPriceArs ? <del>{formatArs(product.compareAtPriceArs)}</del> : null}</p>
         {commerce.interestFreeInstallments > 1 ? <strong className="payment-copy">{commerce.interestFreeInstallments} cuotas sin interés de {formatArs(product.priceArs / commerce.interestFreeInstallments)}</strong> : null}
         {commerce.transferDiscountPercent > 0 ? <p className="transfer-price">{formatArs(transferPrice(product.priceArs))} con transferencia bancaria</p> : null}

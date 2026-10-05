@@ -114,13 +114,20 @@ export function CartDialog() {
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (isOpen && !dialog.open) dialog.showModal();
-    if (!isOpen && dialog.open) dialog.close();
+    if (isOpen) {
+      if (!dialog.open) dialog.showModal();
+      dialog.dataset.state = "open";
+      return;
+    }
+    if (!dialog.open) return;
+    dialog.dataset.state = "closing";
+    const timer = window.setTimeout(() => { dialog.close(); delete dialog.dataset.state; }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 260);
+    return () => window.clearTimeout(timer);
   }, [isOpen]);
 
   return (
-    <dialog ref={dialogRef} className="cart-dialog" aria-labelledby="cart-dialog-heading" onClose={closeCart} onClick={(event) => { if (event.target === event.currentTarget) closeCart(); }}>
-      {isOpen ? <aside className="cart-drawer"><CartPanel onClose={closeCart} headingId="cart-dialog-heading"/></aside> : null}
+    <dialog ref={dialogRef} className="cart-dialog" aria-labelledby="cart-dialog-heading" onCancel={(event) => { event.preventDefault(); closeCart(); }} onClose={closeCart} onClick={(event) => { if (event.target === event.currentTarget) closeCart(); }}>
+      <aside className="cart-drawer"><CartPanel onClose={closeCart} headingId="cart-dialog-heading"/></aside>
     </dialog>
   );
 }

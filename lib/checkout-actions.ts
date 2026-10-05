@@ -1,17 +1,18 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { getCart, readCartId } from "./cart";
 import { getCheckoutConfig } from "./checkout-config";
 import { checkoutFingerprint, signQuote } from "./checkout-security";
 import { normalizePostalCode, quoteDelivery, UUID_PATTERN, validateCheckout } from "./checkout-validation";
-import { CheckoutError, createOrder, transitionOrder } from "./order-service";
+import { CheckoutError, createOrder, findOwnedOrder, transitionOrder } from "./order-service";
 import { withOrderTransaction } from "./db/transaction";
 import { orders } from "./db/schema";
 import type { CheckoutQuote, CheckoutResult, DeliveryMethod, OrderStatus } from "./checkout-types";
 import { deliverOrderEmails } from "./order-email";
+import { currentUser } from "./auth";
 
 export async function getCheckoutQuote(delivery: DeliveryMethod, rawPostalCode: string): Promise<{ ok: true; quote: CheckoutQuote } | { ok: false; error: string }> {
   if (!["pickup", "shipping"].includes(delivery) || typeof rawPostalCode !== "string" || rawPostalCode.length > 12) return { ok: false, error: "Revisá los datos de entrega." };
@@ -38,7 +39,8 @@ export async function submitCheckout(raw: unknown): Promise<CheckoutResult> {
   const cartId = await readCartId();
   if (!cartId) return { ok: false, error: "Tu sesión de carrito venció." };
   try {
-    const orderId = await createOrder(parsed.value, cartId);
+    const user = await currentUser();
+    const orderId = await createOrder(parsed.value, cartId, user?.id);
     revalidatePath("/carrito");
     after(() => deliverOrderEmails(orderId));
     return { ok: true, orderId };
@@ -47,13 +49,13 @@ export async function submitCheckout(raw: unknown): Promise<CheckoutResult> {
   }
 }
 
-/** Simulador autorizado por cookie, por orden y por entorno; inalcanzable en producción. */
+/** Simulador autorizado por cookie o cuenta, por orden y por entorno; inalcanzable en producción. */
 export async function simulatePayment(id: string, status: OrderStatus): Promise<{ ok: boolean; error?: string }> {
   if (!getCheckoutConfig().demo || !UUID_PATTERN.test(id) || !["pending", "approved", "rejected", "cancelled", "refunded"].includes(status)) return { ok: false, error: "Simulación no disponible." };
-  const cartId = await readCartId();
-  if (!cartId) return { ok: false, error: "Sesión no disponible." };
+  const owned = await findOwnedOrder(id);
+  if (!owned?.isDemo) return { ok: false, error: "Pedido de prueba no disponible." };
   const ok = await withOrderTransaction(async (tx) => {
-    const [order] = await tx.select().from(orders).where(and(eq(orders.id, id), eq(orders.cartId, cartId))).for("update");
+    const [order] = await tx.select().from(orders).where(eq(orders.id, owned.id)).for("update");
     return order?.isDemo ? transitionOrder(tx, order, status) : false;
   });
   revalidatePath(`/checkout/confirmacion/${id}`);

@@ -42,6 +42,9 @@
 .filter-group summary svg { width: 17px; height: 17px; color: #5d6468; transition: transform .2s; }
 .filter-group[open] summary svg { transform: rotate(180deg); }
 .filters-panel fieldset { margin: 0; padding: 0 0 14px; border-bottom: 0; }
+/* Anclar las leyendas invisibles al fieldset evita que el cálculo de posición absoluta amplíe el documento. */
+.filters-panel fieldset { position: relative; min-width: 0; }
+.filters-panel legend.sr-only { inset-inline-start: 0; top: 0; max-width: 1px; clip-path: inset(50%); }
 .filters-panel label { min-height: 30px; margin: 2px 0; color: #3d4447; font-size: .82rem; cursor: pointer; }
 .filters-panel small { font-size: .72rem; }
 .filters-panel input[type="checkbox"], .filters-panel input[type="radio"] { appearance: none; width: 18px; height: 18px; margin: 0; display: grid; place-items: center; background: #fff; border: 1.5px solid #7d858a; cursor: pointer; }

@@ -12,19 +12,25 @@ import { checkoutFingerprint, readQuote } from "./checkout-security";
 import { quoteDelivery, UUID_PATTERN } from "./checkout-validation";
 import { canTransition } from "./order-state";
 import type { CheckoutInput, OrderStatus } from "./checkout-types";
+import { currentUser } from "./auth";
 
 export class CheckoutError extends Error {}
 
-/** Autoriza por la cookie del carrito que creó el pedido o por el link firmado (`?t=`). */
+/** Autoriza por carrito, cuenta que creó el pedido o link firmado (`?t=`). */
 export async function findOwnedOrder(id: string, accessToken?: string | null) {
   if (!UUID_PATTERN.test(id)) return null;
   if (verifyOrderAccess(id, accessToken, orderAccessSecret())) {
     const [order] = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
     return order ?? null;
   }
-  const cartId = await readCartId();
-  if (!cartId) return null;
-  const [order] = await db.select().from(orders).where(and(eq(orders.id, id), eq(orders.cartId, cartId))).limit(1);
+  const [cartId, user] = await Promise.all([readCartId(), currentUser()]);
+  const [order] = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  if (!order) return null;
+  // Los pedidos de cuenta requieren su sesión. Al cerrar sesión, la cookie del carrito
+  // no debe seguir dando acceso a sus datos personales. Los pedidos de invitado conservan su flujo.
+  const ownsAccountOrder = user && order.userId === user.id;
+  const ownsGuestOrder = !order.userId && cartId && order.cartId === cartId;
+  if (!ownsAccountOrder && !ownsGuestOrder) return null;
   return order ?? null;
 }
 
@@ -40,7 +46,7 @@ export async function orderDetails(id: string, accessToken?: string | null) {
 }
 
 /** Toda la operación se confirma o revierte junta; no hay llamadas a proveedores dentro de ella. */
-export async function createOrder(input: CheckoutInput, cartId: string) {
+export async function createOrder(input: CheckoutInput, cartId: string, userId?: string) {
   const config = getCheckoutConfig();
   return withOrderTransaction(async (tx) => {
     const [cart] = await tx.select().from(carts).where(eq(carts.id, cartId)).for("update");
@@ -81,7 +87,7 @@ export async function createOrder(input: CheckoutInput, cartId: string) {
       throw new CheckoutError("El importe cambió. Actualizá la cotización antes de confirmar.");
     }
     const [order] = await tx.insert(orders).values({
-      cartId, checkoutKey: input.checkoutKey, isDemo: config.demo, paymentMethod: input.payment,
+      cartId, userId, checkoutKey: input.checkoutKey, isDemo: config.demo, paymentMethod: input.payment,
       name: input.name, email: input.email, phone: input.phone, delivery: input.delivery,
       address: input.delivery === "shipping" ? { street: input.street, number: input.streetNumber, apartment: input.apartment, postalCode: input.postalCode, city: input.city, province: input.province } : null,
       notes: input.notes, pickupDetails: input.delivery === "pickup" ? config.pickup : null,

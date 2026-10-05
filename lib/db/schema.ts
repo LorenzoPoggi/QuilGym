@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { boolean, check, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, check, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -149,8 +149,43 @@ export const orderStatus = pgEnum("order_status", ["pending", "approved", "rejec
 export const deliveryMethod = pgEnum("delivery_method", ["pickup", "shipping"]);
 export const paymentMethod = pgEnum("payment_method", ["mercadopago", "transfer", "cash"]);
 
+/** Better Auth: sesiones revocables y credenciales con hash, nunca contraseñas en claro. */
+export const users = pgTable("users", {
+  id: text("id").primaryKey(), name: text("name").notNull(), email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false), image: text("image"),
+  marketingConsent: boolean("marketing_consent").notNull().default(false),
+  ...timestamps,
+});
+export const authSessions = pgTable("auth_sessions", {
+  id: text("id").primaryKey(), token: text("token").notNull().unique(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  ipAddress: text("ip_address"), userAgent: text("user_agent"), ...timestamps,
+}, (t) => [index("auth_sessions_user_idx").on(t.userId)]);
+export const authAccounts = pgTable("auth_accounts", {
+  id: text("id").primaryKey(), userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  accountId: text("account_id").notNull(), providerId: text("provider_id").notNull(), password: text("password"),
+  accessToken: text("access_token"), refreshToken: text("refresh_token"), idToken: text("id_token"), scope: text("scope"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }), ...timestamps,
+}, (t) => [index("auth_accounts_user_idx").on(t.userId), uniqueIndex("auth_accounts_provider_idx").on(t.providerId, t.accountId)]);
+export const authVerifications = pgTable("auth_verifications", {
+  id: text("id").primaryKey(), identifier: text("identifier").notNull(), value: text("value").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(), ...timestamps,
+}, (t) => [index("auth_verifications_identifier_idx").on(t.identifier)]);
+export const authRateLimits = pgTable("auth_rate_limits", {
+  id: text("id").primaryKey(), key: text("key").notNull().unique(), count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
+export const favorites = pgTable("favorites", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex("favorites_user_product_idx").on(t.userId, t.productId)]);
+
 export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
   cartId: uuid("cart_id").notNull().references(() => carts.id, { onDelete: "restrict" }),
   checkoutKey: uuid("checkout_key").notNull(),
   isDemo: boolean("is_demo").notNull().default(false),

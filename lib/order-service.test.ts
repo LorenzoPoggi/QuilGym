@@ -8,13 +8,14 @@ import * as schema from "./db/schema";
 import { checkoutFingerprint, signQuote } from "./checkout-security";
 import type { CheckoutInput, CheckoutConfig } from "./checkout-types";
 
-const mocks = vi.hoisted(() => ({ transaction: vi.fn(), config: vi.fn(), db: {} }));
+const mocks = vi.hoisted(() => ({ transaction: vi.fn(), config: vi.fn(), db: {}, user: vi.fn(), cartId: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("./db", () => ({ db: mocks.db }));
-vi.mock("./cart", () => ({ readCartId: vi.fn() }));
+vi.mock("./cart", () => ({ readCartId: mocks.cartId }));
+vi.mock("./auth", () => ({ currentUser: mocks.user }));
 vi.mock("./db/transaction", () => ({ withOrderTransaction: mocks.transaction }));
 vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null, orderAccessSecret: () => null, pendingOrderTtlHours: () => 72 }));
-import { createOrder, transitionOrder } from "./order-service";
+import { createOrder, findOwnedOrder, transitionOrder } from "./order-service";
 import { expirePendingOrders } from "./order-expiry";
 
 const pg = new PGlite();
@@ -23,11 +24,45 @@ const config: CheckoutConfig = { demo: false, pickup: { address: "Local de test"
 beforeAll(async () => {
   for (const file of readdirSync("drizzle").filter((f) => f.endsWith(".sql")).sort()) await pg.exec(readFileSync(`drizzle/${file}`, "utf8"));
   mocks.transaction.mockImplementation((fn) => database.transaction(fn));
+  Object.assign(mocks.db, { select: database.select.bind(database) });
 }, 30000);
 afterAll(async () => { await pg.close(); });
 beforeEach(async () => {
   mocks.config.mockReturnValue({ ...config });
+  mocks.user.mockResolvedValue(null);
+  mocks.cartId.mockResolvedValue(null);
   await database.execute(sql`truncate brands, categories, products, product_variants, carts, coupons, orders restart identity cascade`);
+});
+
+describe("privacidad de pedidos ligados a una cuenta", () => {
+  async function accountOrder() {
+    const { cart, input } = await fixture({ demo: true });
+    await database.insert(schema.users).values({ id: "account-qa", name: "QA", email: "account-qa@example.com" }).onConflictDoNothing();
+    const id = await createOrder(input, cart.id, "account-qa");
+    return { id, cart };
+  }
+  it("la cookie del carrito no permite leer un pedido de cuenta después de logout", async () => {
+    const { id, cart } = await accountOrder();
+    mocks.cartId.mockResolvedValue(cart.id);
+    expect(await findOwnedOrder(id)).toBeNull();
+  });
+  it("otra cuenta no accede aunque tenga la cookie del carrito", async () => {
+    const { id, cart } = await accountOrder();
+    mocks.cartId.mockResolvedValue(cart.id);
+    mocks.user.mockResolvedValue({ id: "another-account" });
+    expect(await findOwnedOrder(id)).toBeNull();
+  });
+  it("su propietario accede sin cookie del carrito", async () => {
+    const { id } = await accountOrder();
+    mocks.user.mockResolvedValue({ id: "account-qa" });
+    expect((await findOwnedOrder(id))?.userId).toBe("account-qa");
+  });
+  it("conserva la autorización por cookie para pedidos de invitados", async () => {
+    const { cart, input } = await fixture({ demo: true });
+    const id = await createOrder(input, cart.id);
+    mocks.cartId.mockResolvedValue(cart.id);
+    expect((await findOwnedOrder(id))?.id).toBe(id);
+  });
 });
 
 async function fixture({ demo = false, stock = 3, coupon = false, key = "test" } = {}) {

@@ -3,6 +3,7 @@ import type { ProductSummary } from "@/lib/catalog-types";
 import { formatArs, paymentHighlights } from "@/lib/commerce";
 import { AddToCartButton } from "./cart-buttons";
 import { ProductImage } from "./product-image";
+import { FavoriteButton } from "./account-controls";
 
 export function ProductCard({ product, compact = false, priority = false }: { product: ProductSummary; compact?: boolean; priority?: boolean }) {
   const href = `/productos/${product.slug}`;
@@ -11,6 +12,7 @@ export function ProductCard({ product, compact = false, priority = false }: { pr
   return (
     <article className={`product-card ${compact ? "product-card--compact" : ""}`}>
       <div className="product-image">
+        <FavoriteButton productId={product.id} name={product.name}/>
         <Link href={href} aria-label={`Ver ${product.name}`}><ProductImage product={product} priority={priority} decorative/></Link>
       </div>
       <p className="eyebrow product-brand">{product.brand?.name ?? product.category.name}</p>

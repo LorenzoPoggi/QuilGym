@@ -1,33 +1,17 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { CircleCheck, Info, RefreshCw, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Info, Sparkles, Check } from "lucide-react";
 import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
-import { getProductsByCategory } from "@/lib/catalog";
-import type { ProductSummary } from "@/lib/catalog-types";
-import { formatArs } from "@/lib/commerce";
-
-export const metadata: Metadata = { title: "Tus recomendaciones | QuilGym" };
-
-/** Etiqueta derivada solo del precio dentro de la selección (sin afirmar calidad ni resultados). */
-function priceLabel(product: ProductSummary, index: number, picks: ProductSummary[]) {
-  if (product.priceArs === picks[0].priceArs) return "Menor precio";
-  return index === picks.length - 1 ? "Mayor precio" : "Precio intermedio";
-}
-
-function reason(product: ProductSummary, cheapest: ProductSummary) {
-  const diff = product.priceArs - cheapest.priceArs;
-  const brand = product.brand ? `De ${product.brand.name}, a ${formatArs(product.priceArs)}` : `A ${formatArs(product.priceArs)}`;
-  return `${brand}${diff > 0 ? `: ${formatArs(diff)} más que la opción de menor precio` : ""}. ${product.inStock ? "En stock." : "Sin stock por el momento."}`;
-}
-
-export default async function RecommendationsPage() {
-  // Selección fija hasta implementar el motor de reglas del asesor (Fase 4): se ordena por precio.
-  const picks = (await getProductsByCategory("creatinas", 3)).toSorted((a, b) => a.priceArs - b.priceArs);
-  return <><Header/><main className="recommendations-page"><div className="container">
-    <section className="recommendation-hero"><span><Sparkles aria-hidden="true"/></span><div><p className="eyebrow">SELECCIÓN DE EJEMPLO</p><h1>{picks.length === 3 ? "Tres creatinas" : "Creatinas"} para empezar a comparar</h1><p>Selección de ejemplo mientras el asesor se completa: todavía no usa tus respuestas. Ordenada de menor a mayor precio.</p></div><div><Link className="button button--light" href="/asesor"><SlidersHorizontal aria-hidden="true"/> Cambiar respuestas</Link><Link className="button button--light" href="/asesor"><RefreshCw aria-hidden="true"/> Reiniciar asesor</Link></div></section>
-    <p className="recommendation-note"><Info aria-hidden="true"/><span>Esta selección es orientativa: no reemplaza una evaluación profesional ni implica resultados garantizados.</span></p>
-    <div className="recommendation-grid">{picks.map((product, index) => <div className="recommendation-item" key={product.slug}><span className="recommendation-label">{priceLabel(product, index, picks)}</span><ProductCard product={product} priority/><p><CircleCheck aria-hidden="true"/><span>{reason(product, picks[0])}</span></p></div>)}</div>
-    <section className="selection-adjust"><div><h2>¿Querés ver más opciones?</h2><p>Compará estas creatinas lado a lado o recorré toda la categoría.</p></div><div><Link className="button button--outline" href="/comparar">Comparar productos</Link><Link className="button button--outline" href="/productos?categoria=creatinas">Ver todas las creatinas</Link></div></section>
-  </div></main></>;
+import { getAllProducts } from "@/lib/catalog";
+import { advisorVersion, parseAdvisorProfile, recommendProducts } from "@/lib/advisor";
+export const metadata = { title: "Tus opciones explicadas | QuilGym", robots: { index: false, follow: false } };
+export default async function RecommendationsPage({ searchParams }: { searchParams: Promise<Record<string,string | string[] | undefined>> }) {
+  const raw = await searchParams;
+  const profile = raw.perfil === "adulto" ? parseAdvisorProfile({...raw,age:"adult",safety:"clear"}) : null;
+  const result = profile ? recommendProducts(profile, await getAllProducts()) : null;
+  const consult = raw.orientacion === "personal";
+  return <><Header/><main className="recommendations-page"><div className="container"><section className="recommendation-hero"><span><Sparkles aria-hidden="true"/></span><div><p className="eyebrow">TU ORIENTACIÓN QUILGYM</p><h1>{result?.title ?? (consult ? "Primero, una orientación personal" : "Conozcamos tu rutina")}</h1><p>{result?.explanation ?? (consult ? "Con tus respuestas, lo adecuado es revisar tu caso con un profesional de salud o nutrición deportiva antes de usar suplementos. No vamos a indicarte productos de forma automática." : "Respondé las preguntas para ver opciones basadas en tu objetivo, rutina, alimentación y presupuesto.")}</p></div><Link className="button button--light" href="/asesor">{profile ? "Cambiar mis respuestas" : "Ir al asesor"}</Link></section><p className="recommendation-note"><Info aria-hidden="true"/><span>No es una prescripción ni una compra obligatoria. No calculamos dosis personales y no prometemos resultados.</span></p>
+  {profile ? <div className="advisor-profile-summary"><strong>Lo que tuvimos en cuenta</strong><span>{profile.experience === "regular" ? "Entrenamiento regular" : "Rutina en construcción"} · {profile.duration === "years" ? "Más de un año" : profile.duration === "months" ? "3 meses a un año" : "Primeros meses"} · {profile.budget === "all" ? "Sin tope de precio" : `Hasta $${Number(profile.budget).toLocaleString("es-AR")} por producto`}</span></div> : null}
+  {result?.picks.length ? <div className="recommendation-grid">{result.picks.map(({product,reason,check}) => <div className="recommendation-item" key={product.id}><span className="recommendation-label">Una opción para evaluar</span><ProductCard product={product}/><div className="recommendation-reason"><h3>Por qué puede encajar con vos</h3><p>{reason}</p><small><Info aria-hidden="true"/>{check}</small></div></div>)}</div> : null}
+  {result ? <section className="advisor-habits"><h2>Tu base sigue siendo lo más importante</h2>{result.habits.map((habit) => <p key={habit}><Check aria-hidden="true"/>{habit}</p>)}</section> : null}<section className="selection-adjust"><div><h2>Elegí con información</h2><p>Leé ingredientes y advertencias en la ficha y en el envase. Si algo no está claro, consultá antes de comprar.</p></div><Link className="button button--outline" href="/productos">Explorar el catálogo</Link></section><p className="advisor-sources">Criterios informativos: publicaciones de la ISSN sobre <a href="https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0173-z" target="_blank" rel="noopener noreferrer">creatina</a> y <a href="https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8" target="_blank" rel="noopener noreferrer">proteína y ejercicio</a>. Reglas {advisorVersion}.</p></div></main></>;
 }

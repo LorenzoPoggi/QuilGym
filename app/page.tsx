@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { GoogleReviews } from "@/components/google-reviews";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, BadgeCheck, ClipboardList, CreditCard, Dumbbell, Flame, Gauge, HeartPulse, LayoutGrid, MessagesSquare, RefreshCw, ShieldCheck, Store, Truck, Wallet, Zap } from "lucide-react";
 import { Footer } from "@/components/footer";
@@ -113,6 +114,7 @@ export default async function Home() {
           </div>
         </section>
 
+        <GoogleReviews/>
         <section id="guias" className="section-pad container">
           <SectionHeading eyebrow="ELEGÍ CON CRITERIO" title="Guías por categoría" copy="Lo básico de cada categoría para comparar opciones. Sin promesas mágicas ni atajos." link="Ver todo el catálogo" />
           <div className="guides-grid">{guideCards.map((guide) => <Link className="guide-card" href={`/productos?categoria=${guide.slug}`} key={guide.slug}>
