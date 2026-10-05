@@ -1,4 +1,43 @@
 /* Cuenta, asesor y reseñas: comparten los tokens del sitio. */
+.advisor-layout--conversation { gap: 24px; box-shadow: none; align-items: stretch; }
+.advisor-layout--conversation .advisor-sidebar { border-radius: var(--radius-lg); }
+.advisor-layout--conversation .advisor-sidebar small { margin-top: auto; display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
+.advisor-sidebar small svg { width: 20px; flex-shrink: 0; }
+.advisor-chat--conversation { min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.advisor-chat--conversation > header { gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.advisor-chat--conversation > header button { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.advisor-chat--conversation > header button svg { width: 18px; }
+.advisor-conversation { height: 510px; overflow-y: auto; overscroll-behavior: contain; padding: 24px 4px 16px; scrollbar-width: thin; }
+.advisor-entry { margin-bottom: 26px; }
+.advisor-speaker { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+.advisor-speaker svg { width: 18px; height: 18px; }
+.advisor-entry--user .advisor-speaker { justify-content: flex-end; }
+.advisor-bubble { width: fit-content; max-width: 92%; margin: 0; padding: 18px 20px; border-radius: 4px 18px 18px; background: var(--soft); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; font-size: .95rem; }
+.advisor-entry--user .advisor-bubble { margin-left: auto; color: #fff; background: #373c3f; border-radius: 18px 4px 18px 18px; }
+.advisor-thinking { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .85rem; }
+.advisor-thinking svg { width: 18px; animation: advisor-spin 1s linear infinite; }
+@keyframes advisor-spin { to { transform: rotate(360deg); } }
+.advisor-composer { display: flex; gap: 12px; align-items: flex-end; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; }
+.advisor-composer textarea { flex: 1; min-width: 0; max-height: 180px; resize: vertical; background: none; border: 0; padding: 8px; font: inherit; line-height: 1.5; }
+.advisor-composer textarea:focus-visible { outline: 2px solid var(--muted); border-radius: 6px; }
+.advisor-composer .button { flex-shrink: 0; min-height: 46px; }
+.advisor-privacy { color: var(--muted); font-size: .72rem; line-height: 1.6; margin: 12px 0 0; }
+.advisor-chat-error, .advisor-config-note { font-size: .85rem; line-height: 1.6; padding: 14px; border-radius: var(--radius-sm); background: var(--soft); }
+.advisor-chat-error { color: #9b3030; margin-bottom: 12px; }
+.advisor-chat-error p { margin-top: 0; }
+.advisor-chat-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.advisor-chat-products .recommendation-reason { padding: 16px; }
+.advisor-chat-products .recommendation-reason p { font-size: .85rem; }
+@media (max-width: 768px) {
+ .advisor-layout--conversation { gap: 16px; }.advisor-layout--conversation .advisor-sidebar { padding: 24px; }
+ .advisor-layout--conversation .advisor-sidebar-icon { display: none; }.advisor-layout--conversation .advisor-sidebar h1 { font-size: 1.7rem; }
+ .advisor-chat--conversation { border-radius: var(--radius-lg); padding: 18px; }.advisor-conversation { height: 460px; }
+ .advisor-chat--conversation > header strong { font-size: .9rem; }.advisor-chat--conversation > header small { font-size: .72rem; }
+ .advisor-chat--conversation > header button { padding: 10px; font-size: .75rem; }.advisor-bubble { max-width: 100%; padding: 14px; }
+ .advisor-composer { padding: 8px; gap: 4px; }.advisor-composer .button { padding-inline: 12px; }.advisor-composer .button span { display: none; }
+ .advisor-chat-products { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .advisor-thinking svg { animation: none; } }
 .account-page { min-height: 75vh; padding-block: 60px; }
 .auth-card { max-width: 480px; margin: auto; padding: 36px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--paper); box-shadow: var(--shadow); }
 .auth-card h1 { margin: 10px 0; font-size: 2rem; line-height: 1.15; }

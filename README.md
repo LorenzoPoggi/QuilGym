@@ -1,8 +1,8 @@
 # QuilGym
 
-E-commerce de suplementos deportivos construido con Next.js, TypeScript y Postgres. La experiencia incluye catálogo con filtros, búsqueda predictiva, fichas de producto, comparador, asesor guiado y un recorrido de compra.
+E-commerce de suplementos deportivos construido con Next.js, TypeScript y Postgres. La experiencia incluye catálogo con filtros, búsqueda predictiva, fichas de producto, comparador, asesor conversacional y un recorrido de compra.
 
-> Estado actual: catálogo (68 productos), carrito, pedidos de prueba, cuentas y favoritos funcionan contra Postgres. El asesor explica opciones según las respuestas. Las integraciones de pagos reales, Google OAuth y reseñas esperan sus credenciales; no se activaron cobros.
+> Estado actual: catálogo (68 productos), carrito, pedidos de prueba, cuentas y favoritos funcionan contra Postgres. El asesor tiene chat de texto libre conectado directamente a Gemini; requiere una API key de Google AI Studio. Pagos reales, Google OAuth y reseñas esperan sus credenciales; no se activaron cobros.
 
 ## Funcionalidades
 
@@ -12,7 +12,7 @@ E-commerce de suplementos deportivos construido con Next.js, TypeScript y Postgr
 - Fichas de producto estáticas con revalidación cada 5 minutos y datos estructurados `Product`.
 - Carrito persistente (cookie HttpOnly + Postgres): agregar desde tarjetas o ficha, cantidades, cupones, contador en el header y drawer accesible. Precio, stock y cupón se recalculan siempre en el servidor y avisan si algo cambió.
 - Checkout con el resumen real del carrito; bloquea el pago si hay productos sin stock o precios sin confirmar.
-- Asesor guiado: experiencia, tiempo entrenando, objetivo, rutina, alimentación, restricciones y presupuesto. Reglas versionadas con motivos por producto, stock y precio actuales; no prescribe dosis ni exige comprar.
+- Asesor conversacional: texto libre, preguntas según el contexto, historial durante la visita y sugerencias del catálogo con motivos. Sin opciones múltiples ni preguntas obligatorias de edad. No prescribe dosis ni exige comprar; requiere conexión a IA.
 - Botón flotante gris del asesor con bienvenida y acceso a la conversación completa.
 - Registro con nombre, email y contraseña; sesión persistente y revocable de 30 días con Better Auth. Acceso con Google preparado (requiere credenciales).
 - Favoritos por usuario en tarjetas y fichas, con sección propia en `/cuenta`.
@@ -48,6 +48,30 @@ Abrir [http://localhost:3000](http://localhost:3000).
 No sobrescribir `.env.local`. El catálogo ya está cargado en la base compartida: **no ejecutar `db:seed`**, ya que reemplaza datos comerciales. Para una base nueva, usarlo una sola vez después de migrar.
 
 Si faltan módulos después de actualizar el repositorio, ejecutar `npm ci`. Se detectaron copias repetidas del caché generado con nombres como `.next/dev/types/routes.d 2.ts`: TypeScript excluye esos archivos con espacios, únicamente dentro de `.next`, manteniendo las definiciones originales y el chequeo del código fuente.
+
+### Conectar el asesor a una IA real
+
+1. Crear una clave en [Google AI Studio](https://aistudio.google.com/api-keys). Su nombre descriptivo no tiene que coincidir con la variable del proyecto. No hace falta Vercel AI Gateway ni desplegar el sitio para probarlo.
+2. Revisar cuotas, restricciones de la clave y facturación del proyecto Google antes de compartir el chat: las consultas pueden tener costo. No activar facturación automáticamente sin aprobación del negocio.
+3. Agregar a `.env.local`, sin borrar `DATABASE_URL` ni otras variables:
+
+```env
+GOOGLE_GENERATIVE_AI_API_KEY=tu_clave_privada_de_google
+# Opcional; por defecto se usa este modelo gratuito, probado por API el 5/10/2026:
+ADVISOR_MODEL=gemini-3.5-flash-lite
+```
+
+4. Reiniciar `npm run dev` y abrir `/asesor`. No publicar la clave, no pegarla en chats, no usar `NEXT_PUBLIC_`. `.env.local` permanece ignorado por Git. Consultar [la documentación de Google](https://ai.google.dev/gemini-api/docs/api-key) y los modelos disponibles para el proyecto.
+
+Compatibilidad temporal: si la clave de Google quedó en `AI_GATEWAY_API_KEY`, el asesor la acepta como alias y la envía **solo a Google**, no a Vercel. Se recomienda renombrar esa variable a `GOOGLE_GENERATIVE_AI_API_KEY` conservando el mismo valor (no es necesario copiarlo ni crear otra clave). La variable Google tiene prioridad. El prefijo `google/` en ADVISOR_MODEL también se normaliza. Las claves de Vercel AI Gateway ya no sirven para este asesor.
+
+Si Google rechaza la consulta, la UI distingue autorización, cuota, modelo no disponible y configuración inválida sin mostrar mensajes privados del proveedor. Consultar los límites en AI Studio si aparece 429; no siempre hace falta pagar, puede ser un límite temporal o de solicitudes/tokens del proyecto. Cambiar permisos/cuotas/facturación requiere intervención del dueño del proyecto.
+
+El servidor usa AI SDK con salida estructurada; recibe el historial y el catálogo activo. Las tarjetas solo aceptan IDs existentes y disponibles, y toman nombres, precios, fotos y enlaces de Postgres. La IA redacta las explicaciones; eso no garantiza exactitud nutricional. Revisar recomendaciones con un profesional y hacer QA real con la clave antes del lanzamiento.
+
+Sin clave se explica que falta conectar la IA, sin respuestas falsas. Timeout de 45 segundos, sin reintentos automáticos facturables; errores permiten reintentar conservando el mensaje. Límites atómicos en Postgres: 8 consultas/minuto por identificador firmado de navegador, 30/minuto y 200/día para todo el sitio. El límite global protege costos incluso si se borran cookies; no reemplaza el presupuesto del proveedor ni una protección anti-bots. Reutiliza `auth_rate_limits` con prefijo `advisor:`; no necesita migración. Pendiente limpieza periódica de identificadores vencidos.
+
+La conversación vive únicamente en memoria del navegador y se envía al proveedor externo al consultar; no se guarda en la cuenta, base ni logs de QuilGym. El proveedor tiene sus propias políticas de procesamiento/retención: informarlas y revisar privacidad antes de producción. No enviar datos sensibles. Hasta 11 mensajes de cliente por conversación y 1.800 caracteres por mensaje. Las recomendaciones aparecen dentro del chat; `/asesor/recomendaciones` redirige al asesor nuevo.
 
 ### Cuentas y Google
 
@@ -102,8 +126,9 @@ La consulta pública desde este entorno devuelve una vista limitada sin los text
 | `/productos/[slug]` | Ficha de producto |
 | `/buscar` | Búsqueda predictiva |
 | `/comparar` | Comparador |
-| `/asesor` | Asesor guiado |
-| `/asesor/recomendaciones` | Recomendaciones del asesor |
+| `/asesor` | Chat con IA y sugerencias explicadas del catálogo |
+| `/asesor/recomendaciones` | Redirige al chat (compatibilidad con enlaces anteriores) |
+| `/api/advisor` | Conversación con el LLM, POST de mismo origen y sin caché |
 | `/cuenta/ingresar` | Email/contraseña y acceso con Google configurable |
 | `/cuenta/registro` | Registro de cliente |
 | `/cuenta` | Favoritos, pedidos y preferencias; requiere sesión |
@@ -123,13 +148,13 @@ La consulta pública desde este entorno devuelve una vista limitada sin los text
 - Google OAuth requiere sus credenciales. Verificación de email y recuperación de contraseña pendientes antes de producción.
 - El carrito sigue ligado al navegador; no se sincroniza entre dispositivos. Los favoritos y los nuevos pedidos del usuario sí son propios de su cuenta. No se asignan compras históricas por coincidencia de email.
 - Los pedidos asociados a una cuenta requieren su sesión (o un enlace firmado válido); cerrar sesión corta el acceso mediante la cookie del carrito. Los pedidos de invitado mantienen su autorización por carrito.
-- El asesor aplica reglas, no una IA generativa ni una evaluación nutricional. Puede devolver menos de tres productos o ninguno. No conoce certificaciones ni alérgenos de todo el catálogo.
+- El asesor requiere una clave de Google AI Studio (`GOOGLE_GENERATIVE_AI_API_KEY`, con alias anterior temporal). Los tests automáticos usan respuestas simuladas; las cuotas/permisos del proyecto pueden impedir una consulta real. No es una evaluación nutricional; no fuerza productos si falta contexto, stock o hay riesgos, y no conoce certificaciones ni alérgenos de todo el catálogo.
 - Las reseñas auténticas dentro del carrusel siguen pendientes de acceso a su fuente; el enlace a Google Maps está activo.
 - Comparador fijo y panel de administración pendientes.
 
 ## Próximos pasos
 
-1. Revisar esta etapa y configurar Google OAuth y la fuente autorizada de reseñas.
+1. Conectar y probar el asesor con una clave de IA, fijar presupuesto, revisar sus criterios/privacidad; configurar Google OAuth y la fuente autorizada de reseñas.
 2. Completar comparador y panel de administración de productos, órdenes, precios, stock e imágenes.
 3. Datos del negocio, staging, sandbox real de Mercado Pago y emails; sin habilitar pagos productivos antes de verificar el flujo.
 4. Verificación de email, recuperación de contraseña, legales, accesibilidad, seguridad y observabilidad antes del lanzamiento.

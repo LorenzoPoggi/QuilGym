@@ -1,17 +1,5 @@
-import Link from "next/link";
-import { Info, Sparkles, Check } from "lucide-react";
-import { Header } from "@/components/header";
-import { ProductCard } from "@/components/product-card";
-import { getAllProducts } from "@/lib/catalog";
-import { advisorVersion, parseAdvisorProfile, recommendProducts } from "@/lib/advisor";
-export const metadata = { title: "Tus opciones explicadas | QuilGym", robots: { index: false, follow: false } };
-export default async function RecommendationsPage({ searchParams }: { searchParams: Promise<Record<string,string | string[] | undefined>> }) {
-  const raw = await searchParams;
-  const profile = raw.perfil === "adulto" ? parseAdvisorProfile({...raw,age:"adult",safety:"clear"}) : null;
-  const result = profile ? recommendProducts(profile, await getAllProducts()) : null;
-  const consult = raw.orientacion === "personal";
-  return <><Header/><main className="recommendations-page"><div className="container"><section className="recommendation-hero"><span><Sparkles aria-hidden="true"/></span><div><p className="eyebrow">TU ORIENTACIÓN QUILGYM</p><h1>{result?.title ?? (consult ? "Primero, una orientación personal" : "Conozcamos tu rutina")}</h1><p>{result?.explanation ?? (consult ? "Con tus respuestas, lo adecuado es revisar tu caso con un profesional de salud o nutrición deportiva antes de usar suplementos. No vamos a indicarte productos de forma automática." : "Respondé las preguntas para ver opciones basadas en tu objetivo, rutina, alimentación y presupuesto.")}</p></div><Link className="button button--light" href="/asesor">{profile ? "Cambiar mis respuestas" : "Ir al asesor"}</Link></section><p className="recommendation-note"><Info aria-hidden="true"/><span>No es una prescripción ni una compra obligatoria. No calculamos dosis personales y no prometemos resultados.</span></p>
-  {profile ? <div className="advisor-profile-summary"><strong>Lo que tuvimos en cuenta</strong><span>{profile.experience === "regular" ? "Entrenamiento regular" : "Rutina en construcción"} · {profile.duration === "years" ? "Más de un año" : profile.duration === "months" ? "3 meses a un año" : "Primeros meses"} · {profile.budget === "all" ? "Sin tope de precio" : `Hasta $${Number(profile.budget).toLocaleString("es-AR")} por producto`}</span></div> : null}
-  {result?.picks.length ? <div className="recommendation-grid">{result.picks.map(({product,reason,check}) => <div className="recommendation-item" key={product.id}><span className="recommendation-label">Una opción para evaluar</span><ProductCard product={product}/><div className="recommendation-reason"><h3>Por qué puede encajar con vos</h3><p>{reason}</p><small><Info aria-hidden="true"/>{check}</small></div></div>)}</div> : null}
-  {result ? <section className="advisor-habits"><h2>Tu base sigue siendo lo más importante</h2>{result.habits.map((habit) => <p key={habit}><Check aria-hidden="true"/>{habit}</p>)}</section> : null}<section className="selection-adjust"><div><h2>Elegí con información</h2><p>Leé ingredientes y advertencias en la ficha y en el envase. Si algo no está claro, consultá antes de comprar.</p></div><Link className="button button--outline" href="/productos">Explorar el catálogo</Link></section><p className="advisor-sources">Criterios informativos: publicaciones de la ISSN sobre <a href="https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0173-z" target="_blank" rel="noopener noreferrer">creatina</a> y <a href="https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8" target="_blank" rel="noopener noreferrer">proteína y ejercicio</a>. Reglas {advisorVersion}.</p></div></main></>;
-}
+import { redirect } from "next/navigation";
+
+export const metadata = { title: "Asesor QuilGym", robots: { index: false, follow: false } };
+/** Compatibilidad con enlaces del cuestionario anterior; ahora las sugerencias viven en la charla. */
+export default function RecommendationsPage() { redirect("/asesor"); }

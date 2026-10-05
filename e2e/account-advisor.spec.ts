@@ -74,23 +74,58 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   expect(errors).toEqual([]);
 });
 
-test("asesor: respuestas cambian productos y explican cada sugerencia", async ({ page }, info) => {
+test("asesor conversacional: texto libre, contexto, tarjetas, reintento y reinicio", async ({ page }, info) => {
+  // Solo QA: respuestas interceptadas sin una clave real ni consultas facturables.
+  const errors: string[] = [];
+  page.on("pageerror", (cause) => errors.push(cause.message));
+  let calls = 0;
+  const sent: { role: string; content: string }[][] = [];
+  await page.route("**/api/advisor", async (route) => {
+    sent.push(route.request().postDataJSON().messages);
+    calls++;
+    if (calls === 1) return route.fulfill({ json: { reply: "Querés ganar fuerza y ya entrenás tres veces. ¿Cómo venís con las comidas?", recommendations: [] } });
+    if (calls === 2) return route.fulfill({ status: 502, json: { error: "No pudimos consultar al asesor. Podés reintentar." } });
+    // Producto y contenido simulados exclusivamente en la respuesta interceptada del test.
+    return route.fulfill({ json: { reply: "Por lo que contás, una opción práctica puede acompañar tus comidas sin reemplazarlas.", recommendations: [{ product: { id: 1, variantId: 1, slug: "proteina-star-nutrition-2-lb", name: "Proteína de prueba QA", category: { slug: "proteinas", name: "Proteínas" }, brand: null, priceArs: 20000, compareAtPriceArs: null, inStock: true, imageUrl: null }, reason: "Por tus horarios, podría darte practicidad cuando te cuesta incluir proteína en las comidas.", caution: "Revisá ingredientes y advertencias en el rótulo." }] } });
+  });
   await page.goto("/asesor");
-  for (const answer of ["Sí, tengo 18 años o más", "No, ninguna de esas situaciones", "Ya entreno de forma regular", "Más de 1 año", "Ganar masa muscular", "Gimnasio, fuerza o musculación", "2 a 3 días", "Me cuesta incluirlas por tiempo o practicidad", "No tengo restricciones", "Hasta $45.000"]) {
-    await page.getByRole("button", { name: answer, exact: true }).click();
-    await page.getByRole("button", { name: /^(Continuar|Ver mis opciones)$/ }).click();
-  }
-  await expect(page).toHaveURL(/recomendaciones\?/);
-  await expect(page.getByRole("heading", { name: "Opciones con una razón para vos" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Por qué puede encajar con vos" })).toHaveCount(3);
-  await expect(page.locator(".recommendation-reason").filter({ hasText: "practicidad" })).not.toHaveCount(0);
-  await expect(page.locator(".recommendation-reason").filter({ hasText: "alta intensidad" })).not.toHaveCount(0);
-  await page.screenshot({ path: info.outputPath("advisor-recommendations.png"), fullPage: true });
+  const message = page.getByRole("textbox", { name: "Tu mensaje al asesor" });
+  await expect(message).toBeEnabled();
+  await expect(page.getByText(/Soy tu asesor fitness virtual/)).toBeVisible();
+  await expect(page.getByText("¿Tenés 18 años o más?", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".advisor-options")).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath("advisor-welcome.png"), fullPage: true });
+  await message.fill("Quiero ganar fuerza, entreno hace dos años tres veces por semana.");
+  await page.getByRole("button", { name: "Enviar mensaje" }).click();
+  await expect(page.getByText(/¿Cómo venís con las comidas/)).toBeVisible();
+  await message.fill("Por el trabajo me cuesta preparar comidas, tengo hasta 30000 pesos.");
+  await message.press("Enter");
+  await expect(page.locator(".advisor-chat-error")).toContainText("reintentar");
+  await page.getByRole("button", { name: "Reintentar mensaje" }).click();
+  await expect(page.getByRole("heading", { name: "Por qué podría servirte" })).toHaveCount(1);
+  await expect(page.locator(".recommendation-reason")).toContainText("tus horarios");
+  expect(sent[1]).toHaveLength(3);
+  expect(sent[2]).toEqual(sent[1]);
+  expect(sent[2][0].content).toContain("dos años");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: info.outputPath("advisor-conversation.png"), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  await page.goto("/asesor");
-  await page.getByRole("button", { name: "Soy menor de 18 años", exact: true }).click();
-  await page.getByRole("button", { name: "Continuar", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Primero, una orientación personal" })).toBeVisible();
+  await page.getByRole("button", { name: "Reiniciar", exact: true }).click();
+  await expect(page.locator(".advisor-entry")).toHaveCount(1);
+  await expect(page.locator(".product-card")).toHaveCount(0);
+  await expect(message).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
+test("asesor: conexión pendiente conserva el mensaje y los enlaces anteriores llevan al chat", async ({ page }) => {
+  await page.route("**/api/advisor", (route) => route.fulfill({ status: 503, json: { error: "El chat de IA todavía no está conectado. Falta configurar GOOGLE_GENERATIVE_AI_API_KEY en el servidor." } }));
+  await page.goto("/asesor/recomendaciones?orientacion=personal");
+  await expect(page).toHaveURL(/\/asesor$/);
+  await page.getByRole("textbox", { name: "Tu mensaje al asesor" }).fill("Quiero empezar a entrenar y mejorar mis hábitos.");
+  await page.getByRole("button", { name: "Enviar mensaje" }).click();
+  await expect(page.locator(".advisor-chat-error")).toContainText("GOOGLE_GENERATIVE_AI_API_KEY");
+  await expect(page.locator(".advisor-entry--user")).toContainText("mejorar mis hábitos");
+  await expect(page.locator(".advisor-entry--assistant")).toHaveCount(1);
   await expect(page.locator(".product-card")).toHaveCount(0);
 });
 
