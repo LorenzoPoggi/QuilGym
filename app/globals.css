@@ -60,7 +60,7 @@ svg { width: 1.25em; height: 1.25em; flex: 0 0 auto; }
 .account-link { display: flex; align-items: center; gap: 8px; font-size: .68rem; line-height: 1.1; white-space: nowrap; }
 .account-link svg { width: 24px; height: 24px; }
 .account-link strong { font-size: .83rem; }
-.cart-pill { min-width: 72px; height: 47px; display: flex; align-items: center; justify-content: center; gap: 8px; background: #d9dddf; border-radius: 15px; font-size: .86rem; }
+.cart-pill { min-width: 96px; height: 47px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 17px 0 12px; background: #d9dddf; border-radius: 15px; font-size: .86rem; }
 
 .hero { background: #e4e7e8; }
 .hero-grid { display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; gap: 72px; }
@@ -126,8 +126,8 @@ svg { width: 1.25em; height: 1.25em; flex: 0 0 auto; }
 .product-detail, .installments, .stock { margin: 7px 0 0; color: var(--muted); font-size: .69rem; }
 .price { margin: 5px 0 0; font-size: 1.32rem; font-weight: 800; }
 .price del { margin-left: 5px; color: #92979a; font-size: .7rem; font-weight: 500; }
-.stock { color: #596166; font-weight: 600; }
-.stock span { display: inline-block; width: 6px; height: 6px; margin-right: 4px; background: #697176; border-radius: 50%; }
+.stock { color: #16803c; font-weight: 700; }
+.stock span { display: inline-block; width: 7px; height: 7px; margin-right: 4px; background: #1ca34a; border-radius: 50%; }
 .stock--out { color: #b4234a; }.stock--out span { background: #ef315b; }
 .product-card .button:disabled { opacity: .55; cursor: not-allowed; }
 .product-card--compact h3 { font-size: .92rem; }
@@ -198,7 +198,7 @@ svg { width: 1.25em; height: 1.25em; flex: 0 0 auto; }
   .search { order: 4; width: 100%; flex-basis: 100%; }
   .header-inner { flex-wrap: wrap; padding-block: 10px; }
   .account-link { margin-left: auto; }.account-link span { display: none; }
-  .cart-pill { min-width: 58px; }
+  .cart-pill { min-width: 84px; padding-inline: 10px 15px; }
   .hero-grid { grid-template-columns: 1fr; }
   .hero-copy { max-width: none; }
   .hero h1 { font-size: clamp(2.7rem, 13vw, 4rem); }
@@ -438,7 +438,7 @@ html:has(.cart-dialog[open]) { overflow: hidden; }
 .coupon form button:disabled { opacity: .5; cursor: not-allowed; }
 .cart-drawer .button--full { margin-top: 8px; }
 .cart-pill { position: relative; }
-.cart-pill__count { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; display: grid; place-items: center; padding: 0 5px; color: #fff; background: #ef315b; border-radius: 999px; font-size: .62rem; font-weight: 700; }
+.cart-pill__count { position: absolute; top: -8px; right: -8px; min-width: 27px; height: 27px; display: inline-flex; align-items: center; justify-content: center; padding: 0 4px; color: #fff; background: #ef315b; border: 2.5px solid #fff; border-radius: 999px; font-size: .68rem; font-weight: 800; line-height: 1; }
 .purchase-quantity { display: inline-flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; }
 .purchase-quantity button { width: 32px; height: 32px; background: transparent; border: 0; font-size: 1.1rem; cursor: pointer; }.purchase-quantity button:disabled { color: #b7bbbe; cursor: not-allowed; }
 .option-group button.is-active { color: #fff; background: #34383b; border-color: #34383b; }

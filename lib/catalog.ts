@@ -143,7 +143,10 @@ export async function getAllProducts() {
 }
 
 export async function getFeaturedProducts(limit = 4) {
-  return (await getActiveProducts()).filter((product) => product.isFeatured).slice(0, limit).map(toSummary);
+  const products = await getActiveProducts();
+  const featured = products.filter((product) => product.isFeatured);
+  const remaining = products.filter((product) => !product.isFeatured).sort(compare("relevancia"));
+  return [...featured, ...remaining].slice(0, limit).map(toSummary);
 }
 
 export async function getProductsByCategory(categorySlug: string, limit: number, excludeSlug?: string) {

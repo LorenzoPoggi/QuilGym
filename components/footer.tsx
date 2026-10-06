@@ -6,7 +6,7 @@ const groups = [
   { title: "Comprar", links: [["Todos los productos", "/productos"], ["Proteínas", "/productos?categoria=proteinas"], ["Creatinas", "/productos?categoria=creatinas"], ["Pre-entrenos", "/productos?categoria=pre-entrenos"], ["Vitaminas y minerales", "/productos?categoria=vitaminas-y-minerales"], ["Accesorios", "/productos?categoria=accesorios"]] },
   { title: "Por objetivo", links: [["Masa muscular", "/productos?categoria=proteinas"], ["Rendimiento", "/productos?categoria=creatinas"], ["Energía", "/productos?categoria=pre-entrenos"], ["Recuperación", "/productos?categoria=aminoacidos"], ["Definición", "/productos?categoria=colageno"], ["Bienestar", "/productos?categoria=vitaminas-y-minerales"]] },
   { title: "Para elegir", links: [["Buscar productos", "/buscar"], ["Asesor", "/asesor"], ["Comparador", "/comparar"], ["Mi carrito", "/carrito"]] },
-  { title: "QuilGym", links: [["Destacados", "/#productos"], ["Combos", "/productos?categoria=combos"], ["Marcas", "/#marcas"], ["Cómo comprar", "/#como-comprar"], ["Guías", "/#guias"]] },
+  { title: "QuilGym", links: [["Destacados", "/#productos"], ["Combos", "/productos?categoria=combos"], ["Marcas", "/#marcas"], ["Cómo comprar", "/#como-comprar"]] },
 ];
 
 const trust = [

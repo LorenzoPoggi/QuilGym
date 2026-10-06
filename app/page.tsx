@@ -5,8 +5,7 @@ import { ArrowRight, ArrowUpRight, BadgeCheck, ClipboardList, CreditCard, Dumbbe
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
-import { ProductImage } from "@/components/product-image";
-import { getBrands, getCategories, getFeaturedProducts, getProductsByCategory } from "@/lib/catalog";
+import { getBrands, getFeaturedProducts, getProductsByCategory } from "@/lib/catalog";
 import { commerce } from "@/lib/commerce";
 
 const objectives = [
@@ -32,31 +31,47 @@ const steps = [
   { icon: Truck, title: `Envío o retiro en ${commerce.pickupLocation}`, text: `Recibilo con envío a todo el país o elegí retirarlo en ${commerce.pickupLocation}.`, link: "Ver productos", href: "/productos" },
 ];
 
-const guides = [
-  { slug: "creatinas", title: "Creatina: presentaciones y formatos para comparar", text: "Distintos tamaños, versiones clásicas o saborizadas y varias marcas. Compará porciones por envase y precio." },
-  { slug: "proteinas", title: "Proteína en polvo: claves para elegir una opción", text: "Whey, blends y alternativas vegetales. En cada ficha está el rótulo para comparar proteína por porción." },
-  { slug: "pre-entrenos", title: "Pre-entrenos: qué ingredientes vas a encontrar", text: "Fórmulas con cafeína, óxido nítrico y otros componentes. Leé el rótulo y consultá a un profesional si tenés dudas." },
-];
-
-const brandTones = ["peach", "yellow", "pink", "blue", "green", "gray"];
+const brandLogos: Record<string, string> = {
+  "star-nutrition": "/assets/brands/star-nutrition-v2.png",
+  "ena-sport": "/assets/brands/ena-sport-v2.png",
+  "body-advance": "/assets/brands/body-advance-v2.png",
+  "one-fit": "/assets/brands/one-fit-v2.png",
+  "gold-nutrition": "/assets/brands/gold-nutrition-horizontal-v2.png",
+  xtrenght: "/assets/brands/xtrenght-v2.png",
+};
+const brandStyles: Record<string, string> = {
+  "star-nutrition": "brand-card--star",
+  "ena-sport": "brand-card--ena",
+  "body-advance": "brand-card--body-advance",
+  "one-fit": "brand-card--one-fit",
+  "gold-nutrition": "brand-card--gold-nutrition",
+  xtrenght: "brand-card--xtrenght",
+};
 
 function SectionHeading({ eyebrow, title, copy, link, href = "/productos" }: { eyebrow: string; title: string; copy: string; link?: string; href?: string }) {
   return <div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2><p>{copy}</p></div>{link ? <Link href={href}>{link} <ArrowRight aria-hidden="true"/></Link> : null}</div>;
 }
 
 export default async function Home() {
-  const [featured, combos, brands, categories, ...guideProducts] = await Promise.all([
-    getFeaturedProducts(4), getProductsByCategory("combos", 4), getBrands(), getCategories(),
-    ...guides.map((guide) => getProductsByCategory(guide.slug, 4)),
+  const [desktopFeatured, proteins, creatines, accessories, preWorkouts, combos, brands] = await Promise.all([
+    getFeaturedProducts(12),
+    getProductsByCategory("proteinas", 2),
+    getProductsByCategory("creatinas", 2),
+    getProductsByCategory("accesorios", 30),
+    getProductsByCategory("pre-entrenos", 1),
+    getProductsByCategory("combos", 4),
+    getBrands(),
   ]);
-  // Para las guías, una foto real de la categoría que no repita los destacados.
-  const featuredSlugs = new Set(featured.map((product) => product.slug));
-  const guideCards = guides.map((guide, index) => {
-    const options = guideProducts[index];
-    const product = options.find((item) => item.imageUrl && !featuredSlugs.has(item.slug)) ?? options[0];
-    const category = categories.find((item) => item.slug === guide.slug);
-    return { ...guide, product, category };
-  });
+  const shaker = accessories.find((product) => /shaker/i.test(product.name)) ?? accessories[0];
+  const mobileFeatured = [
+    ...proteins.slice(0, 2),
+    ...creatines.slice(0, 2),
+    ...(shaker ? [shaker] : []),
+    ...preWorkouts.slice(0, 1),
+  ];
+  const desktopFeaturedSlugs = new Set(desktopFeatured.map((product) => product.slug));
+  const mobileFeaturedSlugs = new Set(mobileFeatured.map((product) => product.slug));
+  const featured = [...new Map([...desktopFeatured, ...mobileFeatured].map((product) => [product.slug, product])).values()];
 
   return (
     <>
@@ -89,7 +104,7 @@ export default async function Home() {
         <section id="productos" className="section-pad section-soft">
           <div className="container">
             <SectionHeading eyebrow="SELECCIÓN QUILGYM" title="Destacados" copy="Una selección de básicos para empezar. Precios y stock actualizados." link="Ver todos los productos" />
-            <div className="product-grid">{featured.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} />)}</div>
+            <div className="product-grid">{featured.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} className={desktopFeaturedSlugs.has(product.slug) ? (mobileFeaturedSlugs.has(product.slug) ? "" : "featured-product--desktop-only") : "featured-product--mobile-only"} />)}</div>
             <div className="advisor-banner">
               <div className="advisor-icon"><ClipboardList aria-hidden="true"/></div>
               <div><p className="eyebrow">TE ORIENTAMOS EN 3 MINUTOS</p><h3>¿No sabés qué suplemento elegir?</h3><p>Respondé preguntas simples sobre tu objetivo, alimentación y rutina. Te mostramos categorías para explorar, sin vueltas.</p></div>
@@ -101,7 +116,7 @@ export default async function Home() {
         <section id="combos" className="section-pad container">
           <SectionHeading eyebrow="COMBOS QUILGYM" title="Combos por objetivo" copy="Selecciones armadas para simplificar tu compra. En cada ficha ves qué productos incluye." link="Explorar combos" href="/productos?categoria=combos" />
           <div className="product-grid">{combos.map((product) => <ProductCard key={product.slug} product={product} compact />)}</div>
-          <div id="marcas" className="brands-block"><SectionHeading eyebrow="SELECCIÓN CONFIABLE" title="Marcas disponibles" copy="Trabajamos con marcas reconocidas y productos con trazabilidad." /><div className="brands-grid">{brands.slice(0, 6).map((brand, index) => <Link className={`brand-card brand-card--${brandTones[index % brandTones.length]}`} href={`/productos?marca=${brand.slug}`} key={brand.slug}><strong>{brand.name}</strong><span>{brand.count} {brand.count === 1 ? "producto" : "productos"}</span></Link>)}</div></div>
+              <div id="marcas" className="brands-block"><SectionHeading eyebrow="SELECCIÓN CONFIABLE" title="Marcas disponibles" copy="Trabajamos con marcas reconocidas y productos con trazabilidad." /><div className="brands-grid">{brands.slice(0, 6).map((brand) => <Link className={`brand-card ${brandStyles[brand.slug] ?? ""}`} href={`/productos?marca=${brand.slug}`} key={brand.slug}><span className={`brand-card__logo-frame${brand.slug === "ena-sport" ? " brand-card__logo-frame--ena" : brand.slug === "gold-nutrition" ? " brand-card__logo-frame--gold" : ""}`}><Image className={`brand-card__logo${brand.slug === "ena-sport" ? " brand-card__logo--invert" : ""}`} src={brandLogos[brand.slug]} alt={`Logo ${brand.name}`} width={150} height={56} sizes="(max-width: 768px) 38vw, 180px" /></span></Link>)}</div></div>
         </section>
 
         <section id="como-comprar" className="section-pad section-soft">
@@ -115,13 +130,6 @@ export default async function Home() {
         </section>
 
         <GoogleReviews/>
-        <section id="guias" className="section-pad container">
-          <SectionHeading eyebrow="ELEGÍ CON CRITERIO" title="Guías por categoría" copy="Lo básico de cada categoría para comparar opciones. Sin promesas mágicas ni atajos." link="Ver todo el catálogo" />
-          <div className="guides-grid">{guideCards.map((guide) => <Link className="guide-card" href={`/productos?categoria=${guide.slug}`} key={guide.slug}>
-            <div className="guide-media">{guide.product ? <ProductImage product={guide.product} decorative sizes="(max-width: 768px) 100vw, 33vw" /> : null}</div>
-            <div><p className="eyebrow"><span>{guide.category?.name.toUpperCase() ?? guide.slug.toUpperCase()}</span>{guide.category ? <small>{guide.category.count} {guide.category.count === 1 ? "producto" : "productos"}</small> : null}</p><h3>{guide.title}</h3><p>{guide.text}</p><span className="guide-link">Ver {guide.category?.name.toLowerCase() ?? "productos"} <ArrowRight aria-hidden="true"/></span></div>
-          </Link>)}</div>
-        </section>
       </main>
       <Footer />
     </>

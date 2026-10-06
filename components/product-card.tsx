@@ -5,12 +5,12 @@ import { AddToCartButton } from "./cart-buttons";
 import { ProductImage } from "./product-image";
 import { FavoriteButton } from "./account-controls";
 
-export function ProductCard({ product, compact = false, priority = false }: { product: ProductSummary; compact?: boolean; priority?: boolean }) {
+export function ProductCard({ product, compact = false, priority = false, className = "" }: { product: ProductSummary; compact?: boolean; priority?: boolean; className?: string }) {
   const href = `/productos/${product.slug}`;
   const highlights = paymentHighlights();
 
   return (
-    <article className={`product-card ${compact ? "product-card--compact" : ""}`}>
+    <article className={`product-card ${compact ? "product-card--compact" : ""} ${className}`}>
       <div className="product-image">
         <FavoriteButton productId={product.id} name={product.name}/>
         <Link href={href} aria-label={`Ver ${product.name}`}><ProductImage product={product} priority={priority} decorative/></Link>
