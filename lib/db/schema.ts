@@ -183,6 +183,18 @@ export const favorites = pgTable("favorites", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("favorites_user_product_idx").on(t.userId, t.productId)]);
 
+/** Búsquedas recientes privadas de cada cuenta. */
+export const searchHistory = pgTable("search_history", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  query: text("query").notNull(),
+  normalizedQuery: text("normalized_query").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("search_history_user_query_idx").on(t.userId, t.normalizedQuery),
+  index("search_history_user_created_idx").on(t.userId, t.createdAt),
+]);
+
 export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").references(() => users.id, { onDelete: "set null" }),

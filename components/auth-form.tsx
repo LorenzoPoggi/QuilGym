@@ -9,6 +9,14 @@ export function AuthForm({ register, google, available, next }: { register: bool
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  function explainError(code: string | undefined, status: number | undefined) {
+    if (status === 429) return "Demasiados intentos. Esperá un minuto y volvé a probar.";
+    if (status && status >= 500) return "El acceso no está disponible en este momento. Reintentá en unos minutos.";
+    if (register && code === "USER_ALREADY_EXISTS") return "Ese email ya tiene una cuenta. Probá ingresar.";
+    if (register && code === "PASSWORD_TOO_SHORT") return "La contraseña debe tener al menos 10 caracteres.";
+    if (register) return "No pudimos crear la cuenta. Revisá el nombre, email y contraseña.";
+    return "Email o contraseña incorrectos. Si todavía no tenés cuenta, registrate primero.";
+  }
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setPending(true); setError("");
     const form = new FormData(event.currentTarget);
@@ -17,7 +25,7 @@ export function AuthForm({ register, google, available, next }: { register: bool
     if (register && password !== form.get("confirm")) { setError("Las contraseñas no coinciden."); setPending(false); return; }
     try {
       const result = register ? await authClient.signUp.email({ email, password, name: String(form.get("name")).trim() }) : await authClient.signIn.email({ email, password, rememberMe: true });
-      if (result.error) { setError(result.error.status === 429 ? "Demasiados intentos. Esperá un minuto y volvé a probar." : register ? "No pudimos crear la cuenta. Revisá los datos; si ya tenés cuenta, ingresá." : "Email o contraseña incorrectos."); setPending(false); return; }
+      if (result.error) { setError(explainError(result.error.code, result.error.status)); setPending(false); return; }
       router.push(next);
       router.refresh();
     } catch { setError("No pudimos conectar. Intentá nuevamente."); setPending(false); }

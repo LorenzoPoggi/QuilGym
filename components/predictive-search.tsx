@@ -7,6 +7,7 @@ import { formatArs } from "@/lib/commerce";
 import { normalizeText } from "@/lib/slugify";
 import { ArrowRight, ArrowUpRight, CircleDot, History, Search, SearchX, X } from "lucide-react";
 import { ProductImage } from "./product-image";
+import { useAccount } from "./account-provider";
 
 const HISTORY_KEY = "quilgym:recent-searches";
 const suggestions = ["Creatina", "Proteína", "Pre-entreno", "Combos", "Shaker"];
@@ -84,10 +85,13 @@ function suggestCorrection(query: string, vocabulary: Map<string, string>, hasMa
 }
 
 export function PredictiveSearch({ products, initialQuery = "" }: { products: ProductSummary[]; initialQuery?: string }) {
+  const { user, loading } = useAccount();
   const [query, setQuery] = useState(initialQuery);
+  const [accountHistory, setAccountHistory] = useState<{ id: number; query: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const historyRaw = useSyncExternalStore(subscribeHistory, readHistoryRaw, () => "[]");
-  const history = useMemo(() => parseHistory(historyRaw), [historyRaw]);
+  const guestHistory = useMemo(() => parseHistory(historyRaw), [historyRaw]);
+  const history = user ? accountHistory.map((item) => item.query) : guestHistory;
   const deferredQuery = useDeferredValue(normalizeText(query.trim()));
 
   const index = useMemo(() => products.map((product) => ({ product, text: normalizeText(`${product.name} ${product.brand?.name ?? ""} ${product.category.name}`) })), [products]);
@@ -120,13 +124,46 @@ export function PredictiveSearch({ products, initialQuery = "" }: { products: Pr
     window.history.replaceState(window.history.state, "", url);
   }, [deferredQuery, query]);
 
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      const initial = initialQuery.trim();
+      if (initial.length >= 2) writeHistory([initial, ...guestHistory.filter((item) => normalizeText(item) !== normalizeText(initial))].slice(0, 5));
+      return;
+    }
+    const controller = new AbortController();
+    const initial = initialQuery.trim();
+    async function load() {
+      try {
+        const response = await fetch("/api/account/history", { cache: "no-store", signal: controller.signal });
+        if (!response.ok) return;
+        let data = await response.json();
+        if (initial.length >= 2) {
+          const saved = await fetch("/api/account/history", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: initial }), signal: controller.signal });
+          if (saved.ok) data = await saved.json();
+        }
+        if (!controller.signal.aborted) setAccountHistory(data.items);
+      } catch { /* La búsqueda funciona aunque el historial no esté disponible. */ }
+    }
+    void load();
+    return () => controller.abort();
+  // El historial inicial se carga una vez por usuario y URL de entrada.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, loading, initialQuery]);
+
   function remember() {
     if (trimmed.length < 2) return;
-    writeHistory([trimmed, ...history.filter((item) => normalizeText(item) !== normalizeText(trimmed))].slice(0, 5));
+    if (user) void fetch("/api/account/history", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: trimmed }) })
+      .then((response) => response.ok ? response.json() : null).then((data) => { if (data) setAccountHistory(data.items); }).catch(() => {});
+    else writeHistory([trimmed, ...history.filter((item) => normalizeText(item) !== normalizeText(trimmed))].slice(0, 5));
   }
 
   function forget(item: string) {
-    writeHistory(history.filter((entry) => entry !== item));
+    if (user) {
+      const id = accountHistory.find((entry) => entry.query === item)?.id;
+      if (id) void fetch("/api/account/history", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
+        .then((response) => response.ok ? response.json() : null).then((data) => { if (data) setAccountHistory(data.items); }).catch(() => {});
+    } else writeHistory(history.filter((entry) => entry !== item));
   }
 
   function clear() {

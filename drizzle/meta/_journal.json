@@ -36,6 +36,13 @@
       "when": 1791164825511,
       "tag": "0004_free_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791313311111,
+      "tag": "0005_famous_millenium_guard",
+      "breakpoints": true
     }
   ]
 }

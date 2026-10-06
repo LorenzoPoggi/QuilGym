@@ -8,15 +8,15 @@ E-commerce de suplementos deportivos construido con Next.js, TypeScript y Postgr
 
 - Home con destacados, combos y marcas leídos de la base.
 - Catálogo con categorías, filtros por marca, precio y stock, orden y paginación; todo en la URL para poder compartirlo.
-- Búsqueda predictiva sin distinción de acentos, por varias palabras, con historial local.
+- Búsqueda predictiva sin distinción de acentos, por varias palabras, con historial privado en Postgres para clientes conectados y local para visitantes.
 - Fichas de producto estáticas con revalidación cada 5 minutos y datos estructurados `Product`.
 - Carrito persistente (cookie HttpOnly + Postgres): agregar desde tarjetas o ficha, cantidades, cupones, contador en el header y drawer accesible. Precio, stock y cupón se recalculan siempre en el servidor y avisan si algo cambió.
 - Checkout con el resumen real del carrito; bloquea el pago si hay productos sin stock o precios sin confirmar.
 - Asesor conversacional: texto libre, preguntas según el contexto, historial durante la visita y sugerencias del catálogo con motivos. Sin opciones múltiples ni preguntas obligatorias de edad. No prescribe dosis ni exige comprar; requiere conexión a IA.
 - Botón flotante gris del asesor con bienvenida y acceso a la conversación completa.
 - Registro con nombre, email y contraseña; sesión persistente y revocable de 30 días con Better Auth. Acceso con Google preparado (requiere credenciales).
-- Favoritos por usuario en tarjetas y fichas, con sección propia en `/cuenta`.
-- Cuenta con favoritos, pedidos realizados conectado y consentimiento opcional para novedades; aún no se envían campañas.
+- Favoritos por usuario en tarjetas y fichas, con filtros por categoría en `/cuenta/favoritos`.
+- Cuenta con menú desplegable («Ver perfil», compras, historial, favoritos y configuración), compras con filtros y detalle, historial de búsqueda por usuario y siete avatares de temática deportiva más iniciales. El resumen del perfil muestra solo sus tarjetas; las demás páginas conservan la navegación lateral. Tras ingresar o registrarse se vuelve al inicio, salvo que una acción previa tenga un destino concreto. Aún no se envían campañas.
 - Carrito offcanvas con animación de entrada/salida, foco modal, Escape y respeto por movimiento reducido.
 - Ubicación clicable y acceso a opiniones originales de Google. Carrusel preparado para Google Places; sin API configurada muestra el enlace a Maps, sin reseñas ficticias.
 - Checkout con cotización firmada, órdenes persistentes, idempotencia, confirmación dinámica y simulador local. Adaptadores de Mercado Pago, emails y crons listos para configurar.
@@ -77,7 +77,26 @@ La conversación vive únicamente en memoria del navegador y se envía al provee
 
 El registro con email/contraseña funciona en desarrollo sin configurar Google. Las contraseñas se guardan con hash scrypt y las sesiones se verifican en Postgres mediante cookies HttpOnly; no se guarda el acceso en localStorage.
 
-Para habilitar Google, completar `BETTER_AUTH_SECRET` (aleatorio, 32+ caracteres), `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`. En Google Cloud, registrar el callback `http://localhost:3000/api/auth/callback/google` y el callback HTTPS del dominio cuando exista. Reiniciar el servidor después de cambiar variables. Sin credenciales, el botón aparece deshabilitado y explica su estado.
+Para habilitar Google, hace falta un **cliente OAuth de aplicación web** en Google Cloud. La clave de Google AI Studio del asesor no sirve para iniciar sesión:
+
+1. Entrar en [Google Auth Platform](https://console.cloud.google.com/auth/overview), elegir el proyecto y completar «Información de la marca»/«Público» con el nombre QuilGym y el correo de contacto. Elegir público externo si deben ingresar clientes con cualquier cuenta Google. Si queda en modo de prueba, agregar las cuentas Gmail que harán las pruebas a «Usuarios de prueba».
+2. En la pantalla «Clientes», pulsar «+ Crear cliente» y seleccionar «Aplicación web». En «Orígenes JavaScript autorizados» agregar `http://localhost:3000` y el dominio HTTPS definitivo. En «URI de redirección autorizados» agregar **exactamente** `http://localhost:3000/api/auth/callback/google` y `https://TU-DOMINIO/api/auth/callback/google`. Usar el dominio real mostrado en Vercel, sin barra final.
+3. Copiar el ID y secreto del **cliente OAuth** a `.env.local` (sin comillas si no contienen espacios):
+
+```env
+BETTER_AUTH_SECRET=secreto_aleatorio_de_al_menos_32_caracteres
+BETTER_AUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=id_del_cliente_oauth
+GOOGLE_CLIENT_SECRET=secreto_del_cliente_oauth
+```
+
+4. Reiniciar `npm run dev` y probar con un Gmail autorizado. Para Vercel, cargar las cuatro variables en el proyecto: `BETTER_AUTH_URL` debe ser la URL **HTTPS de producción**, y el secreto debe ser privado y estable. Redesplegar luego de cambiarlas. Nunca pegar secretos en un chat ni subir `.env.local` a Git.
+
+Crear el cliente OAuth para inicio de sesión básico no exige activar una API paga. No habilitar facturación, Identity Platform ni permisos de otros servicios de Google para este paso. Si la consola solicita aceptar un producto de pago o vincular una tarjeta para continuar, detenerse y revisar antes de seguir. Esta integración usa Better Auth y la base propia, no Firebase Authentication/Identity Platform. Ver [la guía oficial de configuración de Google](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid) y [Google Auth Platform](https://support.google.com/cloud/answer/15548748).
+
+En local, email/contraseña funciona aunque Google no esté configurado. El registro crea una cuenta nueva; para ingresar después hay que usar ese mismo email y contraseña. Google crea una cuenta al entrar por primera vez si ese email no existe. Si ya existe una cuenta de contraseña con ese email pero aún no está verificada, Better Auth **no** la vincula automáticamente: ingresá primero con la contraseña y usá «Configuración → Vincular mi cuenta con Google». Así se comprueban ambos accesos sin relajar la protección del email local. Las cuentas ya verificadas pueden vincularse automáticamente si Google confirma el mismo email.
+
+En «Configuración» se puede eliminar la cuenta definitivamente. Se exige escribir `ELIMINAR` y, si hay contraseña, ingresarla. Las cuentas Google sin contraseña requieren una sesión reciente; si venció, hay que salir y volver a ingresar. Better Auth borra usuario, credenciales y sesiones; las relaciones en la base eliminan favoritos e historial. Los pedidos ya emitidos se conservan, pero se desvinculan del usuario y mantienen sus datos de compra para poder gestionarlos.
 
 Producción requiere un secreto propio y una URL HTTPS; nunca utiliza el secreto exclusivo de desarrollo. Antes del lanzamiento hay que agregar verificación de email, recuperación de contraseña y políticas de privacidad con los datos del negocio.
 
@@ -131,12 +150,17 @@ La consulta pública desde este entorno devuelve una vista limitada sin los text
 | `/api/advisor` | Conversación con el LLM, POST de mismo origen y sin caché |
 | `/cuenta/ingresar` | Email/contraseña y acceso con Google configurable |
 | `/cuenta/registro` | Registro de cliente |
-| `/cuenta` | Favoritos, pedidos y preferencias; requiere sesión |
+| `/cuenta` | Resumen de la cuenta; requiere sesión |
+| `/cuenta/compras` | Pedidos propios, búsqueda y filtros |
+| `/cuenta/historial` | Búsquedas privadas del usuario, con opción de borrar |
+| `/cuenta/favoritos` | Productos guardados, filtrables por categoría |
+| `/cuenta/configuracion` | Nombre, avatar, preferencias y salida |
 | `/carrito` | Carrito |
 | `/checkout` | Finalización de compra |
 | `/checkout/confirmacion/[orderId]` | Pedido real o demo, autorizado por carrito, cuenta o link firmado |
 | `/api/auth/[...all]` | Endpoints de Better Auth |
 | `/api/account/favorites` | Favoritos privados de la sesión; sin caché |
+| `/api/account/history` | Historial privado de búsquedas, requiere sesión |
 | `/api/reviews` | Datos de Google configurado o estado sin datos; sin caché |
 
 ## Limitaciones actuales

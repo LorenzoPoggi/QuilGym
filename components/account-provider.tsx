@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { setFavorite } from "@/lib/account-actions";
 
 const AccountContext = createContext<{
-  user: { id: string; name: string; email: string } | null; loading: boolean;
+  user: { id: string; name: string; email: string; image?: string | null } | null; loading: boolean; authLoading: boolean;
   ids: number[]; toggle: (id: number) => Promise<void>; error: string;
 } | null>(null);
 const noFavorites: number[] = [];
@@ -35,7 +35,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       router.refresh();
     } catch { setError("No pudimos actualizar tus favoritos. Intentá nuevamente."); }
   }, [user, ids, router]);
-  return <AccountContext.Provider value={{ user, loading: isPending || Boolean(userId && saved.owner !== userId), ids: user ? ids : noFavorites, toggle, error }}>{children}</AccountContext.Provider>;
+  return <AccountContext.Provider value={{ user, authLoading: isPending, loading: isPending || Boolean(userId && saved.owner !== userId), ids: user ? ids : noFavorites, toggle, error }}>{children}</AccountContext.Provider>;
 }
 export function useAccount() {
   const context = useContext(AccountContext);

@@ -1,15 +1,36 @@
 "use client";
 import Link from "next/link";
-import { Star, UserRound } from "lucide-react";
+import { ChevronDown, History, LogOut, Package, Settings, Star, Trash2, UserRound } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "./account-provider";
 import { authClient } from "@/lib/auth-client";
 import { setMarketingConsent } from "@/lib/account-actions";
+import { AccountAvatar } from "./account-avatar";
 
 export function AccountLink() {
-  const { user } = useAccount();
-  return <Link className="account-link" aria-label={user ? "Mi cuenta" : "Ingresar a mi cuenta"} href={user ? "/cuenta" : "/cuenta/ingresar"}><UserRound aria-hidden="true"/><span>{user ? `Hola, ${user.name.split(" ")[0]}` : "Hola"}<br/><strong>{user ? "Mi cuenta" : "Ingresar"}</strong></span></Link>;
+  const { user, authLoading } = useAccount();
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  if (authLoading && !user) return <span className="account-link account-link--loading" role="status" aria-label="Cargando tu cuenta"><span className="account-link-skeleton-icon"/><span className="account-link-skeleton-text"/></span>;
+  if (!user) return <Link className="account-link" aria-label="Ingresar a mi cuenta" href="/cuenta/ingresar"><UserRound aria-hidden="true"/><span>Hola<br/><strong>Ingresar</strong></span></Link>;
+  return <div className={`account-menu ${open ? "is-open" : ""}`} onMouseLeave={() => setOpen(false)} onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}>
+    <button type="button" className="account-menu-trigger" aria-expanded={open} aria-controls="account-menu-panel" onClick={() => setOpen((value) => !value)} onMouseEnter={() => setOpen(true)}>
+      <AccountAvatar name={user.name} image={user.image}/><span>Hola<br/><strong>{user.name.split(" ")[0]}</strong></span><ChevronDown aria-hidden="true"/>
+    </button>
+    <div id="account-menu-panel" className="account-menu-panel" aria-label="Menú de tu cuenta">
+      <div className="account-menu-identity"><AccountAvatar name={user.name} image={user.image} size="large"/><span><strong>{user.name}</strong><small>{user.email}</small></span></div>
+      <nav aria-label="Secciones de tu cuenta">
+        <Link href="/cuenta" onClick={() => setOpen(false)}><UserRound aria-hidden="true"/>Ver perfil</Link>
+        <Link href="/cuenta/compras" onClick={() => setOpen(false)}><Package aria-hidden="true"/>Compras</Link>
+        <Link href="/cuenta/historial" onClick={() => setOpen(false)}><History aria-hidden="true"/>Historial</Link>
+        <Link href="/cuenta/favoritos" onClick={() => setOpen(false)}><Star aria-hidden="true"/>Favoritos</Link>
+        <Link href="/cuenta/configuracion" onClick={() => setOpen(false)}><Settings aria-hidden="true"/>Configuración</Link>
+      </nav>
+      <button type="button" className="account-menu-signout" onClick={async () => { await authClient.signOut(); setOpen(false); router.push("/"); router.refresh(); }}><LogOut aria-hidden="true"/>Salir</button>
+      <Link className="account-menu-danger" href="/cuenta/configuracion#eliminar-cuenta" onClick={() => setOpen(false)}><Trash2 aria-hidden="true"/>Eliminar cuenta</Link>
+    </div>
+  </div>;
 }
 export function FavoriteButton({ productId, name }: { productId: number; name: string }) {
   const { ids, toggle, loading, error } = useAccount();

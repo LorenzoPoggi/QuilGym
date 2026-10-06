@@ -11,8 +11,10 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   await page.getByLabel("Contraseña", { exact: true }).fill(password);
   await page.getByLabel("Repetí la contraseña").fill(password);
   await page.getByRole("button", { name: "Crear cuenta", exact: true }).click();
-  await expect(page).toHaveURL(/\/cuenta$/, { timeout: 60000 });
+  await expect(page).toHaveURL("/", { timeout: 60000 });
+  await page.goto("/cuenta");
   await expect(page.getByRole("heading", { name: "Hola, Cliente" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Secciones de tu cuenta" })).toHaveCount(0);
   await page.goto("/productos");
   const favorite = page.getByRole("button", { name: /^Guardar en favoritos:/ }).first();
   await expect(favorite).toBeEnabled();
@@ -21,8 +23,8 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   await expect(page.getByRole("button", { name: `Quitar de favoritos: ${productName}`, exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.reload();
   await expect(page.getByRole("button", { name: `Quitar de favoritos: ${productName}`, exact: true })).toHaveAttribute("aria-pressed", "true");
-  await page.goto("/cuenta");
-  await expect(page.locator("#favoritos").getByRole("heading", { name: productName, exact: true })).toBeVisible();
+  await page.goto("/cuenta/favoritos");
+  await expect(page.getByRole("heading", { name: productName, exact: true })).toBeVisible();
   await page.screenshot({ path: info.outputPath("account.png"), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const cookies = await page.context().cookies();
@@ -56,8 +58,9 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   expect(ownedResponse?.status()).toBe(200);
   await page.getByRole("button", { name: "Simular pago aprobado" }).click();
   await expect(page.getByRole("heading", { name: "¡Tu pago está aprobado!" })).toBeVisible({ timeout: 30000 });
-  await page.goto("/cuenta");
-  await expect(page.locator("#pedidos").getByRole("link", { name: /Pedido .*De prueba/ })).toHaveCount(1);
+  await page.goto("/cuenta/compras");
+  await expect(page.getByRole("navigation", { name: "Secciones de tu cuenta" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver compra" })).toHaveCount(1);
   await page.getByRole("button", { name: "Cerrar sesión", exact: true }).click();
   await expect(page).toHaveURL("/");
   await page.goto("/cuenta/ingresar");
@@ -67,10 +70,11 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   await expect(page.locator(".auth-card").getByRole("alert")).toContainText("Email o contraseña incorrectos");
   await page.getByLabel("Contraseña", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Ingresar", exact: true }).click();
-  await expect(page).toHaveURL(/\/cuenta$/, { timeout: 60000 });
-  await expect(page.locator("#favoritos").getByRole("heading", { name: productName, exact: true })).toBeVisible();
+  await expect(page).toHaveURL("/", { timeout: 60000 });
+  await page.goto("/cuenta/favoritos");
+  await expect(page.getByRole("heading", { name: productName, exact: true })).toBeVisible();
   await page.getByRole("button", { name: `Quitar de favoritos: ${productName}`, exact: true }).click();
-  await expect(page.locator("#favoritos").getByRole("heading", { name: productName, exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: productName, exact: true })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

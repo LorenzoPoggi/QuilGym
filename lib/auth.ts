@@ -19,10 +19,11 @@ function createAuth() {
       user: users, session: authSessions, account: authAccounts, verification: authVerifications, rateLimit: authRateLimits,
     } }),
     emailAndPassword: { enabled: true, minPasswordLength: 10, maxPasswordLength: 128 },
+    user: { deleteUser: { enabled: true } },
     socialProviders: googleConfigured() ? { google: {
       clientId: process.env.GOOGLE_CLIENT_ID!, clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     } } : {},
-    account: { accountLinking: { enabled: false }, encryptOAuthTokens: true },
+    account: { accountLinking: { enabled: true }, encryptOAuthTokens: true },
     advanced: { cookiePrefix: "quilgym" },
     session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24, cookieCache: { enabled: false } },
     rateLimit: { enabled: true, storage: "database", window: 60, max: 100,
