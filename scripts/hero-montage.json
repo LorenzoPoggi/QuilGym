@@ -1,0 +1,88 @@
+{
+  "$comment": "Receta del montaje del hero (9 cortes, 24 fps, 13,33 s, sin audio). La lee scripts/build-hero-video.mjs. Tiempos en segundos de la fuente; 'out' = duración en el montaje; zoom/ox/oy = recorte 16:9 sobre el cuadro escalado; vx = centro del recorte 9:16; oy también se usa en vertical. posterFrame = cuadro (del primer corte) que se usa de poster: en desktop, la cara queda a la derecha del texto.",
+  "fps": 24,
+  "grade": "eq=contrast=1.12:brightness=-0.01:saturation=0.68,curves=master='0/0 0.07/0.03 0.30/0.27 0.60/0.62 0.90/0.90 1/0.96',colorbalance=rs=0.03:bs=-0.03:rm=0.045:gm=0.01:bm=-0.045:rh=0.02:bh=-0.03",
+  "vignette": "PI/4.5",
+  "grain": 3,
+  "fadeOut": 0.25,
+  "outputs": [
+    { "name": "hero-1280", "vertical": false, "scale": "1280:720", "posterFrame": 2, "mp4Crf": 25, "webmCrf": 36, "maxBytes": 3000000 },
+    { "name": "hero-720x1280", "vertical": true, "posterFrame": 12, "mp4Crf": 28, "webmCrf": 40, "maxBytes": 1500000 }
+  ],
+  "clips": {
+    "mixkit-40948.mp4": {
+      "title": "Boxer training in the ring",
+      "page": "https://mixkit.co/free-stock-video/boxer-training-in-the-ring-40948/",
+      "download": "https://assets.mixkit.co/videos/40948/40948-1080.mp4",
+      "license": "Mixkit Stock Video Free License (https://mixkit.co/license/#videoFree)",
+      "bytes": 62840534
+    },
+    "mixkit-4596.mp4": {
+      "title": "Man bandaging his hand before boxing",
+      "page": "https://mixkit.co/free-stock-video/man-bandaging-his-hand-before-boxing-4596/",
+      "download": "https://assets.mixkit.co/videos/4596/4596-1080.mp4",
+      "license": "Mixkit Stock Video Free License (https://mixkit.co/license/#videoFree)",
+      "bytes": 57381806
+    },
+    "mixkit-52088.mp4": {
+      "title": "A shirtless young man swings the battle ropes with vigorous",
+      "page": "https://mixkit.co/free-stock-video/a-shirtless-young-man-swings-the-battle-ropes-with-vigorous-52088/",
+      "download": "https://assets.mixkit.co/videos/52088/52088-1080.mp4",
+      "license": "Mixkit Stock Video Free License (https://mixkit.co/license/#videoFree)",
+      "bytes": 40730640
+    },
+    "mixkit-40245.mp4": {
+      "title": "Athlete lifting weights in a crossfit gym",
+      "page": "https://mixkit.co/free-stock-video/athlete-lifting-weights-in-a-crossfit-gym-40245/",
+      "download": "https://assets.mixkit.co/videos/40245/40245-1080.mp4",
+      "license": "Mixkit Stock Video Free License (https://mixkit.co/license/#videoFree)",
+      "bytes": 42517278
+    },
+    "mixkit-44410.mp4": {
+      "title": "Muscular man doing pull ups on a bar",
+      "page": "https://mixkit.co/free-stock-video/muscular-man-doing-pull-ups-on-a-bar-44410/",
+      "download": "https://assets.mixkit.co/videos/44410/44410-1080.mp4",
+      "license": "Mixkit Stock Video Free License (https://mixkit.co/license/#videoFree)",
+      "bytes": 126270846
+    },
+    "coverr-4532.mp4": {
+      "title": "Men training in the gym",
+      "page": "https://coverr.co/videos/men-training-in-the-gym-h03ds40nee",
+      "download": "https://cdn.coverr.co/videos/coverr-men-training-in-the-gym-4532/1080p.mp4",
+      "license": "Coverr License (https://coverr.co/license)",
+      "bytes": 3899445
+    },
+    "mixkit-100552.mp4": {
+      "title": "Man doing pull ups in the gym",
+      "page": "https://mixkit.co/free-stock-video/man-doing-pull-ups-in-the-gym-100552/",
+      "download": "https://assets.mixkit.co/active_storage/video_items/100552/1725385923/100552-video-1080.mp4",
+      "license": "Mixkit Stock Video Free License (https://mixkit.co/license/#videoFree)",
+      "bytes": 34139518
+    },
+    "mixkit-40250.mp4": {
+      "title": "Man throwing barbells to the floor",
+      "page": "https://mixkit.co/free-stock-video/man-throwing-barbells-to-the-floor-40250/",
+      "download": "https://assets.mixkit.co/videos/40250/40250-1080.mp4",
+      "license": "Mixkit Stock Video Free License (https://mixkit.co/license/#videoFree)",
+      "bytes": 50677541
+    },
+    "mixkit-40985.mp4": {
+      "title": "Intense mixed martial arts combat between two women",
+      "page": "https://mixkit.co/free-stock-video/intense-mixed-martial-arts-combat-between-two-women-40985/",
+      "download": "https://assets.mixkit.co/videos/40985/40985-1080.mp4",
+      "license": "Mixkit Stock Video Free License (https://mixkit.co/license/#videoFree)",
+      "bytes": 89093971
+    }
+  },
+  "cuts": [
+    { "clip": "mixkit-40948.mp4", "shows": "Boxeador con manoplas en el ring, cara a cámara", "start": 13.75, "out": 2, "speed": 1, "vx": 740 },
+    { "clip": "mixkit-4596.mp4", "shows": "Vendaje de manos (cámara lenta 0,8x)", "start": 0, "out": 1.8, "speed": 0.8, "vx": 960, "pre": "eq=gamma=1.1" },
+    { "clip": "mixkit-52088.mp4", "shows": "Sogas de batalla en galpón oscuro", "start": 5.5, "out": 1.7, "speed": 1, "zoom": 1.3, "ox": 513, "oy": 300, "vx": 1473 },
+    { "clip": "mixkit-40245.mp4", "shows": "Cargada con barra, luz azul (el zoom saca un póster con texto)", "start": 0, "out": 1.6, "speed": 1, "zoom": 1.15, "ox": 288, "oy": 120, "vx": 1250, "pre": "eq=gamma=1.4:saturation=0.55:contrast=1.05" },
+    { "clip": "mixkit-44410.mp4", "shows": "Dominadas desde abajo, luz roja de borde", "start": 3.25, "out": 1.5, "speed": 1, "vx": 900 },
+    { "clip": "coverr-4532.mp4", "shows": "Dos siluetas con manoplas frente a un ventanal", "start": 0, "out": 1.4, "speed": 1, "zoom": 1.45, "ox": 795, "oy": 403, "vx": 1755, "pre": "eq=gamma=1.1" },
+    { "clip": "mixkit-100552.mp4", "shows": "Elevación de piernas colgado, cara de esfuerzo", "start": 4.5, "out": 1.25, "speed": 1, "vx": 840 },
+    { "clip": "mixkit-40250.mp4", "shows": "Barra cargada cayendo al piso, niebla", "start": 1.9, "out": 1, "speed": 1, "vx": 960, "pre": "eq=gamma=1.3:saturation=0.5" },
+    { "clip": "mixkit-40985.mp4", "shows": "MMA en la jaula; cierra con fundido a negro", "start": 14.25, "out": 1.1, "speed": 1, "vx": 450, "pre": "eq=saturation=0.75" }
+  ]
+}

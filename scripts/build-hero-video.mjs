@@ -1,62 +1,124 @@
 /**
  * Genera el video del hero de la home en public/assets/hero/:
- * hero-1280.{mp4,webm} (16:9), hero-720x1280.{mp4,webm} (9:16) y sus posters webp.
+ * hero-1280.{mp4,webm} (16:9), hero-720x1280.{mp4,webm} (9:16) y sus posters webp. Sin audio.
  *
- * Fuente: Pexels, video 7690496 «A man lifting weights in the gym» (cottonbro studio).
- * https://www.pexels.com/video/a-man-lifting-weights-in-the-gym-7690496/
- * Licencia Pexels (https://www.pexels.com/license/): uso comercial gratuito, sin atribución obligatoria.
- * La versión vertical sale de recortar el mismo clip: el 36072020 propuesto para mobile
- * muestra un banner con logo de gimnasio y equipos con marca, así que se descartó.
- * Los tramos usados (0–10 s y 44,4–54,4 s) se revisaron cuadro a cuadro: sin logos ni marcas.
+ * Es un montaje de 9 cortes (13,33 s, 24 fps) armado con clips de:
+ * - Mixkit, Stock Video Free License (https://mixkit.co/license/#videoFree): uso comercial sin atribución.
+ * - Coverr, Coverr License (https://coverr.co/license): uso comercial sin atribución.
+ * La receta (fuente, página, URL de descarga, licencia, tramo, velocidad, zoom, recortes y grade)
+ * está en scripts/hero-montage.json. Los clips se guardan en .cache/hero-montaje/clips/ (gitignored)
+ * y se bajan solos si faltan.
  *
- *   curl -L -o .cache/hero/pexels-7690496.mp4 https://www.pexels.com/download/video/7690496/
  *   npm run video:hero
  */
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { mkdir, rm, stat } from "node:fs/promises";
+import { createWriteStream, existsSync, readFileSync } from "node:fs";
+import { mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import ffmpeg from "ffmpeg-static";
 import sharp from "sharp";
 
 const root = path.resolve(import.meta.dirname, "..");
-const source = path.join(root, ".cache/hero/pexels-7690496.mp4");
+const recipe = JSON.parse(readFileSync(path.join(import.meta.dirname, "hero-montage.json"), "utf8"));
+const clipsDir = path.join(root, ".cache/hero-montaje/clips");
+const work = path.join(root, ".cache/hero-montaje/work");
 const out = path.join(root, "public/assets/hero");
-const LENGTH = 9, FADE = 1;
-
-if (!existsSync(source)) throw new Error(`Falta ${path.relative(root, source)}: bajalo con el curl del encabezado.`);
-
-// Grade oscuro y desaturado: el texto blanco del hero va encima.
-const grade = "eq=contrast=1.04:saturation=0.6,curves=all='0/0 0.5/0.44 1/0.9'";
-const variants = [
-  // Desktop: curl sentado con el sujeto a la derecha; la izquierda queda libre para el texto.
-  { name: "hero-1280", start: 44.4, frame: "crop=3840:2160:256:0,scale=1280:720:flags=lanczos", mp4Crf: 23, webmCrf: 32, maxBytes: 3_000_000 },
-  // Mobile: la mano que levanta la mancuerna, centrada en el recorte 9:16.
-  { name: "hero-720x1280", start: 0, frame: "crop=1215:2160:1300:0,scale=720:1280:flags=lanczos", mp4Crf: 24, webmCrf: 34, maxBytes: 1_500_000 },
-];
-
-// Loop limpio: el último segundo funde con el primero, así el cuadro final coincide con el inicial.
-const loop = (frame) => `[0:v]${frame},${grade},fps=25,split[a][b];`
-  + `[a]trim=start=${FADE}:end=${LENGTH + FADE},setpts=PTS-STARTPTS[main];`
-  + `[b]trim=start=0:end=${FADE},setpts=PTS-STARTPTS[head];`
-  + `[main][head]xfade=transition=fade:duration=${FADE}:offset=${LENGTH - FADE},format=yuv420p[v]`;
+const { fps } = recipe;
 
 const run = (args) => execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", "-y", ...args], { stdio: "inherit" });
 const kb = async (file) => `${Math.round((await stat(file)).size / 1024)} KB`;
+const pad = (i) => String(i + 1).padStart(2, "0");
 
+/** Baja el clip de su URL directa si no está en caché; si no puede, corta con instrucciones. */
+async function ensureClip(file) {
+  const clip = recipe.clips[file];
+  const target = path.join(clipsDir, file);
+  if (existsSync(target)) return target;
+  console.log(`Bajando ${file} de ${clip.download}…`);
+  const partial = `${target}.part`;
+  try {
+    const response = await fetch(clip.download, { headers: { "user-agent": "Mozilla/5.0", referer: new URL(clip.page).origin + "/" } });
+    if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
+    await pipeline(Readable.fromWeb(response.body), createWriteStream(partial));
+    const { size } = await stat(partial);
+    if (clip.bytes && size !== clip.bytes) throw new Error(`pesa ${size} bytes y se esperaban ${clip.bytes}`);
+    await rename(partial, target);
+    return target;
+  } catch (error) {
+    await rm(partial, { force: true });
+    throw new Error(
+      `No se pudo bajar ${file} (${error.message}).\n`
+      + `Bajalo a mano desde ${clip.page} (${clip.license}) en 1080p y guardalo como ${path.relative(root, target)}:\n`
+      + `  curl -L -o "${path.relative(root, target)}" "${clip.download}"`,
+    );
+  }
+}
+
+/** Cadena por plano: grade previo, velocidad, 24 fps, zoom, recorte 16:9 o 9:16, grade común y del clip. */
+function segmentFilter(cut, vertical) {
+  const zoom = cut.zoom ?? 1;
+  const w = Math.round((1920 * zoom) / 2) * 2, h = Math.round((1080 * zoom) / 2) * 2;
+  const chain = [];
+  if (cut.pre) chain.push(cut.pre);
+  chain.push(`setpts=(PTS-STARTPTS)/${cut.speed}`, `fps=${fps}`);
+  if (zoom !== 1) chain.push(`scale=${w}:${h}:flags=lanczos`);
+  if (vertical) {
+    const vw = 608; // 608x1080 ≈ 9:16, después se escala a 720x1280.
+    const x = Math.max(0, Math.min(w - vw, Math.round(cut.vx - vw / 2)));
+    chain.push(`crop=${vw}:1080:${x}:${cut.oy ?? 0}`, "scale=720:1280:flags=lanczos,setsar=1");
+  } else {
+    chain.push(`crop=1920:1080:${cut.ox ?? 0}:${cut.oy ?? 0}`);
+  }
+  chain.push(recipe.grade);
+  if (cut.grade) chain.push(cut.grade);
+  chain.push("format=yuv420p");
+  return chain.join(",");
+}
+
+await mkdir(clipsDir, { recursive: true });
+await mkdir(work, { recursive: true });
 await mkdir(out, { recursive: true });
-for (const { name, start, frame, mp4Crf, webmCrf, maxBytes } of variants) {
-  const input = ["-ss", String(start), "-t", String(LENGTH + FADE), "-i", source];
-  const mp4 = path.join(out, `${name}.mp4`), webm = path.join(out, `${name}.webm`);
-  run([...input, "-filter_complex", loop(frame), "-map", "[v]", "-an", "-c:v", "libx264", "-preset", "slow", "-crf", String(mp4Crf), "-profile:v", "high", "-movflags", "+faststart", mp4]);
-  run([...input, "-filter_complex", loop(frame), "-map", "[v]", "-an", "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", String(webmCrf), "-row-mt", "1", "-deadline", "good", "-cpu-used", "2", webm]);
+for (const file of new Set(recipe.cuts.map((cut) => cut.clip))) await ensureClip(file);
 
-  // Poster = primer cuadro del video, para que el fade no salte.
-  const png = path.join(out, `${name}-poster.png`), poster = path.join(out, `${name}-poster.webp`);
-  run(["-i", mp4, "-frames:v", "1", png]);
-  await sharp(png).webp({ quality: 72 }).toFile(poster);
-  await rm(png);
+const frames = recipe.cuts.reduce((sum, cut) => sum + Math.round(cut.out * fps), 0);
+const fadeStart = (frames / fps - recipe.fadeOut).toFixed(3);
 
-  for (const file of [mp4, webm]) if ((await stat(file)).size > maxBytes) console.warn(`⚠ ${path.basename(file)} supera ${maxBytes / 1e6} MB`);
-  console.log(name, "mp4", await kb(mp4), "· webm", await kb(webm), "· poster", await kb(poster));
+for (const output of recipe.outputs) {
+  const suffix = output.vertical ? "-v" : "";
+
+  // 1) Cada plano a un intermedio casi sin pérdida (CRF 10) con la cantidad exacta de cuadros.
+  const list = [];
+  for (const [i, cut] of recipe.cuts.entries()) {
+    const segment = path.join(work, `seg${pad(i)}${suffix}.mp4`);
+    run([
+      "-ss", String(cut.start), "-t", (cut.out * cut.speed + 0.2).toFixed(3), "-i", path.join(clipsDir, cut.clip),
+      "-an", "-vf", segmentFilter(cut, output.vertical), "-frames:v", String(Math.round(cut.out * fps)),
+      "-c:v", "libx264", "-preset", "medium", "-crf", "10", "-r", String(fps), segment,
+    ]);
+    list.push(`file '${path.basename(segment)}'`);
+  }
+  const listFile = path.join(work, `list${suffix}.txt`);
+  await writeFile(listFile, list.join("\n"));
+
+  // 2) Viñeta, grano y fundido a negro al final: el loop vuelve en corte seco al boxeador.
+  const post = [
+    `vignette=angle=${recipe.vignette}`, `noise=alls=${recipe.grain}:allf=t`,
+    `fade=t=out:st=${fadeStart}:d=${recipe.fadeOut}`, "format=yuv420p",
+    ...(output.scale ? [`scale=${output.scale}:flags=lanczos`] : []),
+  ].join(",");
+  const input = ["-f", "concat", "-safe", "0", "-i", listFile, "-an", "-vf", post];
+  const mp4 = path.join(out, `${output.name}.mp4`), webm = path.join(out, `${output.name}.webm`);
+  run([...input, "-c:v", "libx264", "-preset", "slow", "-crf", String(output.mp4Crf), "-profile:v", "high", "-pix_fmt", "yuv420p", "-movflags", "+faststart", mp4]);
+  run([...input, "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", String(output.webmCrf), "-pix_fmt", "yuv420p", "-row-mt", "1", "-deadline", "good", "-cpu-used", "2", "-fflags", "+bitexact", webm]);
+
+  // 3) Poster = cuadro nítido del primer corte (el boxeador, inicio del loop), así no salta al arrancar el video.
+  const png = path.join(work, `${output.name}-poster.png`), poster = path.join(out, `${output.name}-poster.webp`);
+  run(["-i", mp4, "-vf", `select=eq(n\\,${output.posterFrame})`, "-frames:v", "1", png]);
+  await sharp(png).webp({ quality: 80 }).toFile(poster);
+
+  for (const file of [mp4, webm]) if ((await stat(file)).size > output.maxBytes) console.warn(`⚠ ${path.basename(file)} supera ${output.maxBytes / 1e6} MB`);
+  if ((await stat(poster)).size > 120_000) console.warn(`⚠ ${path.basename(poster)} supera 120 KB`);
+  console.log(output.name, "mp4", await kb(mp4), "· webm", await kb(webm), "· poster", await kb(poster), `· ${frames} cuadros (${(frames / fps).toFixed(2)} s)`);
 }

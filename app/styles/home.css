@@ -115,6 +115,8 @@
 .footer-bottom { margin-top: 0; }
 
 @media (max-width: 1100px) {
+  /* En tablet el texto ocupa casi todo el ancho: el degradé no puede aclararse tanto a la derecha. */
+  .hero-media::after { background: linear-gradient(90deg, rgba(12,14,15,.8) 0%, rgba(12,14,15,.7) 50%, rgba(12,14,15,.62) 80%, rgba(12,14,15,.4) 100%); }
   .steps-grid { grid-template-columns: repeat(2, 1fr); }
   .advisor-banner { grid-template-columns: auto 1fr; background: #33383b; }
   .advisor-cta { grid-column: 1 / -1; justify-items: start; }
@@ -127,6 +129,10 @@
   .hero { align-items: end; }
   .hero-media::after { background: linear-gradient(180deg, rgba(12,14,15,.3) 0%, rgba(12,14,15,.4) 30%, rgba(12,14,15,.72) 62%, rgba(12,14,15,.85) 100%); }
   .hero-video-toggle { top: 16px; right: 16px; }
+  /* El chip queda en la zona clara del degradé (cara del boxeador en el montaje): fondo oscuro para AA. */
+  .hero .chip { background: rgba(12,14,15,.5); }
+  /* El texto va abajo: el recorte sobrante sale de arriba y las caras quedan por encima del chip. */
+  .hero-poster, .hero-video { object-position: 50% 100%; }
   .hero-content { padding-block: 32px; }
   .hero h1 { font-size: clamp(2.3rem, 10vw, 3.2rem); }
   .brand-track li { padding-inline: 22px; }
