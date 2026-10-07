@@ -61,6 +61,7 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   await page.goto("/cuenta/compras");
   await expect(page.getByRole("navigation", { name: "Secciones de tu cuenta" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver compra" })).toHaveCount(1);
+  await page.goto("/cuenta/configuracion");
   await page.getByRole("button", { name: "Cerrar sesión", exact: true }).click();
   await expect(page).toHaveURL("/");
   await page.goto("/cuenta/ingresar");

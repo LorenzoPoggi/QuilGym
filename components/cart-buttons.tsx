@@ -12,7 +12,7 @@ export function CartPill() {
   const { cart, loaded, openCart } = useCart();
   const label = loaded ? `Carrito: ${cart.itemCount} ${cart.itemCount === 1 ? "producto" : "productos"}, ${formatArs(cart.totalArs)}` : "Carrito";
   return (
-    <Link className="cart-pill" href="/carrito" aria-label={label} onClick={(event) => { event.preventDefault(); openCart(); }}>
+    <Link className={`cart-pill ${cart.itemCount > 0 ? "cart-pill--filled" : ""}`} href="/carrito" aria-label={label} onClick={(event) => { event.preventDefault(); openCart(); }}>
       <BagIcon/><strong>{formatArs(loaded ? cart.totalArs : 0)}</strong>
       {cart.itemCount > 0 ? <span className="cart-pill__count" aria-hidden="true">{cart.itemCount}</span> : null}
     </Link>

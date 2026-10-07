@@ -1,21 +1,35 @@
 "use client";
 import Link from "next/link";
 import { ChevronDown, History, LogOut, Package, Settings, Star, Trash2, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "./account-provider";
 import { authClient } from "@/lib/auth-client";
 import { setMarketingConsent } from "@/lib/account-actions";
 import { AccountAvatar } from "./account-avatar";
 
+/** Hover solo con mouse en desktop: en touch el tap emula mouseenter y el clic lo volvía a cerrar. */
+function canHover() {
+  return window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 769px)").matches;
+}
+
 export function AccountLink() {
   const { user, authLoading } = useAccount();
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const menu = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    function close(event: KeyboardEvent) { if (event.key === "Escape") { setOpen(false); trigger.current?.focus(); } }
+    function outside(event: PointerEvent) { if (!menu.current?.contains(event.target as Node)) setOpen(false); }
+    document.addEventListener("keydown", close); document.addEventListener("pointerdown", outside);
+    return () => { document.removeEventListener("keydown", close); document.removeEventListener("pointerdown", outside); };
+  }, [open]);
   if (authLoading && !user) return <span className="account-link account-link--loading" role="status" aria-label="Cargando tu cuenta"><span className="account-link-skeleton-icon"/><span className="account-link-skeleton-text"/></span>;
   if (!user) return <Link className="account-link" aria-label="Ingresar a mi cuenta" href="/cuenta/ingresar"><UserRound aria-hidden="true"/><span>Hola<br/><strong>Ingresar</strong></span></Link>;
-  return <div className={`account-menu ${open ? "is-open" : ""}`} onMouseLeave={() => setOpen(false)} onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}>
-    <button type="button" className="account-menu-trigger" aria-expanded={open} aria-controls="account-menu-panel" onClick={() => setOpen((value) => !value)} onMouseEnter={() => setOpen(true)}>
+  return <div ref={menu} className={`account-menu ${open ? "is-open" : ""}`} onMouseLeave={() => { if (canHover()) setOpen(false); }}>
+    <button ref={trigger} type="button" className="account-menu-trigger" aria-label={`Hola ${user.name.split(" ")[0]}: menú de tu cuenta`} aria-expanded={open} aria-controls="account-menu-panel" onClick={(event) => { const pointer = event.detail > 0 && canHover(); setOpen((value) => pointer || !value); }} onMouseEnter={() => { if (canHover()) setOpen(true); }}>
       <AccountAvatar name={user.name} image={user.image}/><span>Hola<br/><strong>{user.name.split(" ")[0]}</strong></span><ChevronDown aria-hidden="true"/>
     </button>
     <div id="account-menu-panel" className="account-menu-panel" aria-label="Menú de tu cuenta">

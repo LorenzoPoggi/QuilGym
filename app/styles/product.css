@@ -113,6 +113,7 @@
 @media (max-width: 768px) {
   .product-gallery { grid-template-columns: 1fr; }
   .gallery-thumbs button { width: 64px; }
+  .purchase-quantity button { width: 44px; height: 44px; }
   .compare-scroll-hint { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--muted); font-size: .8rem; }
   .compare-scroll-hint svg { width: 17px; height: 17px; }
   .compare-products, .compare-row { grid-template-columns: 110px repeat(var(--compare-count, 3), 220px); }

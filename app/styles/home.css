@@ -28,7 +28,7 @@
 .objective { min-height: 190px; padding: 20px; border-radius: 20px; box-shadow: 0 10px 22px rgba(31,35,37,.08); }
 .objective::after { right: -10px; top: 34px; width: 160px; height: 160px; border-width: 22px; border-color: rgba(255,255,255,.16); }
 .objective h3 { margin: 0 0 6px; font-size: 1.375rem; font-weight: 700; letter-spacing: -.015em; }
-.objective p { font-size: .82rem; opacity: .9; }
+.objective p { font-size: .82rem; opacity: 1; }
 .objective-icon { width: 46px; height: 46px; border-radius: 12px; }
 .objective-icon svg { width: 21px; height: 21px; }
 .objective .objective-arrow { position: absolute; right: 20px; bottom: 22px; z-index: 1; width: 18px; height: 18px; }
@@ -82,7 +82,8 @@
 .newsletter input { padding: 0 6px; color: var(--ink); background: transparent; font-size: .95rem; }
 .newsletter input::placeholder { color: #8a9094; }
 .newsletter button { height: 100%; padding: 0 22px; color: var(--ink); background: #fff; border: 1.5px solid var(--ink); border-radius: 11px; font-size: .9rem; font-weight: 700; }
-.newsletter button:disabled { opacity: .55; cursor: not-allowed; }
+/* Deshabilitado: gris sobre gris, sin el borde de tinta que lo hacía parecer activo. */
+.newsletter button:disabled { color: #5d6468; background: var(--soft); border-color: transparent; cursor: not-allowed; }
 .newsletter-form small { color: #aeb3b6; font-size: .7rem; }
 
 /* Footer */
@@ -113,6 +114,7 @@
   .advisor-banner { padding: 26px; }
   .advisor-banner h3 { font-size: 1.5rem; }
   .newsletter-inner { gap: 24px; }
+  .footer-grid nav a { min-height: 44px; display: flex; align-items: center; margin: 0; }
   .benefit + .benefit { padding-left: 0; border-left: 0; }
 }
 
@@ -137,11 +139,12 @@
   .steps-grid { grid-template-columns: 1fr; }
   .steps-intro, .step-card { min-height: 0; }
   .advisor-banner { grid-template-columns: 1fr; }
-  .newsletter form { height: auto; flex-direction: row; flex-wrap: wrap; gap: 6px; padding: 6px 6px 6px 14px; background: #fff; }
-  .newsletter input { min-height: 44px; flex: 1 1 60%; }
-  .newsletter button { width: 100%; min-height: 46px; }
+  /* Ícono + input en la primera fila y botón a lo ancho debajo; height: auto evita que desborde el form. */
+  .newsletter form { height: auto; display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; padding: 6px; }
+  .newsletter form > svg { margin-left: 8px; }
+  .newsletter input { min-height: 44px; }
+  .newsletter button { grid-column: 1 / -1; height: auto; min-height: 46px; justify-content: center; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 28px 20px; }
   .footer-brand { grid-column: 1 / -1; }
-  .footer-grid nav a { margin: 0; padding-block: 9px; }
   .footer-trust { gap: 12px 24px; }
 }

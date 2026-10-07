@@ -12,9 +12,11 @@ type CartPanelProps = {
   onClose?: () => void;
   closeHref?: string;
   headingId?: string;
+  /** En /carrito el panel es el contenido principal y su título es el h1. */
+  headingLevel?: "h1" | "h2";
 };
 
-export function CartPanel({ onClose, closeHref = "/productos", headingId = "cart-heading" }: CartPanelProps) {
+export function CartPanel({ onClose, closeHref = "/productos", headingId = "cart-heading", headingLevel: Heading = "h2" }: CartPanelProps) {
   const { cart, loaded, pending, feedback, setQuantity, remove, applyCoupon, removeCoupon, acknowledgeChanges } = useCart();
   const [couponCode, setCouponCode] = useState("");
   const close = onClose
@@ -33,7 +35,7 @@ export function CartPanel({ onClose, closeHref = "/productos", headingId = "cart
   return (
     <>
       <header>
-        <h2 id={headingId}>Tu carrito <span>{cart.itemCount} {cart.itemCount === 1 ? "PRODUCTO" : "PRODUCTOS"}</span></h2>
+        <Heading id={headingId}>Tu carrito <span>{cart.itemCount} {cart.itemCount === 1 ? "PRODUCTO" : "PRODUCTOS"}</span></Heading>
         {close}
       </header>
 

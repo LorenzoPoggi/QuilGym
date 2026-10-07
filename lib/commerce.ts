@@ -13,7 +13,14 @@ export const commerce = {
   /** Monto mínimo para envío gratis; null = no hay envío gratis. */
   freeShippingFromArs: null as number | null,
   pickupLocation: "Quilmes",
+  /** WhatsApp del local: número en formato internacional sin "+" y mensaje inicial. */
+  whatsapp: { phone: "5491126683308", message: "¡Hola! Quiero más información sobre la compra de suplementos." },
 };
+
+/** Link de wa.me con el mensaje codificado; sin texto usa el mensaje por defecto. */
+export function whatsappUrl(text: string = commerce.whatsapp.message) {
+  return `https://wa.me/${commerce.whatsapp.phone}?text=${encodeURIComponent(text)}`;
+}
 
 export function formatArs(value: number) {
   return `$${Math.round(value).toLocaleString("es-AR")}`;

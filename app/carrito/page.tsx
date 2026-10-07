@@ -8,5 +8,5 @@ export const metadata: Metadata = { title: "Tu carrito | QuilGym", robots: { ind
 
 export default async function CartPage() {
   const featured = await getFeaturedProducts(3);
-  return <div className="cart-page"><div className="cart-underlay" inert><Header/><main className="section-pad container"><p className="eyebrow">SELECCIÓN QUILGYM</p><h1>Destacados</h1><div className="product-grid">{featured.map((product) => <ProductCard product={product} priority key={product.slug}/>)}</div></main></div><div className="cart-overlay"/><aside className="cart-drawer" aria-labelledby="cart-heading"><CartPanel closeHref="/productos"/></aside></div>;
+  return <div className="cart-page"><div className="cart-underlay" inert><Header/><main className="section-pad container"><p className="eyebrow">SELECCIÓN QUILGYM</p><h2>Destacados</h2><div className="product-grid">{featured.map((product) => <ProductCard product={product} priority key={product.slug}/>)}</div></main></div><div className="cart-overlay"/><aside className="cart-drawer" aria-labelledby="cart-heading"><CartPanel closeHref="/productos" headingLevel="h1"/></aside></div>;
 }
