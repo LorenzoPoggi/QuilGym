@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { setFavorite } from "@/lib/account-actions";
 
 const AccountContext = createContext<{
-  user: { id: string; name: string; email: string; image?: string | null } | null; loading: boolean; authLoading: boolean;
+  user: { id: string; name: string; email: string; emailVerified?: boolean; image?: string | null } | null; loading: boolean; authLoading: boolean;
   ids: number[]; toggle: (id: number) => Promise<void>; error: string;
 } | null>(null);
 const noFavorites: number[] = [];

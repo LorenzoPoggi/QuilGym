@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ChevronDown, History, LogOut, Package, Settings, Star, Trash2, UserRound } from "lucide-react";
+import { Boxes, ChevronDown, History, LogOut, Package, Settings, Star, Trash2, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "./account-provider";
@@ -40,6 +40,7 @@ export function AccountLink() {
         <Link href="/cuenta/historial" onClick={() => setOpen(false)}><History aria-hidden="true"/>Historial</Link>
         <Link href="/cuenta/favoritos" onClick={() => setOpen(false)}><Star aria-hidden="true"/>Favoritos</Link>
         <Link href="/cuenta/configuracion" onClick={() => setOpen(false)}><Settings aria-hidden="true"/>Configuración</Link>
+        {user.emailVerified && user.email.trim().toLowerCase() === "quilgymnuevo@gmail.com" && <Link href="/admin/productos" onClick={() => setOpen(false)}><Boxes aria-hidden="true"/>Administración</Link>}
       </nav>
       <button type="button" className="account-menu-signout" onClick={async () => { await authClient.signOut(); setOpen(false); router.push("/"); router.refresh(); }}><LogOut aria-hidden="true"/>Salir</button>
       <Link className="account-menu-danger" href="/cuenta/configuracion#eliminar-cuenta" onClick={() => setOpen(false)}><Trash2 aria-hidden="true"/>Eliminar cuenta</Link>
