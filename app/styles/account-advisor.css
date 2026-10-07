@@ -210,7 +210,8 @@
 .advisor-habits p { display: flex; align-items: center; gap: 10px; }
 .advisor-habits svg { width: 18px; flex-shrink: 0; }
 .advisor-sources a { text-decoration: underline; }
-.advisor-floating { position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); right: 24px; z-index: 25; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+/* --sticky-buy-h lo define la barra de compra de la ficha mobile mientras está visible (incluye la safe area). */
+.advisor-floating { position: fixed; bottom: max(calc(var(--sticky-buy-h, 0px) + 24px), calc(24px + env(safe-area-inset-bottom, 0px))); right: 24px; z-index: 25; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; transition: bottom .25s ease; }
 .advisor-floating-button { display: grid; place-items: center; width: 62px; height: 62px; margin-left: auto; border-radius: 50%; background: #42494e; border: 1px solid #6c7479; color: #fff; box-shadow: 0 6px 24px #0003; cursor: pointer; transition: transform .18s; }
 .advisor-floating-button:hover { transform: translateY(-3px); }
 .advisor-floating-button svg { width: 30px; height: 30px; }
@@ -218,7 +219,18 @@
 .whatsapp-floating-button:hover { transform: translateY(-3px); background: #1fbd5b; }
 .whatsapp-glyph { width: 32px; height: 32px; }
 /* Flotan sobre cualquier fondo: anillo blanco y contorno oscuro para que el foco se vea en claro y en oscuro. */
-.whatsapp-floating-button:focus-visible, .advisor-floating-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 2px #fff, 0 6px 24px #0003; }
+.whatsapp-floating-button:focus-visible, .advisor-floating-button:focus-visible, .floating-dial-toggle:focus-visible, .floating-dial__item:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 2px #fff, 0 6px 24px #0003; }
+/* Menú flotante mobile: un botón de 52px que despliega WhatsApp y el asesor. */
+.floating-dial-toggle, .floating-dial { display: none; }
+.floating-dial-toggle { place-items: center; width: 52px; height: 52px; padding: 0; color: #fff; background: var(--ink); border: 1px solid #4b5256; border-radius: 50%; box-shadow: 0 6px 24px #0003; cursor: pointer; }
+.floating-dial-toggle svg { width: 24px; height: 24px; }
+.floating-dial { order: -1; flex-direction: column; align-items: flex-end; gap: 10px; }
+.floating-dial__item { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 4px 16px 4px 4px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 999px; box-shadow: 0 6px 20px rgba(31,35,37,.16); font-size: .88rem; font-weight: 600; animation: floating-dial-in .18s ease-out both; }
+.floating-dial__item + .floating-dial__item { animation-delay: .04s; }
+.floating-dial__icon { display: grid; place-items: center; width: 40px; height: 40px; color: #fff; background: #42494e; border-radius: 50%; }
+.floating-dial__icon svg { width: 21px; height: 21px; }
+.floating-dial__icon--whatsapp { background: #25d366; }
+@keyframes floating-dial-in { from { opacity: 0; transform: translateY(8px) scale(.96); } }
 .advisor-popover { width: min(370px, calc(100vw - 32px)); padding: 22px; border-radius: var(--radius-lg); border: 1px solid var(--line); background: var(--paper); box-shadow: var(--shadow); animation: advisor-pop .2s ease-out; }
 .advisor-popover header, .advisor-popover header span { display: flex; align-items: center; gap: 10px; }
 .advisor-popover header { justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
@@ -267,12 +279,16 @@
 @media (max-width: 768px) {
  .account-page { padding-block: 32px; }.auth-card { padding: 24px; }.account-heading { align-items: flex-start; flex-direction: column; }
  .account-orders > a { padding: 18px; }.account-empty { padding: 26px; }
- .advisor-floating { right: 16px; bottom: max(16px,env(safe-area-inset-bottom)); gap: 10px; }.advisor-floating-button, .whatsapp-floating-button { width: 56px; height: 56px; }
- .whatsapp-glyph { width: 29px; height: 29px; }
+ .advisor-floating { right: 16px; bottom: max(calc(var(--sticky-buy-h, 0px) + 16px), calc(16px + env(safe-area-inset-bottom, 0px))); gap: 10px; }
+ .advisor-floating-button, .whatsapp-floating-button, .advisor-popover { display: none; }
+ .floating-dial-toggle { display: grid; }.floating-dial { display: flex; }
+ /* Aire al final para que el botón flotante (52px + 16px) no tape el último contenido. */
+ #footer .footer-main { padding-bottom: calc(25px + 68px + max(var(--sticky-buy-h, 0px), env(safe-area-inset-bottom, 0px))); }
+ body:has(.advisor-floating):not(:has(#footer)) { padding-bottom: calc(68px + max(var(--sticky-buy-h, 0px), env(safe-area-inset-bottom, 0px))); }
  .google-reviews-layout { grid-template-columns: 1fr; }.review-card { flex-basis: 85%; }.location-card { min-height: auto; }
  .advisor-chat .chat-message h2 { font-size: 1.2rem; }.advisor-profile-summary span { font-size: .9rem; }
 }
 @media (prefers-reduced-motion: reduce) {
  .cart-dialog .cart-drawer, .cart-dialog::backdrop, .advisor-popover { animation: none !important; }
- .reviews-track { scroll-behavior: auto; }.advisor-floating-button { transition: none; }
+ .reviews-track { scroll-behavior: auto; }.advisor-floating-button, .advisor-floating { transition: none; }.floating-dial__item { animation: none; }
 }

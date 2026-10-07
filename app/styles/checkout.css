@@ -112,6 +112,18 @@
 .checkout-summary-mobile__body { padding: 4px 16px 12px; border-top: 1px solid var(--line); }
 .checkout-summary-mobile .summary-lines { border-bottom: 0; }
 
+/* Checkout sin entrega o pago configurados: pedido por WhatsApp */
+.checkout-unavailable { display: grid; grid-template-columns: auto 1fr; gap: 14px 16px; align-items: start; }
+.checkout-unavailable__icon { width: 46px; height: 46px; display: grid; place-items: center; color: #583d0a; background: #fff4d6; border-radius: 12px; }
+.checkout-unavailable h2 { margin: 0 0 6px; font-size: 1.3rem; font-weight: 800; }
+.checkout-unavailable p { margin: 0; color: #3d4447; font-size: .9rem; line-height: 1.5; }
+.checkout-unavailable > .button, .checkout-unavailable > small { grid-column: 2; }
+.checkout-unavailable > small { color: var(--muted); font-size: .76rem; line-height: 1.4; }
+.button--whatsapp { justify-self: start; min-height: 48px; color: var(--ink); background: #25d366; border-color: #25d366; font-size: .9rem; font-weight: 700; }
+.button--whatsapp .whatsapp-glyph { width: 20px; height: 20px; }
+.button--whatsapp:hover { background: #1ebe5b; border-color: #1ebe5b; }
+.checkout-summary--whatsapp .summary-lines { padding-bottom: 0; border-bottom: 0; }
+
 /* Confirmación: hero */
 .confirmation-hero { padding: 30px 32px; border-radius: 24px; }
 .confirmation-hero > span { width: 78px; height: 78px; background: #4d5356; border-radius: 18px; }
@@ -199,6 +211,9 @@
   .checkout-summary article, .checkout-summary-mobile article { grid-template-columns: 56px 1fr auto; gap: 10px; }
   .checkout-summary article > b { grid-column: auto; }
   .checkout-choices > label { min-height: 72px; }
+  .checkout-unavailable { grid-template-columns: 1fr; }
+  .checkout-unavailable > .button, .checkout-unavailable > small { grid-column: auto; }
+  .checkout-unavailable > .button { justify-self: stretch; }
   .confirmation-hero { padding: 24px 20px; }
   .confirmation-hero > span { width: 60px; height: 60px; border-radius: 15px; }
   .confirmation-hero > span svg { width: 32px; height: 32px; }

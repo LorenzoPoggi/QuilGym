@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ProductDetail } from "@/lib/catalog-types";
 import { formatArs } from "@/lib/commerce";
 import { useCart } from "./cart-provider";
 import { BagIcon } from "./icons";
+import { ProductStickyBuy } from "./product-sticky-buy";
 
 export function CartPill() {
   const { cart, loaded, openCart } = useCart();
@@ -47,6 +48,7 @@ export function ProductPurchase({ product }: { product: Pick<ProductDetail, "nam
   const [variantId, setVariantId] = useState(product.variantId);
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState<"add" | "buy" | null>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0];
   const max = variant.maxQuantity;
 
@@ -70,7 +72,7 @@ export function ProductPurchase({ product }: { product: Pick<ProductDetail, "nam
           <div>{product.variants.map((item) => <button type="button" role="radio" aria-checked={item.id === variant.id} className={item.id === variant.id ? "is-active" : ""} disabled={!item.inStock} onClick={() => { setVariantId(item.id); setQuantity(1); }} key={item.id}>{item.label ?? item.sku} · {item.inStock ? formatArs(item.priceArs) : "Sin stock"}</button>)}</div>
         </div>
       ) : null}
-      <div className="buy-actions">
+      <div className="buy-actions" ref={actionsRef}>
         <div className="purchase-quantity" role="group" aria-label="Cantidad">
           <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={quantity <= 1 || max === 0} aria-label="Restar una unidad">−</button>
           <span aria-live="polite">{max === 0 ? 0 : quantity}</span>
@@ -81,6 +83,7 @@ export function ProductPurchase({ product }: { product: Pick<ProductDetail, "nam
           <button type="button" className="button button--dark" disabled={max === 0} aria-disabled={busy !== null || undefined} onClick={() => submit("buy")}>{busy === "buy" ? "Procesando…" : "Comprar ahora"}</button>
         </div>
       </div>
+      <ProductStickyBuy target={actionsRef} name={product.name} priceArs={variant.priceArs} quantity={max === 0 ? 0 : quantity} soldOut={max === 0} busy={busy} onSubmit={submit}/>
     </>
   );
 }

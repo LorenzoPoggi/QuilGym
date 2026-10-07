@@ -462,6 +462,20 @@ html:has(.cart-dialog[open]) { overflow: hidden; }
   .search kbd { display: none; }
   .header-inner { padding-block: 8px; row-gap: 8px; }
 }
+/* Header mobile con scroll (HeaderAutoHide): al bajar, clip-path recorta la fila de búsqueda (44px + 8px de gap)
+   sin mover el layout y también deja pasar los toques al contenido de abajo. El borde inferior acompaña el recorte. */
+@media (max-width: 768px) {
+  .site-header[data-scroll] { --header-collapse: 52px; clip-path: inset(0 0 -100vh 0); border-bottom-color: transparent; transition: clip-path .25s ease; }
+  .site-header[data-scroll]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--line); transition: transform .25s ease; }
+  .site-header[data-scroll] .search { transition: opacity .2s ease, transform .25s ease, visibility .25s; }
+  .site-header[data-scroll="down"]:not(:has(.search:focus-within, .account-menu.is-open)) { clip-path: inset(0 0 var(--header-collapse) 0); }
+  .site-header[data-scroll="down"]:not(:has(.search:focus-within, .account-menu.is-open))::after { transform: translateY(calc(-1 * var(--header-collapse))); }
+  .site-header[data-scroll="down"]:not(:has(.search:focus-within, .account-menu.is-open)) .search { opacity: 0; visibility: hidden; transform: translateY(-10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header[data-scroll], .site-header[data-scroll]::after, .site-header[data-scroll] .search { transition: none; }
+}
+
 .shipping-banner span { display: inline-flex; align-items: center; gap: 6px; }
 .shipping-banner svg { width: 13px; height: 13px; color: #f5b041; fill: currentColor; }
 .site-header--no-search .header-inner { justify-content: flex-start; }

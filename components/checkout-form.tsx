@@ -8,6 +8,7 @@ import type { Cart } from "@/lib/cart-types";
 import type { CheckoutConfig, CheckoutInput, CheckoutQuote, DeliveryMethod, PaymentMethod } from "@/lib/checkout-types";
 import { getCheckoutQuote, submitCheckout } from "@/lib/checkout-actions";
 import { validateCheckout } from "@/lib/checkout-validation";
+import { initialCheckoutChoice, usablePayments } from "@/lib/checkout-whatsapp";
 import { formatArs } from "@/lib/commerce";
 import { useCart } from "./cart-provider";
 import { ProductImage } from "./product-image";
@@ -16,8 +17,8 @@ export function CheckoutForm({ initialCart, config }: { initialCart: Cart; confi
   const router = useRouter();
   const { cart: liveCart, loaded, acknowledgeChanges, refreshCart } = useCart();
   const cart = loaded ? liveCart : initialCart;
-  const [delivery, setDelivery] = useState<DeliveryMethod>(config.pickup ? "pickup" : "shipping");
-  const [payment, setPayment] = useState<PaymentMethod>(config.payments.mercadopago ? "mercadopago" : config.payments.transfer ? "transfer" : "cash");
+  const [delivery, setDelivery] = useState<DeliveryMethod>(() => initialCheckoutChoice(config).delivery);
+  const [payment, setPayment] = useState<PaymentMethod>(() => initialCheckoutChoice(config).payment);
   const [accepted, setAccepted] = useState(false);
   const [quote, setQuote] = useState<CheckoutQuote | null>(null);
   const [busy, setBusy] = useState(false);
@@ -28,14 +29,17 @@ export function CheckoutForm({ initialCart, config }: { initialCart: Cart; confi
   const requestKey = useRef<string | null>(null);
   const submitting = useRef(false);
   const quoteVersion = useRef(0);
-  const allowed = config.payments[payment] && (payment !== "cash" || delivery === "pickup");
+  const deliveryEnabled = { shipping: config.shippingRates.length > 0, pickup: !!config.pickup };
+  const payments = usablePayments(config, delivery);
+  const allowed = deliveryEnabled[delivery] && payments.includes(payment);
   const canSubmit = accepted && quote && cart.lines.length > 0 && !cart.hasBlockingIssues && !cart.hasPriceChanges && allowed && !busy && !quoting;
 
   function invalidateQuote() { quoteVersion.current += 1; setQuote(null); }
   function changeDelivery(value: DeliveryMethod) {
     setDelivery(value);
     invalidateQuote();
-    if (value === "shipping" && payment === "cash") setPayment(config.payments.mercadopago ? "mercadopago" : "transfer");
+    const next = usablePayments(config, value);
+    if (!next.includes(payment) && next[0]) setPayment(next[0]);
   }
 
   async function calculate() {
@@ -110,8 +114,8 @@ export function CheckoutForm({ initialCart, config }: { initialCart: Cart; confi
         </section>
         <section className="checkout-card"><header><span>2</span><h2>Entrega o retiro</h2></header>
           <div className="checkout-choices">
-            <label className={delivery === "shipping" ? "is-active" : ""}><input type="radio" name="delivery" value="shipping" checked={delivery === "shipping"} disabled={!config.shippingRates.length || busy} onChange={() => changeDelivery("shipping")}/><b aria-hidden="true"><Truck size={18}/></b><span><strong>Envío a domicilio</strong><small>{config.shippingRates.length ? "Calculá el costo con tu código postal." : "Envíos aún no disponibles."}</small></span></label>
-            <label className={delivery === "pickup" ? "is-active" : ""}><input type="radio" name="delivery" value="pickup" checked={delivery === "pickup"} disabled={!config.pickup || busy} onChange={() => changeDelivery("pickup")}/><b aria-hidden="true"><Store size={18}/></b><span><strong>Retiro en Quilmes</strong><small>{config.pickup ? "Sin costo de entrega." : "Retiro aún no disponible."}</small></span></label>
+            <label className={delivery === "shipping" && deliveryEnabled.shipping ? "is-active" : ""}><input type="radio" name="delivery" value="shipping" checked={delivery === "shipping" && deliveryEnabled.shipping} disabled={!deliveryEnabled.shipping || busy} onChange={() => changeDelivery("shipping")}/><b aria-hidden="true"><Truck size={18}/></b><span><strong>Envío a domicilio</strong><small>{config.shippingRates.length ? "Calculá el costo con tu código postal." : "Envíos aún no disponibles."}</small></span></label>
+            <label className={delivery === "pickup" && deliveryEnabled.pickup ? "is-active" : ""}><input type="radio" name="delivery" value="pickup" checked={delivery === "pickup" && deliveryEnabled.pickup} disabled={!deliveryEnabled.pickup || busy} onChange={() => changeDelivery("pickup")}/><b aria-hidden="true"><Store size={18}/></b><span><strong>Retiro en Quilmes</strong><small>{config.pickup ? "Sin costo de entrega." : "Retiro aún no disponible."}</small></span></label>
           </div>
           {delivery === "pickup" ? <div className="checkout-delivery-detail"><strong>{config.pickup?.address}</strong><p>{config.pickup?.hours}</p><p>Esperá el aviso de preparación antes de acercarte.</p></div> : <><h3>Dirección de entrega</h3><div className="form-grid">
             {field("street", "Calle", { required: true, autoComplete: "address-line1", maxLength: 160, className: "span-2" })}
@@ -131,8 +135,8 @@ export function CheckoutForm({ initialCart, config }: { initialCart: Cart; confi
               ["mercadopago", "Mercado Pago", "Tarjetas, cuotas, saldo en cuenta, Rapipago y Pago Fácil.", CreditCard],
               ["transfer", "Transferencia bancaria", "El pedido queda pendiente hasta verificar el pago.", Landmark],
               ["cash", "Efectivo al retirar", "Disponible únicamente con retiro en el local.", Wallet],
-            ] as const).map(([value, title, copy, Icon]) => <label key={value} className={payment === value ? "is-active" : ""}>
-              <input type="radio" name="payment" value={value} checked={payment === value} disabled={busy || !config.payments[value] || (value === "cash" && delivery !== "pickup")} onChange={() => setPayment(value)}/><b aria-hidden="true"><Icon size={18}/></b>
+            ] as const).map(([value, title, copy, Icon]) => <label key={value} className={payment === value && payments.includes(value) ? "is-active" : ""}>
+              <input type="radio" name="payment" value={value} checked={payment === value && payments.includes(value)} disabled={busy || !payments.includes(value)} onChange={() => setPayment(value)}/><b aria-hidden="true"><Icon size={18}/></b>
               <span><strong>{title}</strong><small>{config.payments[value] ? copy : "Próximamente disponible."}</small></span>
             </label>)}
           </div>

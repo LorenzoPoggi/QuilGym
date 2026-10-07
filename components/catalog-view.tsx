@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { ArrowDownUp, ArrowLeft, ArrowRight, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { catalogHref } from "@/lib/catalog-params";
 import { priceRanges, type CatalogQuery, type CatalogResult, type CatalogSort } from "@/lib/catalog-types";
@@ -16,7 +16,34 @@ export function CatalogView({ result, query }: { result: CatalogResult; query: C
   const [isPending, startTransition] = useTransition();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [showAllBrands, setShowAllBrands] = useState(false);
+  const tabsRef = useRef<HTMLElement>(null);
   const totalProducts = result.categories.reduce((sum, item) => sum + item.count, 0);
+
+  // Degradé en el borde que todavía tiene pestañas ocultas (se escribe en el DOM para no re-renderizar en cada scroll).
+  const measureTabs = useCallback(() => {
+    const el = tabsRef.current;
+    const wrap = el?.parentElement;
+    if (!el || !wrap) return;
+    const start = el.scrollLeft > 4;
+    const end = el.scrollLeft + el.clientWidth < el.scrollWidth - 4;
+    const state = start && end ? "both" : start ? "start" : end ? "end" : "";
+    if (state) wrap.dataset.overflow = state; else delete wrap.dataset.overflow;
+  }, []);
+
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    // La pestaña activa queda a la vista sin mover la página.
+    const active = el.querySelector<HTMLElement>("[aria-current]");
+    if (active) {
+      const box = el.getBoundingClientRect(), tab = active.getBoundingClientRect();
+      if (tab.left < box.left || tab.right > box.right) el.scrollLeft += tab.left - box.left - 24;
+    }
+    measureTabs();
+    const observer = new ResizeObserver(measureTabs);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [measureTabs, query.category]);
 
   function navigate(changes: Partial<CatalogQuery>) {
     startTransition(() => router.push(catalogHref(query, changes), { scroll: false }));
@@ -41,20 +68,20 @@ export function CatalogView({ result, query }: { result: CatalogResult; query: C
 
   return (
     <>
-      <nav className="catalog-tabs" aria-label="Categorías">
-        {tabs.map((item) => {
-          const active = query.category === item.slug;
-          return <Link href={catalogHref(query, { category: item.slug, brands: [] })} className={active ? "is-active" : ""} aria-current={active ? "page" : undefined} key={item.slug ?? "todas"}><CategoryIcon slug={item.slug}/><small>{item.count}</small><span>{item.name}</span></Link>;
-        })}
-      </nav>
-      <div className="catalog-toolbar">
-        <div className="filter-chips">
-          {chips.map((chip) => <button type="button" key={chip.label} onClick={() => navigate(chip.remove)} aria-label={`Quitar filtro ${chip.label}`}>{chip.label}<X aria-hidden="true"/></button>)}
-          {chips.length > 0 ? <button type="button" className="clear-filters" onClick={() => navigate({ q: undefined, brands: [], price: undefined, inStockOnly: false })}>Limpiar filtros</button> : null}
+      <div className="catalog-bar">
+        <div className="catalog-tabs-wrap">
+          <nav className="catalog-tabs" aria-label="Categorías" ref={tabsRef} onScroll={measureTabs}>
+            {tabs.map((item) => {
+              const active = query.category === item.slug;
+              return <Link href={catalogHref(query, { category: item.slug, brands: [] })} className={active ? "is-active" : ""} aria-current={active ? "page" : undefined} key={item.slug ?? "todas"}><CategoryIcon slug={item.slug}/><small>{item.count}</small><span>{item.name}</span></Link>;
+            })}
+          </nav>
         </div>
-        <p className="catalog-count">{resultsLabel}</p>
-        <button type="button" className="catalog-filters-toggle" aria-expanded={filtersOpen} aria-controls="catalog-filters" onClick={() => setFiltersOpen((open) => !open)}><SlidersHorizontal aria-hidden="true"/>Filtros{chips.length > 0 ? ` · ${chips.length} ${chips.length === 1 ? "activo" : "activos"}` : ""}</button>
-        <label className="catalog-sort"><ArrowDownUp aria-hidden="true"/><span>Ordenar:</span><select value={query.sort} onChange={(event) => navigate({ sort: event.target.value as CatalogSort })}><option value="relevancia">Más relevantes</option><option value="menor-precio">Menor precio</option><option value="mayor-precio">Mayor precio</option><option value="nombre">Nombre (A–Z)</option></select><ChevronDown aria-hidden="true"/></label>
+        <div className="catalog-toolbar">
+          <button type="button" className="catalog-filters-toggle" aria-expanded={filtersOpen} aria-controls="catalog-filters" onClick={() => setFiltersOpen((open) => !open)}><SlidersHorizontal aria-hidden="true"/>Filtros{chips.length > 0 ? <span className="catalog-filters-count">{chips.length}<span className="sr-only"> {chips.length === 1 ? "activo" : "activos"}</span></span> : null}</button>
+          <p className="catalog-count" aria-live="polite">{resultsLabel}</p>
+          <label className="catalog-sort"><ArrowDownUp aria-hidden="true"/><span>Ordenar:</span><select aria-label="Ordenar productos" value={query.sort} onChange={(event) => navigate({ sort: event.target.value as CatalogSort })}><option value="relevancia">Más relevantes</option><option value="menor-precio">Menor precio</option><option value="mayor-precio">Mayor precio</option><option value="nombre">Nombre (A–Z)</option></select><ChevronDown aria-hidden="true"/></label>
+        </div>
       </div>
       <div className="catalog-layout">
         <aside id="catalog-filters" className={filtersOpen ? "filters-panel is-open" : "filters-panel"} aria-label="Filtros">
@@ -65,6 +92,10 @@ export function CatalogView({ result, query }: { result: CatalogResult; query: C
           <button type="button" className="button button--dark filters-apply" onClick={() => setFiltersOpen(false)}>Ver {resultsLabel}</button>
         </aside>
         <div aria-busy={isPending} className={isPending ? "catalog-results is-pending" : "catalog-results"}>
+          {chips.length > 0 ? <div className="filter-chips">
+            {chips.map((chip) => <button type="button" key={chip.label} onClick={() => navigate(chip.remove)} aria-label={`Quitar filtro ${chip.label}`}>{chip.label}<X aria-hidden="true"/></button>)}
+            <button type="button" className="clear-filters" onClick={() => navigate({ q: undefined, brands: [], price: undefined, inStockOnly: false })}>Limpiar filtros</button>
+          </div> : null}
           {result.products.length === 0 ? <div className="catalog-empty"><h2>No hay productos con estos filtros</h2><p>Probá quitar algún filtro o buscar otra categoría.</p><Link className="button button--dark" href="/productos">Ver todos los productos</Link></div> : <div className="catalog-product-grid">{result.products.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 4}/>)}</div>}
           {result.pageCount > 1 ? <nav className="pagination" aria-label="Páginas del catálogo">
             {result.page > 1 ? <Link href={catalogHref(query, { page: result.page - 1 })} aria-label="Página anterior"><ArrowLeft aria-hidden="true"/></Link> : <span className="is-disabled" aria-hidden="true"><ArrowLeft/></span>}

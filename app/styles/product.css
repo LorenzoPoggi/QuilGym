@@ -62,6 +62,8 @@ html:has(.lightbox[open]) { overflow: hidden; }
 .buybox-price { margin-top: 16px; font-size: 2.3rem; letter-spacing: -.02em; }
 .product-buybox .stock { font-size: .84rem; }
 .buy-actions .button { min-height: 50px; border-radius: 12px; font-size: .9rem; }
+/* Barra de compra fija: solo en mobile y cuando el bloque de compra quedó arriba */
+.sticky-buy { display: none; }
 .shipping-calculator { margin-top: 16px; padding: 16px; border-radius: 16px; }
 .shipping-calculator strong { font-size: .95rem; }
 .shipping-calculator p { gap: 8px; color: #4f575b; font-size: .84rem; }
@@ -83,7 +85,8 @@ html:has(.lightbox[open]) { overflow: hidden; }
 .compare-note > span > svg { flex-shrink: 0; width: 18px; height: 18px; color: #4a5155; }
 .compare-note .button { min-height: 46px; border-radius: 12px; }
 .compare-note .button svg { width: 17px; height: 17px; }
-.compare-scroll-hint { display: none; }
+/* Link al rótulo nutricional (solo cuando hay foto del rótulo) */
+.compare-link { min-height: 44px; display: inline-flex; align-items: center; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .compare-products { grid-template-columns: 190px repeat(var(--compare-count, 3), minmax(0, 1fr)); box-shadow: 0 16px 30px rgba(31,35,37,.08); }
 .compare-products > aside h2 { font-size: 1.35rem; font-weight: 800; }
 .compare-products > aside p { font-size: .8rem; line-height: 1.5; }
@@ -156,6 +159,17 @@ html:has(.lightbox[open]) { overflow: hidden; }
   .gallery-counter { display: block; }
   .gallery-dots { display: flex; }
   .gallery-zoom { right: 12px; bottom: 12px; }
+  /* Foto principal más baja para acercar precio y botones al primer viewport */
+  .product-main-image.product-thumb { max-height: 52vh; max-height: 52svh; }
+  .sticky-buy { position: fixed; left: 0; right: 0; bottom: 0; z-index: 24; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: rgba(255,255,255,.97); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(31,35,37,.1); visibility: hidden; transform: translateY(100%); transition: transform .25s ease, visibility .25s; }
+  .sticky-buy.is-visible { visibility: visible; transform: none; }
+  .sticky-buy--out { grid-template-columns: minmax(0, 1fr) auto; }
+  .sticky-buy__info { display: grid; min-width: 0; }
+  .sticky-buy__info span { overflow: hidden; color: var(--muted); font-size: .72rem; white-space: nowrap; text-overflow: ellipsis; }
+  .sticky-buy__info strong { font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
+  .sticky-buy--out .sticky-buy__info strong { color: var(--muted); }
+  .sticky-buy .button { min-height: 46px; padding: 0 12px; border-radius: 12px; font-size: .82rem; white-space: nowrap; }
+  .sticky-buy .button svg { width: 17px; height: 17px; }
   .lightbox-bar { padding: 8px 8px 8px 16px; }
   .lightbox-close, .lightbox-arrow { width: 44px; height: 44px; }
   .lightbox-arrow { top: auto; bottom: 16px; translate: none; }
@@ -163,15 +177,25 @@ html:has(.lightbox[open]) { overflow: hidden; }
   .lightbox-arrow--next { right: 16px; }
   .lightbox-slide { padding: 0 12px 76px; }
   .purchase-quantity button { width: 44px; height: 44px; }
-  .compare-scroll-hint { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--muted); font-size: .8rem; }
-  .compare-scroll-hint svg { width: 17px; height: 17px; }
-  .compare-products, .compare-row { grid-template-columns: 110px repeat(var(--compare-count, 3), 220px); }
-  .compare-scroll > * { min-width: calc(110px + var(--compare-count, 3) * 234px); }
-  .compare-products > aside { padding: 12px; }
-  .compare-products > aside p, .compare-products > aside span { display: none; }
-  .compare-products > aside h2 { font-size: 1rem; }
-  .compare-row > div:first-child small { display: none; }
-  .compare-products .product-card, .compare-row > div:not(:first-child) { scroll-margin-left: 110px; }
+  /* Comparador: cada producto es una tarjeta apilada con filas «etiqueta: valor». La tabla y la fila de tarjetas
+     pasan a display: contents y `order` reagrupa las celdas por producto (hasta 3). */
+  .compare-page .compare-scroll { display: grid; grid-template-columns: minmax(0, 1fr); overflow: visible; scroll-snap-type: none; }
+  .compare-page .compare-scroll > * { min-width: 0; }
+  .compare-page :is(.compare-products, .compare-table, .compare-row) { display: contents; }
+  .compare-page .compare-products > aside, .compare-page .compare-row > [role="rowheader"] { display: none; }
+  .compare-page .compare-products > .product-card:nth-child(2) { order: 10; }
+  .compare-page .compare-row > [role="cell"]:nth-child(2) { order: 11; }
+  .compare-page .compare-products > .product-card:nth-child(3) { order: 20; }
+  .compare-page .compare-row > [role="cell"]:nth-child(3) { order: 21; }
+  .compare-page .compare-products > .product-card:nth-child(4) { order: 30; }
+  .compare-page .compare-row > [role="cell"]:nth-child(4) { order: 31; }
+  .compare-page .compare-products > .product-card { margin-top: 20px; border-bottom: 0; border-radius: 20px 20px 0 0; box-shadow: none; scroll-snap-align: none; }
+  .compare-page .compare-products > .product-card:nth-child(2) { margin-top: 0; }
+  .compare-page .compare-row > [role="cell"] { min-height: 48px; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 13px; background: #fff; border: 1px solid #d9dcde; border-top-color: var(--line); border-bottom: 0; scroll-snap-align: none; text-align: right; }
+  .compare-page .compare-row > [role="cell"]::before { content: attr(data-label); color: var(--muted); font-size: .8rem; text-align: left; }
+  .compare-page .compare-row--diff > [role="cell"] { background: #f2f3f1; }
+  .compare-page .compare-row:last-child > [role="cell"] { border-bottom: 1px solid #d9dcde; border-radius: 0 0 20px 20px; }
+  .compare-page .compare-row > [role="cell"]:has(.compare-link) { padding-block: 2px; }
   .advisor-layout { grid-template-columns: 1fr; gap: 14px; }
   .advisor-sidebar, .advisor-chat { border-radius: 22px; }
   .advisor-sidebar { padding: 18px 20px; }
@@ -197,4 +221,5 @@ html:has(.lightbox[open]) { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .lightbox[data-state], .lightbox[data-state]::backdrop, .lightbox[data-state] .lightbox-track { animation: none; }
   .lightbox-frame, .gallery-dots i { transition: none; }
+  .sticky-buy { transition: none; }
 }

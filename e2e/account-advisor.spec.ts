@@ -136,11 +136,18 @@ test("asesor: conexión pendiente conserva el mensaje y los enlaces anteriores l
 
 test("acceso flotante, mapa real y carrito offcanvas accesible", async ({ page }, info) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Abrir chat del asesor QuilGym", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Empezar la conversación" })).toHaveAttribute("href", "/asesor");
-  await page.screenshot({ path: info.outputPath("advisor-launcher.png"), fullPage: false, animations: "disabled" });
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("button", { name: "Abrir chat del asesor QuilGym", exact: true })).toBeFocused();
+  if (info.project.name === "desktop") {
+    await page.getByRole("button", { name: "Abrir chat del asesor QuilGym", exact: true }).click();
+    await expect(page.getByRole("link", { name: "Empezar la conversación" })).toHaveAttribute("href", "/asesor");
+    await page.screenshot({ path: info.outputPath("advisor-launcher.png"), fullPage: false, animations: "disabled" });
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("button", { name: "Abrir chat del asesor QuilGym", exact: true })).toBeFocused();
+  } else {
+    // En mobile un solo botón despliega WhatsApp y el asesor (cubierto en floating-buy-catalog.spec.ts).
+    await page.getByRole("button", { name: "Ayuda: WhatsApp y asesor QuilGym" }).click();
+    await expect(page.getByRole("link", { name: "Asesor QuilGym" })).toHaveAttribute("href", "/asesor");
+    await page.keyboard.press("Escape");
+  }
   await expect(page.getByRole("link", { name: "Abrir ubicación de QuilGym en Google Maps" })).toHaveAttribute("href", /1791416799115149607/);
   await expect(page.getByRole("link", { name: "Ver todas las reseñas" })).toBeVisible();
   await page.goto("/productos");

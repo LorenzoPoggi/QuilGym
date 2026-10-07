@@ -5,9 +5,23 @@
 .page-title-row p:not(.eyebrow) { color: #3d4447; font-size: 1rem; }
 .breadcrumb a:hover { color: var(--ink); }
 
-/* Pestañas de categoría: una sola fila con scroll horizontal */
-.catalog-tabs { display: flex; gap: 12px; margin: 28px 0 24px; padding-bottom: 6px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; }
-.catalog-tabs a { flex: 0 0 auto; min-width: 150px; min-height: 82px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; align-items: start; gap: 4px 8px; padding: 14px 16px; border-radius: 16px; scroll-snap-align: start; transition: border-color .2s, background-color .2s; }
+/* Catálogo compacto: intro corta para que los productos arranquen más arriba */
+.catalog-page .breadcrumb { margin-bottom: 14px; }
+.catalog-page .page-title-row { margin-bottom: 20px; }
+.catalog-page .page-title-row p:not(.eyebrow) { margin-top: 8px; }
+
+/* Barra: pestañas con scroll a la izquierda, resultados y orden a la derecha */
+.catalog-bar { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
+.catalog-tabs-wrap { position: relative; flex: 1; min-width: 0; }
+/* Degradé en el borde que todavía tiene pestañas ocultas (data-overflow lo pone CatalogView). */
+.catalog-tabs-wrap::before, .catalog-tabs-wrap::after { content: ""; position: absolute; top: 0; bottom: 6px; z-index: 1; width: 56px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.catalog-tabs-wrap::before { left: 0; background: linear-gradient(90deg, var(--paper) 15%, rgba(255,255,255,0)); }
+.catalog-tabs-wrap::after { right: 0; background: linear-gradient(270deg, var(--paper) 15%, rgba(255,255,255,0)); }
+.catalog-tabs-wrap:is([data-overflow="start"], [data-overflow="both"])::before, .catalog-tabs-wrap:is([data-overflow="end"], [data-overflow="both"])::after { opacity: 1; }
+
+/* Pestañas de categoría: una sola fila con scroll horizontal y snap */
+.catalog-tabs { display: flex; gap: 12px; margin: 0; padding-bottom: 6px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.catalog-tabs a { flex: 0 0 auto; min-width: 150px; min-height: 74px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; align-items: start; gap: 4px 8px; padding: 13px 16px; border-radius: 16px; scroll-snap-align: start; transition: border-color .2s, background-color .2s; }
 .catalog-tabs a:hover { border-color: #9aa0a3; }
 .catalog-tabs a svg { width: 20px; height: 20px; color: #4a5155; }
 .catalog-tabs a small { justify-self: end; color: var(--muted); font-size: .7rem; font-weight: 600; }
@@ -15,13 +29,18 @@
 .catalog-tabs a.is-active svg, .catalog-tabs a.is-active small { color: #c9cdcf; }
 .catalog-tabs a.is-active span { color: #fff; }
 
-/* Toolbar: chips a la izquierda, orden a la derecha */
-.catalog-toolbar { margin-bottom: 24px; }
-.filter-chips button { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-size: .78rem; }
+/* Toolbar: cantidad y orden (en mobile también el botón de filtros) */
+.catalog-toolbar { flex: none; gap: 14px; margin: 0; }
+.catalog-count { margin: 0; color: var(--muted); font-size: .84rem; white-space: nowrap; }
+.catalog-filters-toggle, .filters-apply { display: none; }
+.catalog-filters-count { min-width: 20px; height: 20px; display: inline-grid; place-items: center; padding: 0 5px; color: #fff; background: var(--ink); border-radius: 999px; font-size: .7rem; }
+.catalog-filters-toggle[aria-expanded="true"] .catalog-filters-count { color: var(--ink); background: #fff; }
+.catalog-toolbar > .catalog-sort { position: relative; min-height: 46px; gap: 8px; margin-left: auto; padding: 0 12px; background: #fff; font-size: .8rem; }
+/* Chips de filtros activos: arriba de la grilla, solo si hay alguno */
+.catalog-results > .filter-chips { align-items: center; margin-bottom: 16px; }
+.filter-chips button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; color: var(--ink); font-size: .78rem; }
 .filter-chips button svg { width: 14px; height: 14px; }
 .filter-chips .clear-filters { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.catalog-count, .catalog-filters-toggle, .filters-apply { display: none; }
-.catalog-toolbar > .catalog-sort { position: relative; min-height: 46px; gap: 8px; margin-left: auto; padding: 0 12px; background: #fff; font-size: .8rem; }
 .catalog-sort > svg:first-child { width: 16px; height: 16px; color: var(--muted); }
 .catalog-sort select { appearance: none; padding-right: 22px; font-size: .84rem; cursor: pointer; }
 .catalog-sort > svg:last-child { position: absolute; right: 12px; width: 16px; height: 16px; pointer-events: none; }
@@ -111,23 +130,34 @@
 /* Mobile: filtros plegables y toolbar en una fila */
 @media (max-width: 768px) {
   .page-title-row h1, .search-page > .container > h1 { font-size: 2.1rem; }
-  .catalog-tabs { gap: 8px; margin: 20px 0 16px; }
+  .catalog-page .breadcrumb { margin-bottom: 10px; }
+  .catalog-page .page-title-row { margin-bottom: 14px; }
+  .catalog-page .page-title-row h1 { font-size: 1.9rem; }
+  .catalog-page .page-title-row p:not(.eyebrow) { margin-top: 6px; font-size: .9rem; }
+  .catalog-bar { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 16px; }
+  /* Las pestañas van a sangre para que el corte en el borde de la pantalla también anuncie que hay más. */
+  .catalog-tabs-wrap { margin-inline: -16px; }
+  .catalog-tabs-wrap::before, .catalog-tabs-wrap::after { bottom: 0; width: 40px; }
+  .catalog-tabs { gap: 8px; padding: 0 16px; scroll-padding-inline: 16px; scrollbar-width: none; }
+  .catalog-tabs::-webkit-scrollbar { display: none; }
   .catalog-layout { grid-template-columns: 1fr; }
   .catalog-tabs a { min-width: 0; min-height: 44px; display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 0 14px; border-radius: 999px; }
   .catalog-tabs a span { grid-column: auto; align-self: center; }
   .catalog-tabs a svg { width: 17px; height: 17px; }
   .catalog-tabs a small { order: 2; font-size: .7rem; }
   .catalog-tabs a span { font-size: .84rem; }
-  .catalog-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex-direction: row; }
-  .filter-chips { grid-column: 1 / -1; order: 2; }
-  .filter-chips:empty { display: none; }
-  .catalog-count { display: block; grid-column: 1 / -1; order: 3; margin: 0; color: var(--muted); font-size: .82rem; }
-  .catalog-filters-toggle { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 12px; font-size: .82rem; font-weight: 700; cursor: pointer; }
+  /* Filtros, cantidad y orden en una sola fila */
+  .catalog-toolbar { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px; }
+  .catalog-count { flex: 1 1 0; min-width: 0; overflow: hidden; font-size: .8rem; text-overflow: ellipsis; }
+  .catalog-filters-toggle { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 12px; font-size: .82rem; font-weight: 700; cursor: pointer; }
   .catalog-filters-toggle svg { width: 17px; height: 17px; }
   .catalog-filters-toggle[aria-expanded="true"] { color: #fff; background: #33383b; border-color: #33383b; }
-  .catalog-toolbar > .catalog-sort { align-self: stretch; margin: 0; }
-  .catalog-sort > span { display: none; }
-  .catalog-sort select { width: 100%; min-width: 0; }
+  .catalog-toolbar > .catalog-sort { align-self: stretch; min-height: 44px; margin: 0 0 0 auto; padding: 0 10px; }
+  .catalog-sort > span, .catalog-sort > svg:first-child { display: none; }
+  .catalog-sort select { min-height: 44px; min-width: 0; padding-right: 24px; font-size: .8rem; }
+  .catalog-sort > svg:last-child { right: 10px; }
+  .filter-chips button { min-height: 44px; }
+  .catalog-results > .filter-chips { margin-bottom: 12px; }
   .filters-panel { display: none; }
   .filters-panel.is-open { display: block; }
   .filters-apply { display: flex; width: 100%; min-height: 48px; margin-top: 16px; }
