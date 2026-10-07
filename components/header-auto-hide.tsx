@@ -16,10 +16,15 @@ export function HeaderAutoHide({ className, children }: { className: string; chi
     let lastY = Math.max(window.scrollY, 0);
     let frame = 0;
     const set = (state: "up" | "down") => { if (header.dataset.scroll !== state) header.dataset.scroll = state; };
+    const setScrolled = (y: number) => {
+      const scrolled = y > 48 ? "true" : "false";
+      if (header.dataset.scrolled !== scrolled) header.dataset.scrolled = scrolled;
+    };
 
     function update() {
       frame = 0;
       const y = Math.max(window.scrollY, 0);
+      setScrolled(y);
       // Nunca se oculta con el buscador enfocado, cerca del inicio ni en desktop.
       if (!media.matches || y < TOP_ZONE || header!.querySelector(".search")?.contains(document.activeElement)) { set("up"); lastY = y; return; }
       if (Math.abs(y - lastY) < THRESHOLD) return;
@@ -30,6 +35,7 @@ export function HeaderAutoHide({ className, children }: { className: string; chi
     const reveal = () => set("up");
 
     set("up");
+    setScrolled(lastY);
     window.addEventListener("scroll", onScroll, { passive: true });
     media.addEventListener("change", reveal);
     header.addEventListener("focusin", reveal);

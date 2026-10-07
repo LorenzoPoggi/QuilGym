@@ -60,8 +60,8 @@ export default async function Home() {
   const featured = [...new Map([...desktopFeatured, ...mobileFeatured].map((product) => [product.slug, product])).values()];
 
   return (
-    <>
-      <Header />
+    <div className="home-page-shell">
+      <Header overlayOnHero />
       <main className="home-page">
         <section className="hero" aria-labelledby="hero-title">
           <HeroVideo/>
@@ -122,6 +122,6 @@ export default async function Home() {
         <GoogleReviews/>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

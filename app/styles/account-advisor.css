@@ -102,6 +102,7 @@
 .account-area-heading p { margin: 0; color: var(--muted); }
 .account-area-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 30px; align-items: start; }
 .account-area-layout--overview { display: block; max-width: 1160px; margin-inline: auto; }
+.account-area--overview .account-area-layout--overview { max-width: 1160px; }
 .account-side-nav { display: grid; gap: 4px; position: sticky; top: 112px; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
 .account-side-nav a { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 10px; font-weight: 600; }
 .account-side-nav a:hover, .account-side-nav a[aria-current="page"] { background: var(--soft); }
@@ -117,6 +118,12 @@
 .account-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 22px 0; }
 .account-toolbar input, .account-toolbar select, .account-filter { min-height: 43px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); }
 .account-toolbar input { flex: 1; min-width: 190px; }
+.account-toolbar--purchases { gap: 14px; margin: 26px 0 30px; padding-inline: 8px 18px; }
+.account-toolbar--purchases input, .account-toolbar--purchases select { min-height: 49px; padding: 11px 16px; border: 1.5px solid #c7cdd0; border-radius: 11px; }
+.account-toolbar--purchases select { min-width: 190px; }
+.account-toolbar--purchases > span { flex: 0 0 auto; padding-inline: 2px 8px; }
+.purchase-empty { display: grid; justify-items: center; gap: 18px; padding: 44px 32px; }
+.purchase-empty p { margin: 0; }
 .account-list { display: grid; gap: 14px; }
 .purchase-card, .history-row { border: 1px solid var(--line); border-radius: 16px; background: #fff; }
 .purchase-card > header { display: flex; justify-content: space-between; gap: 12px; padding: 15px 20px; border-bottom: 1px solid var(--line); }
@@ -295,6 +302,11 @@
 @media (max-width: 768px) {
  .account-page { padding-block: 32px; }.auth-card { padding: 24px; }.account-heading { align-items: flex-start; flex-direction: column; }
  .account-orders > a { padding: 18px; }.account-empty { padding: 26px; }
+ .account-toolbar--purchases { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 22px 0 26px; padding-inline: 0; }
+ .account-toolbar--purchases input { grid-column: 1 / -1; min-width: 0; }
+ .account-toolbar--purchases select { width: 100%; min-width: 0; padding-inline: 11px; }
+ .account-toolbar--purchases > span { grid-column: 1 / -1; padding: 0 4px; }
+ .purchase-empty { gap: 20px; padding: 30px 18px; }
  .advisor-floating { right: 16px; bottom: max(calc(var(--sticky-buy-h, 0px) + 16px), calc(16px + env(safe-area-inset-bottom, 0px))); gap: 10px; }
  .advisor-floating-button, .whatsapp-floating-button, .advisor-popover { display: none; }
  .floating-dial-toggle { display: grid; }.floating-dial { display: flex; }

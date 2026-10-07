@@ -4,7 +4,7 @@ const fitsViewport = (page: Page) => page.evaluate(() => document.documentElemen
 const brandLinks = (page: Page) => page.locator("#marcas").getByRole("link", { name: /^Ver \d+ productos? de / });
 const trackState = (page: Page) => page.locator(".brand-track").evaluate((track) => getComputedStyle(track).animationPlayState);
 
-test("hero: video según el ancho, botón de pausa y texto en el primer viewport", async ({ page }, info) => {
+test("hero: video según el ancho, pausa accesible por teclado y texto en el primer viewport", async ({ page }, info) => {
   const mobile = info.project.name === "mobile";
   await page.goto("/");
   const hero = page.locator("section.hero");
@@ -24,11 +24,15 @@ test("hero: video según el ancho, botón de pausa y texto en el primer viewport
   expect(src).toMatch(mobile ? /hero-720x1280\.webm$/ : /hero-1280\.webm$/);
 
   const pause = hero.getByRole("button", { name: "Pausar video de fondo" });
+  // Los controles de pausa no aparecen como botones flotantes; se revelan al recibir foco de teclado.
+  await pause.focus();
+  await expect(pause).toBeFocused();
   await pause.click();
-  await expect(hero.getByRole("button", { name: "Reproducir video de fondo" })).toBeVisible();
+  const play = hero.getByRole("button", { name: "Reproducir video de fondo" });
+  await expect(play).toBeFocused();
   expect(await video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
-  await hero.getByRole("button", { name: "Reproducir video de fondo" }).click();
-  await expect(pause).toBeVisible();
+  await play.click();
+  await expect(pause).toBeFocused();
   await page.screenshot({ path: info.outputPath("hero.png") });
   expect(await fitsViewport(page)).toBe(true);
 });
@@ -67,18 +71,16 @@ test("cinta de marcas: 6 links accesibles, pausa con foco y con el control", asy
   await page.keyboard.press("Tab");
   await expect(links.nth(1)).toBeFocused();
   await links.nth(1).blur();
-  // Control explícito (WCAG 2.2.2), también para pantallas táctiles.
-  await page.mouse.move(0, 0);
+  // Control explícito WCAG 2.2.2: se revela al enfocarlo y puede pausar la cinta.
   const toggle = page.getByRole("checkbox", { name: "Pausar la cinta de marcas" });
-  await page.locator(".brand-pause").click();
+  await toggle.focus();
+  await page.keyboard.press("Space");
   await expect(toggle).toBeChecked();
-  await page.mouse.move(0, 0);
   expect(await trackState(page)).toBe("paused");
   const box = (await page.locator(".brand-pause").boundingBox())!;
   expect(box.height).toBeGreaterThanOrEqual(44);
-  await page.locator(".brand-pause").click();
+  await page.keyboard.press("Space");
   await expect(toggle).not.toBeChecked();
-  await page.mouse.move(0, 0);
   await page.locator("body").evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   expect(await trackState(page)).toBe("running");
   expect(await fitsViewport(page)).toBe(true);

@@ -7,7 +7,8 @@ import { AccountLink } from "./account-controls";
 import { HeaderAutoHide } from "./header-auto-hide";
 
 /** En /buscar la página tiene su propio buscador: `showSearch={false}` evita dos inputs superpuestos. */
-export function Header({ showSearch = true }: { showSearch?: boolean }) {
+export function Header({ showSearch = true, overlayOnHero = false }: { showSearch?: boolean; overlayOnHero?: boolean }) {
+  const headerClass = ["site-header", overlayOnHero ? "site-header--hero" : ""].filter(Boolean).join(" ");
   const inner = (
     <div className="container header-inner">
       <Link href="/" className="wordmark" aria-label="QuilGym, inicio">QUILGYM</Link>
@@ -29,9 +30,9 @@ export function Header({ showSearch = true }: { showSearch?: boolean }) {
 
   return (
     <>
-      <div className="shipping-banner"><span><Zap aria-hidden="true"/>{commerce.freeShippingFromArs ? `ENVÍO GRATIS DESDE ${formatArs(commerce.freeShippingFromArs)} A TODO EL PAÍS` : `ENVÍOS A TODO EL PAÍS · RETIRO EN ${commerce.pickupLocation.toUpperCase()}`}</span></div>
+      <div className={`shipping-banner${overlayOnHero ? " shipping-banner--hero" : ""}`}><span><Zap aria-hidden="true"/>{commerce.freeShippingFromArs ? `ENVÍO GRATIS DESDE ${formatArs(commerce.freeShippingFromArs)} A TODO EL PAÍS` : `ENVÍOS A TODO EL PAÍS · RETIRO EN ${commerce.pickupLocation.toUpperCase()}`}</span></div>
       {/* Sin buscador no hay fila que colapsar en mobile. */}
-      {showSearch ? <HeaderAutoHide className="site-header">{inner}</HeaderAutoHide> : <header className="site-header site-header--no-search">{inner}</header>}
+      {showSearch ? <HeaderAutoHide className={headerClass}>{inner}</HeaderAutoHide> : <header className={`${headerClass} site-header--no-search`}>{inner}</header>}
     </>
   );
 }
