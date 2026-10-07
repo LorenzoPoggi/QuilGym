@@ -254,21 +254,37 @@
 .reviews-panel { min-width: 0; }
 .reviews-panel-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 18px; }
 .reviews-panel-head strong { display: block; font-size: 2.1rem; }
-.google-attribution { display: flex; gap: 8px; align-items: center; font-weight: 600; }
-.google-attribution img { width: 28px; height: 28px; }
+.reviews-source { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+/* Atribución de texto de Google Maps según las políticas de Places: Roboto o sans-serif, regular, sin estilizar. */
+.google-maps-attribution { font-family: Roboto, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 1.2; letter-spacing: normal; color: #5e5e5e; white-space: nowrap; }
+.google-attribution { display: flex; gap: 8px; align-items: center; min-height: 44px; font-weight: 600; }
 .reviews-track { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; scroll-behavior: smooth; padding: 2px 2px 14px; }
 .review-card { flex: 0 0 calc(50% - 8px); min-width: 0; scroll-snap-align: start; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; padding: 24px; display: flex; flex-direction: column; }
 .review-stars { color: #b18413; font-size: 1.2rem; letter-spacing: .06em; }
-.review-card blockquote { margin: 18px 0; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.review-author { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-size: .9rem; min-width: 0; }
+.review-author img, .review-avatar { flex: none; width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--soft); }
+.review-avatar { display: grid; place-items: center; font-weight: 700; color: var(--muted); }
+.review-author div { min-width: 0; }
+.review-author a, .review-author strong { display: block; font-weight: 700; overflow-wrap: anywhere; }
+.review-author a { text-decoration: underline; text-underline-offset: 2px; }
+.review-author small { display: block; color: var(--muted); margin-top: 2px; font-size: .8rem; }
+.review-card blockquote { margin: 14px 0; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.review-translated { align-self: flex-start; font-size: .75rem; color: var(--muted); }
 .review-card footer { margin-top: auto; padding-top: 18px; font-size: .85rem; }
 .review-card footer a { font-weight: 700; text-decoration: underline; }
-.review-card footer small { display: block; color: var(--muted); margin-top: 6px; }
-.review-card details summary { cursor: pointer; margin-top: 12px; font-size: .8rem; }
+.review-card details summary { cursor: pointer; margin-top: 6px; font-size: .8rem; }
 .reviews-controls { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
 .reviews-controls button { display: inline-grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 50%; background: #fff; cursor: pointer; }
 .reviews-controls button:first-child { width: auto; border-radius: var(--radius-sm); padding-inline: 14px; font-size: .8rem; }
-.reviews-unavailable { border: 1px solid var(--line); background: #fff; padding: 32px; border-radius: var(--radius-lg); min-height: 230px; }
-.reviews-unavailable p { color: var(--muted); line-height: 1.6; }
+.reviews-note { display: block; margin-top: 10px; color: var(--muted); font-size: .8rem; }
+/* Sin reseñas (sin configurar, error o cargando): «Visitanos en Quilmes» con mapa y CTA. */
+.visit-quilmes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; overflow: hidden; }
+.visit-quilmes-copy { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 14px; padding: 40px; }
+.visit-quilmes-copy h2 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.55rem); line-height: 1.1; letter-spacing: -.035em; }
+.visit-quilmes-copy p { margin: 0; max-width: 440px; color: var(--muted); line-height: 1.6; }
+.visit-quilmes-copy .button { margin-top: 8px; }
+.visit-quilmes-map { position: relative; min-height: 340px; }
+.visit-quilmes-map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
 .location-card { position: relative; display: flex; flex-direction: column; min-height: 360px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; overflow: hidden; }
 .location-card iframe { width: 100%; height: 250px; border: 0; pointer-events: none; }
 .location-link { position: absolute; inset: 0; z-index: 2; border-radius: var(--radius-lg); }
@@ -286,6 +302,8 @@
  #footer .footer-main { padding-bottom: calc(25px + 68px + max(var(--sticky-buy-h, 0px), env(safe-area-inset-bottom, 0px))); }
  body:has(.advisor-floating):not(:has(#footer)) { padding-bottom: calc(68px + max(var(--sticky-buy-h, 0px), env(safe-area-inset-bottom, 0px))); }
  .google-reviews-layout { grid-template-columns: 1fr; }.review-card { flex-basis: 85%; }.location-card { min-height: auto; }
+ .reviews-source { align-items: flex-start; }
+ .visit-quilmes { grid-template-columns: 1fr; }.visit-quilmes-copy { padding: 26px 22px; }.visit-quilmes-map { min-height: 240px; }
  .advisor-chat .chat-message h2 { font-size: 1.2rem; }.advisor-profile-summary span { font-size: .9rem; }
 }
 @media (prefers-reduced-motion: reduce) {

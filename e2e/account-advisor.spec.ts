@@ -148,8 +148,6 @@ test("acceso flotante, mapa real y carrito offcanvas accesible", async ({ page }
     await expect(page.getByRole("link", { name: "Asesor QuilGym" })).toHaveAttribute("href", "/asesor");
     await page.keyboard.press("Escape");
   }
-  await expect(page.getByRole("link", { name: "Abrir ubicación de QuilGym en Google Maps" })).toHaveAttribute("href", /1791416799115149607/);
-  await expect(page.getByRole("link", { name: "Ver todas las reseñas" })).toBeVisible();
   await page.goto("/productos");
   await page.getByRole("button", { name: /^Agregar .* al carrito$/ }).first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -161,15 +159,49 @@ test("acceso flotante, mapa real y carrito offcanvas accesible", async ({ page }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
+// 1x1 PNG para el avatar simulado: el test no sale a la red de Google.
+const avatarPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+const mockReview = (id: number) => ({ id: String(id), author: `Usuario de prueba ${id}`, authorUrl: "https://www.google.com/maps", photo: `https://lh3.googleusercontent.com/a/qa-avatar-${id}=s128`, rating: 5, text: `Opinión simulada para QA ${id}`, original: id === 2 ? `Simulated review for QA ${id}` : null, date: "4/10/2026", url: "https://www.google.com/maps" });
+
 test("carrusel usa atribuciones y controles con datos de proveedor simulados solo en QA", async ({ page }) => {
-  await page.route("**/api/reviews", (route) => route.fulfill({ json: { source: "google", rating: 4.5, count: 3, reviews: [1,2,3].map((id) => ({ id:String(id),author:`Usuario de prueba ${id}`,authorUrl:"https://www.google.com/maps",rating:5,text:`Opinión simulada para QA ${id}`,original:null,date:"4/10/2026",url:"https://www.google.com/maps" })) } }));
+  let calls = 0;
+  page.on("request", (request) => { if (new URL(request.url()).pathname === "/api/reviews") calls++; });
+  await page.route("**/api/reviews", (route) => route.fulfill({ json: { source: "google", rating: 4.5, count: 3, reviews: [1, 2, 3].map(mockReview) } }));
+  await page.route("https://lh3.googleusercontent.com/**", (route) => route.fulfill({ contentType: "image/png", body: avatarPng }));
   await page.goto("/");
+  await page.waitForLoadState("load");
+  // Places se consulta recién cuando la sección se acerca a la pantalla (cada pedido tiene costo).
+  expect(calls).toBe(0);
+  await page.locator("#resenas").scrollIntoViewIfNeeded();
   await expect(page.locator(".review-card")).toHaveCount(3);
+  expect(calls).toBe(1);
+  await expect(page.locator(".google-maps-attribution")).toHaveText("Google Maps");
+  await expect(page.getByText("Hasta 5 opiniones, ordenadas por relevancia según Google.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver todas las reseñas" })).toHaveAttribute("href", /1791416799115149607/);
+  const avatar = page.locator(".review-author img").first();
+  await expect(avatar).toHaveAttribute("referrerpolicy", "no-referrer");
+  await expect(avatar).toHaveAttribute("alt", "");
+  await expect(page.locator(".review-translated")).toHaveCount(1);
+  await expect(page.locator(".review-card").nth(1).getByText("Traducida por Google")).toBeAttached();
   await page.getByRole("button", { name: "Pausar carrusel" }).click();
   await expect(page.getByRole("button", { name: "Reanudar carrusel" })).toBeVisible();
   await page.getByRole("button", { name: "Siguiente reseña" }).click();
   await expect.poll(() => page.locator(".reviews-track").evaluate((n) => n.scrollLeft)).toBeGreaterThan(0);
   await expect(page.getByRole("link", { name: "Usuario de prueba 1" })).toHaveAttribute("href", "https://www.google.com/maps");
   await expect(page.getByText("COMPRA VERIFICADA", { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("sin reseñas la sección invita a visitar el local sin prometer opiniones", async ({ page }) => {
+  await page.route("**/api/reviews", (route) => route.fulfill({ json: { source: "unavailable", rating: null, count: null, reviews: [] } }));
+  await page.goto("/");
+  const reviewsResponse = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/reviews");
+  await page.locator("#resenas").scrollIntoViewIfNeeded();
+  await reviewsResponse;
+  await expect(page.getByRole("heading", { name: "Visitanos en Quilmes" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver reseñas y cómo llegar" })).toHaveAttribute("href", /1791416799115149607/);
+  await expect(page.getByTitle("Ubicación de QuilGym en Google Maps")).toBeAttached();
+  await expect(page.getByText("EXPERIENCIAS REALES", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".review-card")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
