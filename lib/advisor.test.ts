@@ -3,7 +3,7 @@ import { advisorSteps, parseAdvisorProfile, recommendProducts, type AdvisorProfi
 import type { ProductSummary } from "./catalog-types";
 const profile: AdvisorProfile = { age:"adult",safety:"clear",experience:"regular",duration:"years",goal:"muscle",training:"strength",frequency:"medium",nutrition:"difficult",restriction:"none",budget:"45000" };
 function product(id: number, category: string, priceArs=20000, inStock=true): ProductSummary {
-  return { id, variantId:id, slug:`p${id}`, name:category === "creatinas" ? `Creatina ${id}` : `Producto ${id}`,category:{slug:category,name:category},brand:null,priceArs,compareAtPriceArs:null,inStock,imageUrl:null };
+  return { id, variantId:id, slug:`p${id}`, name:category === "creatinas" ? `Creatina ${id}` : `Producto ${id}`,category:{slug:category,name:category},brand:null,priceArs,compareAtPriceArs:null,inStock,imageUrl:null,photoUrls:[] };
 }
 const catalog=[product(1,"proteinas"),product(2,"creatinas"),product(3,"accesorios"),product(4,"creatinas",50000),product(5,"proteinas",10000,false)];
 describe("asesor con razones y límites",()=>{

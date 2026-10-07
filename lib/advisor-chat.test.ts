@@ -8,7 +8,7 @@ vi.mock("ai", () => ({ createGateway: mocks.gateway, generateText: mocks.generat
 vi.mock("@ai-sdk/google", () => ({ createGoogle: mocks.gateway }));
 import { advisorConfigured, advisorInstructions, generateAdvisorReply } from "./advisor-chat";
 
-const product: ProductSummary = { id: 1, variantId: 1, slug: "creatina-test", name: "Creatina", category: { slug: "creatinas", name: "Creatinas" }, brand: null, priceArs: 10000, compareAtPriceArs: null, inStock: true, imageUrl: null };
+const product: ProductSummary = { id: 1, variantId: 1, slug: "creatina-test", name: "Creatina", category: { slug: "creatinas", name: "Creatinas" }, brand: null, priceArs: 10000, compareAtPriceArs: null, inStock: true, imageUrl: null, photoUrls: [] };
 const output = { reply: "Contame cómo entrenás hoy.", needsProfessional: false, recommendations: [{ productId: 1, reason: "Una opción para tu entrenamiento de fuerza.", caution: "Verificá el rótulo." }] };
 beforeEach(() => { vi.unstubAllEnvs(); mocks.generate.mockReset(); });
 

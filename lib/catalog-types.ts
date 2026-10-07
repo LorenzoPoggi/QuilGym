@@ -15,6 +15,8 @@ export type ProductSummary = {
   compareAtPriceArs: number | null;
   inStock: boolean;
   imageUrl: string | null;
+  /** Hasta 4 fotos de producto (sin rótulos) para el carrusel de la tarjeta; la primera es `imageUrl`. */
+  photoUrls: string[];
 };
 
 export type ProductImage = { url: string; kind: "product" | "nutrition"; width: number; height: number };

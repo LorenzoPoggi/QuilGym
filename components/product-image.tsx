@@ -14,7 +14,7 @@ export function ProductImage({ product, className = "", priority = false, sizes 
   if (product.imageUrl) {
     return (
       <div className={`product-thumb ${className}`}>
-        <Image src={product.imageUrl} alt={decorative ? "" : product.name} fill sizes={sizes} priority={priority} />
+        <Image src={product.imageUrl} alt={decorative ? "" : product.name} fill sizes={sizes} preload={priority} />
       </div>
     );
   }

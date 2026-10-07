@@ -132,8 +132,13 @@ svg { width: 1.25em; height: 1.25em; flex: 0 0 auto; }
 .price { margin: 5px 0 0; font-size: 1.32rem; font-weight: 800; }
 .price del { margin-left: 5px; color: #92979a; font-size: .7rem; font-weight: 500; }
 .stock { color: #16803c; font-weight: 700; }
-.stock span { display: inline-block; width: 7px; height: 7px; margin-right: 4px; background: #1ca34a; border-radius: 50%; }
+.stock span { position: relative; display: inline-block; width: 7px; height: 7px; margin-right: 4px; background: #1ca34a; border-radius: 50%; }
 .stock--out { color: #b4234a; }.stock--out span { background: #ef315b; }
+/* Pulso del punto de stock: verde en stock, rojo y más lento sin stock. */
+.stock span::after { content: ""; position: absolute; inset: 0; background: inherit; border-radius: inherit; animation: stock-pulse 1.8s ease-out infinite; }
+.stock--out span::after { animation-duration: 2.8s; }
+@keyframes stock-pulse { from { opacity: .5; transform: scale(1); } to { opacity: 0; transform: scale(2.6); } }
+@media (prefers-reduced-motion: reduce) { .stock span::after { display: none; animation: none; } }
 .product-card .button:disabled { opacity: .55; cursor: not-allowed; }
 .product-card--compact h3 { font-size: .92rem; }
 .advisor-banner { min-height: 170px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 22px; margin-top: 44px; padding: 24px 34px; overflow: hidden; color: #fff; background: linear-gradient(102deg, #33383b 0 72%, #d5dade 72%); border-radius: 22px; box-shadow: 0 12px 20px rgba(76,61,150,.17); }

@@ -26,6 +26,22 @@ export async function getPrimaryImages(productIds: number[]) {
   return primary;
 }
 
+/** Hasta `limit` fotos de producto (no rótulos) de cada id, en orden. */
+export async function getProductPhotos(productIds: number[], limit = 4) {
+  const photos = new Map<number, string[]>();
+  if (productIds.length === 0) return photos;
+  const rows = await db
+    .select({ productId: productImages.productId, url: productImages.url })
+    .from(productImages)
+    .where(and(inArray(productImages.productId, productIds), eq(productImages.kind, "product")))
+    .orderBy(asc(productImages.productId), asc(productImages.position));
+  for (const row of rows) {
+    const list = photos.get(row.productId) ?? [];
+    if (list.length < limit) photos.set(row.productId, [...list, row.url]);
+  }
+  return photos;
+}
+
 type CatalogRow = ProductSummary & { isFeatured: boolean; categoryPosition: number };
 
 /**
@@ -58,7 +74,7 @@ const getActiveProducts = unstable_cache(async (): Promise<CatalogRow[]> => {
     .where(eq(products.status, "active"))
     .orderBy(asc(categories.position), asc(products.name));
 
-  const primaryImages = await getPrimaryImages(rows.map((row) => row.id));
+  const photos = await getProductPhotos(rows.map((row) => row.id));
 
   return rows.map((row) => ({
     id: row.id,
@@ -70,15 +86,16 @@ const getActiveProducts = unstable_cache(async (): Promise<CatalogRow[]> => {
     priceArs: row.priceArs,
     compareAtPriceArs: row.compareAtPriceArs,
     inStock: isAvailable(row.stock),
-    imageUrl: primaryImages.get(row.id) ?? null,
+    imageUrl: photos.get(row.id)?.[0] ?? null,
+    photoUrls: photos.get(row.id) ?? [],
     isFeatured: row.isFeatured,
     categoryPosition: row.categoryPosition,
   }));
-}, ["catalog:active-products"], { tags: [CATALOG_TAG], revalidate: 300 });
+}, ["catalog:active-products:v2"], { tags: [CATALOG_TAG], revalidate: 300 });
 
 function toSummary(row: CatalogRow): ProductSummary {
-  const { id, variantId, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl } = row;
-  return { id, variantId, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl };
+  const { id, variantId, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl, photoUrls } = row;
+  return { id, variantId, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl, photoUrls };
 }
 
 function matchesQuery(product: ProductSummary, q: string) {
@@ -173,6 +190,7 @@ export const getProduct = unstable_cache(async (slug: string): Promise<ProductDe
   if (!product || product.variants.length === 0) return null;
 
   const main = product.variants.find((variant) => variant.isDefault) ?? product.variants[0];
+  const photoUrls = product.images.filter((image) => image.kind === "product").slice(0, 4).map((image) => image.url);
   return {
     id: product.id,
     variantId: main.id,
@@ -184,8 +202,9 @@ export const getProduct = unstable_cache(async (slug: string): Promise<ProductDe
     priceArs: main.priceArs,
     compareAtPriceArs: main.compareAtPriceArs,
     inStock: product.variants.some((variant) => isAvailable(variant.stock)),
-    imageUrl: product.images.find((image) => image.kind === "product")?.url ?? null,
+    imageUrl: photoUrls[0] ?? null,
+    photoUrls,
     images: product.images.map(({ url, kind, width, height }) => ({ url, kind, width, height })),
     variants: product.variants.map((variant) => ({ id: variant.id, sku: variant.sku, label: variant.label, priceArs: variant.priceArs, inStock: isAvailable(variant.stock), maxQuantity: maxQuantityFor(variant.stock, MAX_QUANTITY_PER_LINE) })),
   };
-}, ["catalog:product"], { tags: [CATALOG_TAG], revalidate: 300 });
+}, ["catalog:product:v2"], { tags: [CATALOG_TAG], revalidate: 300 });
