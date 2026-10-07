@@ -1,10 +1,12 @@
 import Image from "next/image";
 import { GoogleReviews } from "@/components/google-reviews";
+import { HeroVideo } from "@/components/hero-video";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, BadgeCheck, ClipboardList, CreditCard, Dumbbell, Flame, Gauge, HeartPulse, LayoutGrid, MessagesSquare, RefreshCw, ShieldCheck, Store, Truck, Wallet, Zap } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BadgeCheck, ClipboardList, CreditCard, Dumbbell, Flame, Gauge, HeartPulse, LayoutGrid, MessagesSquare, Pause, Play, RefreshCw, ShieldCheck, Store, Truck, Wallet, Zap } from "lucide-react";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
+import { withLogos } from "@/lib/brand-logos";
 import { getBrands, getFeaturedProducts, getProductsByCategory } from "@/lib/catalog";
 import { commerce } from "@/lib/commerce";
 
@@ -31,23 +33,6 @@ const steps = [
   { icon: Truck, title: `Envío o retiro en ${commerce.pickupLocation}`, text: `Recibilo con envío a todo el país o elegí retirarlo en ${commerce.pickupLocation}.`, link: "Ver productos", href: "/productos" },
 ];
 
-const brandLogos: Record<string, string> = {
-  "star-nutrition": "/assets/brands/star-nutrition-v2.png",
-  "ena-sport": "/assets/brands/ena-sport-v2.png",
-  "body-advance": "/assets/brands/body-advance-v2.png",
-  "one-fit": "/assets/brands/one-fit-v2.png",
-  "gold-nutrition": "/assets/brands/gold-nutrition-horizontal-v2.png",
-  xtrenght: "/assets/brands/xtrenght-v2.png",
-};
-const brandStyles: Record<string, string> = {
-  "star-nutrition": "brand-card--star",
-  "ena-sport": "brand-card--ena",
-  "body-advance": "brand-card--body-advance",
-  "one-fit": "brand-card--one-fit",
-  "gold-nutrition": "brand-card--gold-nutrition",
-  xtrenght: "brand-card--xtrenght",
-};
-
 function SectionHeading({ eyebrow, title, copy, link, href = "/productos" }: { eyebrow: string; title: string; copy: string; link?: string; href?: string }) {
   return <div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2><p>{copy}</p></div>{link ? <Link href={href}>{link} <ArrowRight aria-hidden="true"/></Link> : null}</div>;
 }
@@ -71,26 +56,25 @@ export default async function Home() {
   ];
   const desktopFeaturedSlugs = new Set(desktopFeatured.map((product) => product.slug));
   const mobileFeaturedSlugs = new Set(mobileFeatured.map((product) => product.slug));
+  const logoBrands = withLogos(brands);
   const featured = [...new Map([...desktopFeatured, ...mobileFeatured].map((product) => [product.slug, product])).values()];
 
   return (
     <>
       <Header />
       <main className="home-page">
-        <section className="hero section-pad">
-          <div className="container hero-grid">
-            <div className="hero-copy">
-              <span className="chip">ORIGINALES · ENTREGA RÁPIDA</span>
-              <h1>Suplementos para llevar tu entrenamiento más lejos</h1>
-              <p>Encontrá proteínas, creatinas y esenciales de marcas confiables. Elegí según tu objetivo y comprá con asesoramiento real.</p>
-              <div className="hero-actions"><a className="button button--outline" href="#objetivos">Comprar por objetivo <ArrowRight aria-hidden="true"/></a><a className="button button--outline" href="#productos">Ver productos</a></div>
-              <ul className="hero-meta">
-                <li><ShieldCheck aria-hidden="true"/>Compra protegida</li>
-                <li><Truck aria-hidden="true"/>Envíos a todo el país</li>
-                <li><Store aria-hidden="true"/>Retiro en {commerce.pickupLocation}</li>
-              </ul>
-            </div>
-            <Image src="/assets/hero/hero-productos.webp" alt="Mutant Mass, Platinum Whey Protein, Creatine Monohydrate y PUMP V8 de Star Nutrition sobre pedestales" width={2200} height={1600} sizes="(max-width: 1100px) 100vw, 55vw" className="hero-art" priority />
+        <section className="hero" aria-labelledby="hero-title">
+          <HeroVideo/>
+          <div className="container hero-content">
+            <span className="chip">ORIGINALES · ENTREGA RÁPIDA</span>
+            <h1 id="hero-title">Entrená en serio. Suplementate bien.</h1>
+            <p>Proteínas, creatinas y esenciales de marcas originales. Elegí según tu objetivo y comprá con asesoramiento real.</p>
+            <div className="hero-actions"><Link className="button button--light" href="/productos">Ver productos <ArrowRight aria-hidden="true"/></Link><a className="button button--ghost" href="#objetivos">Comprar por objetivo</a></div>
+            <ul className="hero-meta">
+              <li><ShieldCheck aria-hidden="true"/>Compra protegida</li>
+              <li><Truck aria-hidden="true"/>Envíos a todo el país</li>
+              <li><Store aria-hidden="true"/>Retiro en {commerce.pickupLocation}</li>
+            </ul>
           </div>
         </section>
 
@@ -116,7 +100,13 @@ export default async function Home() {
         <section id="combos" className="section-pad container">
           <SectionHeading eyebrow="COMBOS QUILGYM" title="Combos por objetivo" copy="Selecciones armadas para simplificar tu compra. En cada ficha ves qué productos incluye." link="Explorar combos" href="/productos?categoria=combos" />
           <div className="product-grid">{combos.map((product) => <ProductCard key={product.slug} product={product} compact />)}</div>
-              <div id="marcas" className="brands-block"><SectionHeading eyebrow="SELECCIÓN CONFIABLE" title="Marcas disponibles" copy="Trabajamos con marcas reconocidas y productos con trazabilidad." /><div className="brands-grid">{brands.slice(0, 6).map((brand) => <Link className={`brand-card ${brandStyles[brand.slug] ?? ""}`} href={`/productos?marca=${brand.slug}`} key={brand.slug}><span className={`brand-card__logo-frame${brand.slug === "ena-sport" ? " brand-card__logo-frame--ena" : brand.slug === "gold-nutrition" ? " brand-card__logo-frame--gold" : ""}`}><Image className={`brand-card__logo${brand.slug === "ena-sport" ? " brand-card__logo--invert" : ""}`} src={brandLogos[brand.slug]} alt={`Logo ${brand.name}`} width={150} height={56} sizes="(max-width: 768px) 38vw, 180px" /></span></Link>)}</div></div>
+          <div id="marcas" className="brands-block">
+            <SectionHeading eyebrow="SELECCIÓN CONFIABLE" title="Marcas disponibles" copy="Trabajamos con marcas reconocidas y productos con trazabilidad." />
+            {/* Cuatro pasadas para que cada mitad supere el ancho del contenedor; solo la primera es accesible. */}
+            {logoBrands.length > 0 ? <div className="brand-marquee"><ul className="brand-track">{[0, 1, 2, 3].flatMap((copy) => logoBrands.map(({ slug, name, count, logo }) => <li className={copy ? "brand-copy" : undefined} aria-hidden={copy ? true : undefined} key={`${copy}-${slug}`}><Link className="brand-logo" data-tone={logo.tone} href={`/productos?marca=${slug}`} aria-label={`Ver ${count} ${count === 1 ? "producto" : "productos"} de ${name}`} tabIndex={copy ? -1 : undefined}><Image src={logo.src} alt="" width={logo.width} height={logo.height} sizes="170px"/></Link></li>))}</ul></div> : null}
+            {/* WCAG 2.2.2: control para frenar la cinta también en pantallas táctiles, sin JS. */}
+            {logoBrands.length > 0 ? <label className="brand-pause"><input type="checkbox" className="sr-only" aria-label="Pausar la cinta de marcas"/><Pause aria-hidden="true"/><Play aria-hidden="true"/><span aria-hidden="true">Pausar</span><span aria-hidden="true">Reanudar</span></label> : null}
+          </div>
         </section>
 
         <section id="como-comprar" className="section-pad section-soft">
