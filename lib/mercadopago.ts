@@ -68,7 +68,7 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
           items: [{ id: order.id, title: "Pedido QuilGym", quantity: 1, unit_price: order.totalArs, currency_id: "ARS" }],
           payer: { email: order.email }, external_reference: order.id,
           ...(order.paymentChoice === "mercado_credito" ? { purpose: "onboarding_credits" } : {}),
-          ...(order.paymentChoice === "mercadopago" ? { payment_methods: { excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }, { id: "prepaid_card" }, { id: "account_money" }, { id: "ticket" }] } } : {}),
+          ...(order.paymentChoice === "mercadopago" ? { payment_methods: { excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }, { id: "prepaid_card" }, { id: "ticket" }] } } : {}),
           notification_url: `${siteUrl()}/api/payments/mercadopago/webhook`,
           back_urls: { success: returnUrl, pending: returnUrl, failure: returnUrl },
           auto_return: "approved",
