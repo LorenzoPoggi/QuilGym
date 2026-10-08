@@ -51,7 +51,9 @@ export function readPendingOrderTtlHours(env: Env) {
 }
 
 export function readOrderAccessSecret(env: Env) {
-  const secret = value(env, "ORDER_ACCESS_SECRET");
+  // Reuse the webhook secret as a secure fallback so Mercado Pago's return link
+  // remains usable in a separate browser when an explicit order secret is absent.
+  const secret = value(env, "ORDER_ACCESS_SECRET") ?? value(env, "MP_WEBHOOK_SECRET");
   return secret && secret.length >= MIN_ORDER_ACCESS_SECRET_LENGTH ? secret : null;
 }
 
@@ -96,9 +98,10 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   const ttl = readPendingOrderTtlHours(env);
   if (!ttl.valid) issues.push(`PENDING_ORDER_TTL_HOURS debe ser un entero entre 1 y 720. Se usa ${DEFAULT_PENDING_ORDER_TTL_HOURS}.`);
 
-  const accessSecret = value(env, "ORDER_ACCESS_SECRET");
-  if (!accessSecret) warnings.push("Falta ORDER_ACCESS_SECRET: el pedido solo se puede ver desde el navegador que lo creó y el email no incluye el link.");
-  else if (accessSecret.length < MIN_ORDER_ACCESS_SECRET_LENGTH) issues.push(`ORDER_ACCESS_SECRET debe tener al menos ${MIN_ORDER_ACCESS_SECRET_LENGTH} caracteres.`);
+  const explicitAccessSecret = value(env, "ORDER_ACCESS_SECRET");
+  const accessSecret = explicitAccessSecret ?? value(env, "MP_WEBHOOK_SECRET");
+  if (!accessSecret) warnings.push("Falta ORDER_ACCESS_SECRET (o MP_WEBHOOK_SECRET): el pedido solo se puede ver desde el navegador que lo creó y el email no incluye el link.");
+  else if (accessSecret.length < MIN_ORDER_ACCESS_SECRET_LENGTH) issues.push(`${explicitAccessSecret ? "ORDER_ACCESS_SECRET" : "ORDER_ACCESS_SECRET o MP_WEBHOOK_SECRET"} debe tener al menos ${MIN_ORDER_ACCESS_SECRET_LENGTH} caracteres.`);
 
   const emailsEnabled = Boolean(value(env, "RESEND_API_KEY") && value(env, "EMAIL_FROM"));
   if (!emailsEnabled) warnings.push("Faltan RESEND_API_KEY y/o EMAIL_FROM: los emails quedan guardados en la outbox sin enviarse.");
@@ -155,7 +158,9 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
       mercadopago: Boolean(accessToken && publicKey && value(env, "MP_WEBHOOK_SECRET") && site
         && accessToken.startsWith("TEST-") === publicKey.startsWith("TEST-")),
       transfer: Boolean(bank),
-      cash: Boolean(pickup && cashFlag === "true"),
+      // Cash is available by default whenever pickup is configured; set the flag
+      // to false to explicitly disable it for a deployment.
+      cash: Boolean(pickup && cashFlag !== "false"),
     },
   } };
 }

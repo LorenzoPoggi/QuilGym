@@ -3,7 +3,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { validateCheckout, quoteDelivery } from "./checkout-validation";
 import { readQuote, signQuote, checkoutFingerprint, verifyMercadoPagoSignature } from "./checkout-security";
 import { canTransition } from "./order-state";
-import { parseCheckoutEnv } from "./checkout-env";
+import { parseCheckoutEnv, readOrderAccessSecret } from "./checkout-env";
 import { orderAccessToken, verifyOrderAccess } from "./order-access";
 import type { CheckoutConfig, CheckoutInput } from "./checkout-types";
 vi.mock("server-only", () => ({}));
@@ -106,6 +106,8 @@ describe("diagnóstico de configuración", () => {
   it("efectivo requiere retiro y el TTL se valida", () => {
     expect(parseCheckoutEnv({ ...base, CASH_PICKUP_ENABLED: "true" }).issues.join(" ")).toMatch(/requiere PICKUP_ADDRESS/);
     expect(parseCheckoutEnv({ ...base, CASH_PICKUP_ENABLED: "true", PICKUP_ADDRESS: "Calle 1", PICKUP_HOURS: "9 a 18" }).config.payments.cash).toBe(true);
+    expect(parseCheckoutEnv({ ...base, PICKUP_ADDRESS: "Calle 1", PICKUP_HOURS: "9 a 18" }).config.payments.cash).toBe(true);
+    expect(parseCheckoutEnv({ ...base, CASH_PICKUP_ENABLED: "false", PICKUP_ADDRESS: "Calle 1", PICKUP_HOURS: "9 a 18" }).config.payments.cash).toBe(false);
     expect(parseCheckoutEnv({ ...base, PENDING_ORDER_TTL_HOURS: "0" }).pendingOrderTtlHours).toBe(72);
     expect(parseCheckoutEnv({ ...base, PENDING_ORDER_TTL_HOURS: "48" }).pendingOrderTtlHours).toBe(48);
   });
@@ -126,5 +128,10 @@ describe("link firmado al pedido", () => {
     expect(orderAccessToken(id, null)).toBeNull();
     expect(verifyOrderAccess(id, orderAccessToken(id, secret), null)).toBe(false);
     expect(parseCheckoutEnv({ NODE_ENV: "production", ORDER_ACCESS_SECRET: "corto" }).orderAccessEnabled).toBe(false);
+  });
+  it("usa el secreto webhook como respaldo para autorizar el retorno de Mercado Pago", () => {
+    const report = parseCheckoutEnv({ NODE_ENV: "production", MP_WEBHOOK_SECRET: secret });
+    expect(report.orderAccessEnabled).toBe(true);
+    expect(readOrderAccessSecret({ MP_WEBHOOK_SECRET: secret })).toBe(secret);
   });
 });
