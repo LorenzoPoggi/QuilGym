@@ -181,6 +181,14 @@ La consulta pública desde este entorno devuelve una vista limitada sin los text
 1. Conectar y probar el asesor con una clave de IA, fijar presupuesto, revisar sus criterios/privacidad; configurar Google OAuth y la fuente autorizada de reseñas.
 2. Completar comparador y panel de administración de productos, órdenes, precios, stock e imágenes.
 3. Datos del negocio, staging, sandbox real de Mercado Pago y emails; sin habilitar pagos productivos antes de verificar el flujo.
+
+### Retorno de Mercado Pago en Preview
+
+- En `VERCEL_ENV=preview`, el checkout usa `https://${VERCEL_URL}` (URL del despliegue que creó el pedido) para los enlaces firmados de confirmación y `notification_url`. No usa el alias móvil de la rama ni el dominio de producción. Las variables de sistema de Vercel deben estar habilitadas; si falta un hostname válido, el checkout no habilita Mercado Pago.
+- Fuera de Preview se conserva `NEXT_PUBLIC_SITE_URL`. El retorno (`back_urls`) abre el dashboard; el webhook confirma el pago consultando la API de Mercado Pago. Un parámetro `status=approved` en el navegador no acredita el pedido.
+- Deployment Protection puede permitir entrar al desarrollador autenticado y bloquear a Mercado Pago. El endpoint `/api/payments/mercadopago/webhook` debe ser accesible por el proveedor sin login de Vercel, manteniendo siempre la validación de firma de la aplicación. Cualquier excepción de protección requiere autorización; no desactivar la protección de todo el proyecto para una prueba.
+- Las preferencias ya creadas conservan sus URLs antiguas: desplegar código nuevo no las modifica. No volver a cobrar un pedido ya aprobado para probar un retorno. Primero abrir su enlace firmado en el despliegue donde se creó y revisar la recepción/conciliación del webhook.
+- Diagnóstico del 08/10/2026: los logs mostraron creación y retorno en despliegues distintos; el mismo enlace firmado abrió correctamente al usar el despliegue creador. También se verificó un HTTP 401 de **Vercel Authentication**, anterior al handler del webhook. La corrección local de URLs no elimina ese bloqueo de infraestructura.
 4. Verificación de email, recuperación de contraseña, legales, accesibilidad, seguridad y observabilidad antes del lanzamiento.
 
 ## Reglas de contribución

@@ -26,6 +26,14 @@ function value(env: Env, key: string) {
 }
 
 export function readSiteUrl(env: Env) {
+  // A branch alias can still point at an older deployment with different secrets
+  // or a different database. Return to the exact Preview that created the order.
+  // Use Vercel's server-side metadata, never a client-supplied Host header.
+  if (value(env, "VERCEL_ENV") === "preview") {
+    const host = value(env, "VERCEL_URL");
+    if (!host || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.vercel\.app$/i.test(host)) return null;
+    return `https://${host.toLowerCase()}`;
+  }
   const raw = value(env, "NEXT_PUBLIC_SITE_URL");
   if (!raw) return null;
   try {
@@ -130,7 +138,8 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
 
   const rawSite = value(env, "NEXT_PUBLIC_SITE_URL");
   const site = readSiteUrl(env);
-  if (rawSite && !site) issues.push("NEXT_PUBLIC_SITE_URL debe ser una URL https válida (por ejemplo https://quilgym.com.ar).");
+  if (value(env, "VERCEL_ENV") === "preview" && !site) issues.push("Preview necesita VERCEL_URL válido: habilitá las variables de sistema en Vercel para no enviar pedidos a otro despliegue.");
+  else if (rawSite && !site) issues.push("NEXT_PUBLIC_SITE_URL debe ser una URL https válida (por ejemplo https://quilgym.com.ar).");
 
   const mpKeys = ["MP_ACCESS_TOKEN", "NEXT_PUBLIC_MP_PUBLIC_KEY", "MP_WEBHOOK_SECRET"] as const;
   const mpPresent = mpKeys.filter((key) => value(env, key));
@@ -141,7 +150,7 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   if (accessToken && publicKey && accessToken.startsWith("TEST-") !== publicKey.startsWith("TEST-")) {
     issues.push("Las credenciales de Mercado Pago mezclan sandbox (TEST-) y producción (APP_USR-).");
   }
-  if (mpPresent.length === mpKeys.length && !site) issues.push("Mercado Pago necesita NEXT_PUBLIC_SITE_URL con https para el webhook y la vuelta del pago.");
+  if (mpPresent.length === mpKeys.length && !site) issues.push("Mercado Pago necesita una URL https para el webhook y la vuelta del pago (VERCEL_URL en Preview; NEXT_PUBLIC_SITE_URL fuera de Preview).");
 
   const bank = readBankDetails(env);
   const bankPresent = ["TRANSFER_ACCOUNT", "TRANSFER_HOLDER", "TRANSFER_TAX_ID"].filter((key) => value(env, key));

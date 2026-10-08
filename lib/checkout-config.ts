@@ -15,7 +15,7 @@ export function orderAccessSecret() {
   return readOrderAccessSecret(process.env);
 }
 
-/** URL absoluta del pedido, con el link firmado cuando hay secreto. Null sin NEXT_PUBLIC_SITE_URL. */
+/** URL firmada del pedido, fijada al despliegue creador en Preview. Null sin origen válido. */
 export function orderPageUrl(orderId: string) {
   const site = siteUrl();
   if (!site) return null;
