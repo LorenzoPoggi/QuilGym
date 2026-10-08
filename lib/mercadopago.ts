@@ -51,35 +51,55 @@ export function safePaymentUrl(raw: string | undefined) {
 }
 
 export async function paymentSetup(order: typeof orders.$inferSelect) {
-  if (order.isDemo || order.paymentMethod !== "mercadopago" || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
-  return withOrderTransaction(async (tx) => {
-    const [payment] = await tx.select().from(payments).where(eq(payments.orderId, order.id)).for("update");
-    if (!payment) throw new Error("Pago no disponible.");
-    let preferenceId = payment.preferenceId;
-    let initPoint: string | undefined;
-    if (!preferenceId) {
-      // Incluye el link firmado: la vuelta desde la app de Mercado Pago puede abrir otro navegador sin la cookie.
-      const returnUrl = orderPageUrl(order.id) ?? `${siteUrl()}/checkout/confirmacion/${order.id}`;
-      const preference = await request<{ id: string; init_point: string }>("/checkout/preferences", {
-        items: [{ id: order.id, title: "Pedido QuilGym", quantity: 1, unit_price: order.totalArs, currency_id: "ARS" }],
-        payer: { email: order.email }, external_reference: order.id,
-        ...(order.paymentChoice === "mercado_credito" ? { purpose: "onboarding_credits" } : {}),
-        ...(order.paymentChoice === "mercadopago" ? { payment_methods: { excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }, { id: "prepaid_card" }, { id: "account_money" }, { id: "ticket" }] } } : {}),
-        notification_url: `${siteUrl()}/api/payments/mercadopago/webhook`,
-        back_urls: { success: returnUrl, pending: returnUrl, failure: returnUrl },
-        auto_return: "approved",
-      }, payment.id);
-      preferenceId = preference.id;
-      initPoint = preference.init_point;
-      await tx.update(payments).set({ preferenceId }).where(eq(payments.id, payment.id));
-    } else {
-      const preference = await request<{ init_point: string }>(`/checkout/preferences/${encodeURIComponent(preferenceId)}`);
-      initPoint = preference.init_point;
-    }
-    const safeInitPoint = safePaymentUrl(initPoint);
-    if (!safeInitPoint) throw new Error("Mercado Pago no devolvió un enlace de pago seguro.");
-    return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, preferenceId, initPoint: safeInitPoint, amount: order.totalArs, email: order.email };
-  });
+  let stage = "eligibility";
+  try {
+    if (order.isDemo || order.paymentMethod !== "mercadopago" || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
+    stage = "payment_record";
+    return await withOrderTransaction(async (tx) => {
+      const [payment] = await tx.select().from(payments).where(eq(payments.orderId, order.id)).for("update");
+      if (!payment) throw new Error("Pago no disponible.");
+      let preferenceId = payment.preferenceId;
+      let initPoint: string | undefined;
+      if (!preferenceId) {
+        stage = "preference_create";
+        // Incluye el link firmado: la vuelta desde la app de Mercado Pago puede abrir otro navegador sin la cookie.
+        const returnUrl = orderPageUrl(order.id) ?? `${siteUrl()}/checkout/confirmacion/${order.id}`;
+        const preference = await request<{ id: string; init_point: string }>("/checkout/preferences", {
+          items: [{ id: order.id, title: "Pedido QuilGym", quantity: 1, unit_price: order.totalArs, currency_id: "ARS" }],
+          payer: { email: order.email }, external_reference: order.id,
+          ...(order.paymentChoice === "mercado_credito" ? { purpose: "onboarding_credits" } : {}),
+          ...(order.paymentChoice === "mercadopago" ? { payment_methods: { excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }, { id: "prepaid_card" }, { id: "account_money" }, { id: "ticket" }] } } : {}),
+          notification_url: `${siteUrl()}/api/payments/mercadopago/webhook`,
+          back_urls: { success: returnUrl, pending: returnUrl, failure: returnUrl },
+          auto_return: "approved",
+        }, payment.id);
+        preferenceId = preference.id;
+        initPoint = preference.init_point;
+        stage = "preference_save";
+        await tx.update(payments).set({ preferenceId }).where(eq(payments.id, payment.id));
+      } else {
+        stage = "preference_load";
+        const preference = await request<{ init_point: string }>(`/checkout/preferences/${encodeURIComponent(preferenceId)}`);
+        initPoint = preference.init_point;
+      }
+      stage = "payment_url";
+      const safeInitPoint = safePaymentUrl(initPoint);
+      if (!safeInitPoint) throw new Error("Mercado Pago no devolvió un enlace de pago seguro.");
+      return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, preferenceId, initPoint: safeInitPoint, amount: order.totalArs, email: order.email };
+    });
+  } catch (error) {
+    const value = error && typeof error === "object" ? error as { name?: unknown; code?: unknown; status?: unknown } : {};
+    const knownReason = error instanceof Error && ["Pago no disponible.", "Mercado Pago no devolvió un enlace de pago seguro."].includes(error.message)
+      ? error.message : undefined;
+    console.error("[Mercado Pago] No se pudo configurar la preferencia", {
+      stage,
+      reason: knownReason,
+      name: typeof value.name === "string" ? value.name : "UnknownError",
+      code: typeof value.code === "string" || typeof value.code === "number" ? value.code : undefined,
+      status: typeof value.status === "number" ? value.status : undefined,
+    });
+    throw error;
+  }
 }
 
 /** Lista permitida: descarta cualquier monto, referencia o dato de tarjeta crudo enviado por el navegador. */
