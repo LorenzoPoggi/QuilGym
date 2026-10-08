@@ -13,6 +13,8 @@ export function orderAccessToken(orderId: string, secret: string | null) {
 
 export function verifyOrderAccess(orderId: string, token: string | null | undefined, secret: string | null) {
   if (!secret || !token || !TOKEN_PATTERN.test(token)) return false;
-  const expected = createHmac("sha256", secret).update(`order:${orderId}`).digest();
-  return timingSafeEqual(Buffer.from(token, "base64url"), expected);
+  // Comparar la representación canónica: distintos últimos caracteres base64url
+  // pueden decodificarse al mismo HMAC por los bits de relleno no utilizados.
+  const expected = createHmac("sha256", secret).update(`order:${orderId}`).digest("base64url");
+  return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
 }

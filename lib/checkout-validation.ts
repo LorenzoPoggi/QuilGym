@@ -23,6 +23,8 @@ export function validateCheckout(raw: unknown): { ok: true; value: CheckoutInput
   if (!["shipping", "pickup"].includes(String(input.delivery))) fields.delivery = "Elegí una forma de entrega.";
   const payment = input.payment === "cash" ? "cash" : input.payment === "transfer" ? "transfer" : "mercadopago";
   if (!["cash", "transfer", "mercadopago"].includes(String(input.payment))) fields.payment = "Elegí un medio de pago.";
+  const paymentChoice = ["mercadopago", "mercado_credito", "debit_card", "credit_card", "cash"].includes(String(input.paymentChoice)) ? input.paymentChoice as CheckoutInput["paymentChoice"] : null;
+  if (!paymentChoice || (payment === "cash") !== (paymentChoice === "cash")) fields.paymentChoice = "Elegí un medio de pago válido.";
   if (payment === "cash" && delivery !== "pickup") fields.payment = "El efectivo está disponible solo con retiro.";
   const street = text("street", delivery === "shipping" ? 2 : 0, 160);
   const streetNumber = text("streetNumber", delivery === "shipping" ? 1 : 0, 12);
@@ -37,7 +39,7 @@ export function validateCheckout(raw: unknown): { ok: true; value: CheckoutInput
   const quoteToken = text("quoteToken", 1, 4096);
   if (input.accepted !== true) fields.accepted = "Confirmá los datos de tu pedido para continuar.";
   if (Object.keys(fields).length) return { ok: false, fields };
-  return { ok: true, value: { name, email, phone, delivery, payment, street, streetNumber, apartment, postalCode, city, province, notes, checkoutKey, quoteToken, accepted: true } };
+  return { ok: true, value: { name, email, phone, delivery, payment, paymentChoice: paymentChoice!, street, streetNumber, apartment, postalCode, city, province, notes, checkoutKey, quoteToken, accepted: true } };
 }
 
 /** Tarifas configuradas por el negocio. Nunca supone envío gratis. */

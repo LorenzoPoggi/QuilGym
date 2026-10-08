@@ -57,9 +57,34 @@
 .checkout-delivery-detail, .checkout-quote { font-size: .88rem; line-height: 1.5; }
 .checkout-delivery-detail strong, .checkout-quote strong { font-weight: 700; }
 .checkout-delivery-detail p { margin: 4px 0 0; color: #3d4447; }
+.checkout-pickup-map { display: block; margin: 18px 0; }
+.checkout-pickup-map[hidden] { display: none; }
+.checkout-pickup-map__frame { position: relative; min-height: 340px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; }
+.checkout-pickup-map__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.checkout-pickup-map__details { position: absolute; z-index: 2; top: 18px; left: 18px; display: grid; gap: 5px; max-width: min(340px, calc(100% - 36px)); padding: 16px 18px; color: var(--ink); background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 5px 20px rgba(0,0,0,.14); pointer-events: none; }
+.checkout-pickup-map__details strong { font-weight: 800; }
+.checkout-pickup-map__details span { color: #3d4447; font-size: .88rem; line-height: 1.4; }
+.checkout-pickup-map__frame a { position: absolute; z-index: 1; inset: 0; }
+.checkout-whatsapp-banner { grid-template-columns: 1fr auto; gap: 8px 20px; align-items: center; }
+.checkout-whatsapp-banner strong, .checkout-whatsapp-banner span, .checkout-whatsapp-banner small { grid-column: 1; }
+.checkout-whatsapp-banner strong { font-size: 1rem; }
+.checkout-whatsapp-banner span { font-size: .88rem; }
+.checkout-whatsapp-banner .button { grid-column: 2; grid-row: 1 / span 2; }
+.checkout-whatsapp-banner small { color: #596166; font-size: .78rem; }
 .checkout-payment-note { margin: 14px 0 0; line-height: 1.45; }
 
 /* Checkout: opciones de entrega y pago con radio propio */
+.payment-choices { grid-template-columns: 1fr; gap: 10px; }
+.payment-choices > label { min-height: 76px; display: grid; grid-template-columns: 20px 92px 1fr; align-items: center; gap: 16px; padding: 10px 16px; }
+.payment-choices > label.is-active { background: #fff; }
+.payment-choices .payment-mark { width: 88px; height: 48px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: #1d2022; font-size: .8rem; font-weight: 800; text-align: center; }
+.payment-choices .payment-mark img { width: 70px; height: 42px; object-fit: contain; }
+.payment-choices .payment-mark--brand img { display: block; max-width: 80px; max-height: 46px; width: auto; height: auto; object-fit: contain; }
+.payment-choices .payment-mark--brand .payment-logo--mercado-credito { mix-blend-mode: multiply; transform: scale(1.06); }
+.payment-choices .payment-mark--card img { display: block; width: 56px; height: 34px; object-fit: contain; }
+.payment-choices .payment-brand-mark { width: 58px; height: 40px; display: grid; place-items: center; color: #fff; border: 2px solid #293b8e; border-radius: 50%; }
+.payment-choices .payment-brand-mark--mp { background: #25b8e8; }
+.payment-choices .payment-brand-mark--credit { background: #4bbb96; }
 .checkout-choices > label { min-height: 78px; gap: 12px; padding: 14px 16px; background: #fff; border-radius: 14px; transition: border-color .15s, background-color .15s; }
 .checkout-choices > label:not(.is-active):hover { border-color: #9aa0a3; }
 .checkout-choices > label.is-active { border: 1px solid #34393c; box-shadow: inset 0 0 0 1px #34393c; }
@@ -73,8 +98,6 @@
 .checkout-choices label small { margin-top: 2px; font-size: .76rem; line-height: 1.35; }
 
 /* Checkout: franja de confianza (solo hechos del sistema) */
-.checkout-trust { gap: 16px; margin: 0; padding: 16px 20px; list-style: none; font-size: .78rem; }
-.checkout-trust li { display: flex; align-items: center; gap: 8px; }
 
 /* Checkout: resumen */
 .checkout-summary { box-shadow: var(--shadow); }
@@ -113,6 +136,34 @@
 .checkout-summary-mobile .summary-lines { border-bottom: 0; }
 
 /* Checkout sin entrega o pago configurados: pedido por WhatsApp */
+.checkout-whatsapp-note { display: grid; gap: 3px; padding: 14px 18px; background: #eef8f1; border: 1px solid #cbe8d5; border-radius: 14px; }
+.checkout-whatsapp-note strong { font-size: .88rem; }
+.checkout-whatsapp-note span { color: #596166; font-size: .78rem; line-height: 1.45; }
+.checkout-stepper { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 2px; border-bottom: 1px solid var(--line); }
+.checkout-stepper__item { min-width: 0; display: grid; grid-template-rows: 1fr 3px; }
+.checkout-stepper__item button { min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 10px; color: #858c90; background: transparent; border: 0; font-size: .88rem; }
+.checkout-stepper__item button:disabled { cursor: default; opacity: 1; }
+.checkout-stepper__item button:not(:disabled) { cursor: pointer; }
+.checkout-stepper__item button:not(:disabled):hover { color: var(--ink); }
+.checkout-stepper__icon { display: grid; place-items: center; }
+.checkout-stepper__icon svg { width: 20px; height: 20px; }
+.checkout-stepper__item.is-active button, .checkout-stepper__item.is-complete button { color: var(--ink); }
+.checkout-stepper__track { height: 3px; background: transparent; }
+.checkout-stepper__track i { display: block; width: 0; height: 100%; background: #1d2022; transition: width .25s ease; }
+.checkout-stepper__item.is-active .checkout-stepper__track i, .checkout-stepper__item.is-complete .checkout-stepper__track i { width: 100%; }
+.checkout-step-panel:not([hidden]) { animation: checkout-panel-enter .32s cubic-bezier(.2,.7,.25,1) both; }
+.checkout-step-panel[data-direction="backward"]:not([hidden]) { animation-name: checkout-panel-return; }
+@keyframes checkout-panel-enter { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes checkout-panel-return { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: translateX(0); } }
+.checkout-step-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 22px; }
+.checkout-step-actions--end { justify-content: flex-end; }
+.checkout-step-actions > .button { min-height: 48px; font-weight: 700; }
+.checkout-step-actions > .button[type="submit"] { min-width: min(280px, 100%); }
+.checkout-step-actions .button--whatsapp { display: inline-flex; align-items: center; gap: 9px; }
+.checkout-step-actions .button--whatsapp .whatsapp-glyph { width: 20px; height: 20px; }
+.checkout-step-panel .terms { margin-top: 20px; }
+.checkout-step-panel > .form-error { margin: 12px 0 0; }
+.checkout-flow-error { margin: 0; }
 .checkout-unavailable { display: grid; grid-template-columns: auto 1fr; gap: 14px 16px; align-items: start; }
 .checkout-unavailable__icon { width: 46px; height: 46px; display: grid; place-items: center; color: #583d0a; background: #fff4d6; border-radius: 12px; }
 .checkout-unavailable h2 { margin: 0 0 6px; font-size: 1.3rem; font-weight: 800; }
@@ -123,6 +174,10 @@
 .button--whatsapp .whatsapp-glyph { width: 20px; height: 20px; }
 .button--whatsapp:hover { background: #1ebe5b; border-color: #1ebe5b; }
 .checkout-summary--whatsapp .summary-lines { padding-bottom: 0; border-bottom: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .checkout-step-panel:not([hidden]), .checkout-stepper__track i { animation: none; transition: none; }
+}
 
 /* Confirmación: hero */
 .confirmation-hero { padding: 30px 32px; border-radius: 24px; }
@@ -198,7 +253,14 @@
 @media (max-width: 768px) {
   .cart-items .quantity button { width: 44px; height: 44px; }
   .remove-item { width: 44px; height: 44px; margin: -10px -10px 0 0; }
-  .checkout-trust { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .checkout-pickup-map__frame { min-height: 290px; }
+  .checkout-whatsapp-banner { grid-template-columns: 1fr; }
+  .checkout-whatsapp-banner .button { grid-column: 1; grid-row: auto; }
+  .checkout-stepper__item button { gap: 6px; font-size: .8rem; }
+  .checkout-step-actions { flex-wrap: wrap; }
+  .checkout-step-actions > .button { flex: 1 1 140px; }
+  .checkout-step-actions > .button[type="submit"] { flex-basis: 100%; }
+  .checkout-step-actions--end > .button { flex: 0 1 auto; }
   .confirmation-hero > div:last-child { min-width: 0; }
   .confirmation-hero h1 { font-size: 2.1rem; }
 }

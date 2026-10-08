@@ -86,8 +86,11 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
     if (quote.fingerprint !== checkoutFingerprint(snapshots, discountArs, cart.couponCode) || quote.shippingArs !== delivery.shippingArs || quote.totalArs !== totalArs) {
       throw new CheckoutError("El importe cambió. Actualizá la cotización antes de confirmar.");
     }
+    // Solo en la simulación local: los medios digitales saltean el proveedor de pagos.
+    // La orden y su pago quedan aprobados en la misma transacción, sin cobrar dinero.
+    const initialStatus = config.demo && input.payment !== "cash" ? "approved" : "pending";
     const [order] = await tx.insert(orders).values({
-      cartId, userId, checkoutKey: input.checkoutKey, isDemo: config.demo, paymentMethod: input.payment,
+      cartId, userId, checkoutKey: input.checkoutKey, isDemo: config.demo, status: initialStatus, paymentMethod: input.payment, paymentChoice: input.paymentChoice,
       name: input.name, email: input.email, phone: input.phone, delivery: input.delivery,
       address: input.delivery === "shipping" ? { street: input.street, number: input.streetNumber, apartment: input.apartment, postalCode: input.postalCode, city: input.city, province: input.province } : null,
       notes: input.notes, pickupDetails: input.delivery === "pickup" ? config.pickup : null,
@@ -99,7 +102,7 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
     for (const line of snapshots) if (line.stockReserved) {
       await tx.update(productVariants).set({ stock: sql`${productVariants.stock} - ${line.quantity}` }).where(eq(productVariants.id, line.variantId));
     }
-    await tx.insert(payments).values({ orderId: order.id });
+    await tx.insert(payments).values({ orderId: order.id, status: initialStatus });
     await tx.insert(shipments).values({ orderId: order.id, label: delivery.label, estimate: delivery.estimate });
     if (!config.demo) await tx.insert(orderEmails).values({ orderId: order.id, event: "created" });
     await tx.delete(cartItems).where(eq(cartItems.cartId, cartId));

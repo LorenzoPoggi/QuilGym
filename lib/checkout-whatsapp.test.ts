@@ -29,7 +29,7 @@ describe("disponibilidad de la compra online", () => {
     expect(isOnlineCheckoutAvailable({ ...none, payments: { mercadopago: true, transfer: true, cash: false } })).toBe(false);
     expect(isOnlineCheckoutAvailable({ ...none, shippingRates: [rate], payments: { mercadopago: false, transfer: false, cash: true } })).toBe(false);
     expect(isOnlineCheckoutAvailable({ ...none, pickup, payments: { mercadopago: false, transfer: false, cash: true } })).toBe(true);
-    expect(isOnlineCheckoutAvailable({ ...none, shippingRates: [rate], payments: { mercadopago: false, transfer: true, cash: false } })).toBe(true);
+    expect(isOnlineCheckoutAvailable({ ...none, shippingRates: [rate], payments: { mercadopago: false, transfer: true, cash: false } })).toBe(false);
   });
 
   it("el efectivo solo se usa con retiro", () => {
@@ -66,5 +66,20 @@ describe("mensaje de pedido por WhatsApp", () => {
     expect(message).toContain("Total sin envío: $54.000");
     expect(message).toContain("Sin stock en la web: Mutant Mass.");
     expect(message).not.toContain("× Mutant Mass");
+  });
+
+  it("agrega los datos y preferencias del checkout por etapas sin afirmar que el pago ya se hizo", () => {
+    const message = whatsappOrderMessage({ ...emptyCart, lines: [line({})], itemCount: 2, subtotalArs: 60000, totalArs: 60000 }, {
+      name: "Cliente QA", email: "qa@example.com", phone: "1144444444", delivery: "shipping", payment: "mercadopago",
+      street: "Calle de prueba", streetNumber: "123", apartment: "2 B", postalCode: "1878", city: "Quilmes", province: "Buenos Aires",
+      notes: "Tocar timbre", shippingLabel: "Envío Quilmes", shippingArs: 3500,
+    });
+    expect(message).toContain("Nombre: Cliente QA");
+    expect(message).toContain("Dirección: Calle de prueba 123, 2 B, Quilmes, Buenos Aires, CP 1878");
+    expect(message).toContain("Envío: Envío Quilmes · $3.500");
+    expect(message).toContain("Total estimado con envío: $63.500");
+    expect(message).toContain("Preferencia de pago: Mercado Pago");
+    expect(message).toContain("Tocar timbre");
+    expect(message).toContain("quiero coordinar disponibilidad, entrega y pago");
   });
 });

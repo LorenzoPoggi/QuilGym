@@ -36,26 +36,35 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
     const [payment] = await tx.select().from(payments).where(eq(payments.orderId, order.id)).for("update");
     if (!payment) throw new Error("Pago no disponible.");
     let preferenceId = payment.preferenceId;
+    let initPoint: string | undefined;
     if (!preferenceId) {
       // Incluye el link firmado: la vuelta desde la app de Mercado Pago puede abrir otro navegador sin la cookie.
       const returnUrl = orderPageUrl(order.id) ?? `${siteUrl()}/checkout/confirmacion/${order.id}`;
-      const preference = await request<{ id: string }>("/checkout/preferences", {
+      const preference = await request<{ id: string; init_point: string }>("/checkout/preferences", {
         items: [{ id: order.id, title: "Pedido QuilGym", quantity: 1, unit_price: order.totalArs, currency_id: "ARS" }],
         payer: { email: order.email }, external_reference: order.id,
+        ...(order.paymentChoice === "mercado_credito" ? { purpose: "onboarding_credits" } : {}),
+        ...(order.paymentChoice === "mercadopago" ? { payment_methods: { excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }, { id: "prepaid_card" }, { id: "account_money" }, { id: "ticket" }] } } : {}),
         notification_url: `${siteUrl()}/api/payments/mercadopago/webhook`,
         back_urls: { success: returnUrl, pending: returnUrl, failure: returnUrl },
         auto_return: "approved",
       }, payment.id);
       preferenceId = preference.id;
+      initPoint = preference.init_point;
       await tx.update(payments).set({ preferenceId }).where(eq(payments.id, payment.id));
+    } else {
+      const preference = await request<{ init_point: string }>(`/checkout/preferences/${encodeURIComponent(preferenceId)}`);
+      initPoint = preference.init_point;
     }
-    return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, preferenceId, amount: order.totalArs, email: order.email };
+    const safeInitPoint = safePaymentUrl(initPoint);
+    if (!safeInitPoint) throw new Error("Mercado Pago no devolvió un enlace de pago seguro.");
+    return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, preferenceId, initPoint: safeInitPoint, amount: order.totalArs, email: order.email };
   });
 }
 
 /** Lista permitida: descarta cualquier monto, referencia o dato de tarjeta crudo enviado por el navegador. */
 export async function submitProviderPayment(order: typeof orders.$inferSelect, raw: unknown) {
-  if (order.isDemo || order.paymentMethod !== "mercadopago" || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
+  if (order.isDemo || order.paymentMethod !== "mercadopago" || !["debit_card", "credit_card"].includes(order.paymentChoice) || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
   if (!raw || typeof raw !== "object") throw new Error("Datos de pago inválidos.");
   const value = raw as Record<string, unknown>;
   const method = typeof value.payment_method_id === "string" && /^[\w-]{1,60}$/.test(value.payment_method_id) ? value.payment_method_id : null;

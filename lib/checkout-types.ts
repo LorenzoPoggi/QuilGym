@@ -1,5 +1,6 @@
 export type DeliveryMethod = "pickup" | "shipping";
 export type PaymentMethod = "mercadopago" | "transfer" | "cash";
+export type PaymentChoice = "mercadopago" | "mercado_credito" | "debit_card" | "credit_card" | "cash";
 export type OrderStatus = "pending" | "approved" | "rejected" | "cancelled" | "refunded";
 export type CheckoutInput = {
   checkoutKey: string;
@@ -9,6 +10,7 @@ export type CheckoutInput = {
   phone: string;
   delivery: DeliveryMethod;
   payment: PaymentMethod;
+  paymentChoice: PaymentChoice;
   street: string;
   streetNumber: string;
   apartment: string;

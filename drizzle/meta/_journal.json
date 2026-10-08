@@ -43,6 +43,13 @@
       "when": 1791313311111,
       "tag": "0005_famous_millenium_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791420564060,
+      "tag": "0006_talented_joshua_kane",
+      "breakpoints": true
     }
   ]
 }

@@ -74,7 +74,7 @@ async function fixture({ demo = false, stock = 3, coupon = false, key = "test" }
   await database.insert(schema.cartItems).values({ cartId: cart.id, variantId: variant.id, quantity: 2, seenPriceArs: 1000 });
   if (coupon) await database.insert(schema.coupons).values({ code: "TEST", kind: "percent", value: 10, maxRedemptions: 1 });
   const discount = coupon ? 200 : 0;
-  const input: CheckoutInput = { name: "Prueba", email: "test@example.com", phone: "1144444444", delivery: "pickup", payment: "cash",
+  const input: CheckoutInput = { name: "Prueba", email: "test@example.com", phone: "1144444444", delivery: "pickup", payment: "cash", paymentChoice: "cash",
     street: "", streetNumber: "", apartment: "", postalCode: "", city: "", province: "", notes: "", accepted: true, checkoutKey: randomUUID(),
     quoteToken: signQuote(cart.id, { expires: Date.now() + 60000, delivery: "pickup", postalCode: "", demo,
       fingerprint: checkoutFingerprint([{ variantId: variant.id, quantity: 2, unitPriceArs: 1000 }], discount, coupon ? "TEST" : null), shippingArs: 0, totalArs: 2000 - discount }) };

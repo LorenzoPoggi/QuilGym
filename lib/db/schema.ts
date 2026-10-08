@@ -203,6 +203,7 @@ export const orders = pgTable("orders", {
   isDemo: boolean("is_demo").notNull().default(false),
   status: orderStatus("status").notNull().default("pending"),
   paymentMethod: paymentMethod("payment_method").notNull(),
+  paymentChoice: text("payment_choice").notNull().default("mercadopago"),
   name: text("name").notNull(), email: text("email").notNull(), phone: text("phone").notNull(),
   delivery: deliveryMethod("delivery").notNull(),
   address: jsonb("address").$type<{ street: string; number: string; apartment: string; postalCode: string; city: string; province: string }>(),

@@ -9,7 +9,7 @@ import type { CheckoutConfig, CheckoutInput } from "./checkout-types";
 vi.mock("server-only", () => ({}));
 import { getCheckoutConfig } from "./checkout-config";
 
-const valid: CheckoutInput = { checkoutKey: randomUUID(), quoteToken: "quote", name: "Cliente de prueba", email: "prueba@example.com", phone: "1144444444", delivery: "pickup", payment: "cash", street: "", streetNumber: "", apartment: "", postalCode: "", city: "", province: "", notes: "", accepted: true };
+const valid: CheckoutInput = { checkoutKey: randomUUID(), quoteToken: "quote", name: "Cliente de prueba", email: "prueba@example.com", phone: "1144444444", delivery: "pickup", payment: "cash", paymentChoice: "cash", street: "", streetNumber: "", apartment: "", postalCode: "", city: "", province: "", notes: "", accepted: true };
 const config: CheckoutConfig = { demo: false, pickup: { address: "Local", hours: "A coordinar" }, shippingRates: [{ id: "quilmes", label: "Estándar", postalCodes: ["1878"], priceArs: 5000, estimate: "A coordinar" }], payments: { cash: true, transfer: true, mercadopago: true } };
 
 afterEach(() => vi.unstubAllEnvs());

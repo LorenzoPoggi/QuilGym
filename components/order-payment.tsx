@@ -36,11 +36,13 @@ export function DemoPayment({ orderId, status }: { orderId: string; status: Orde
   </section>;
 }
 
-export function MercadoPagoPayment({ orderId, accessToken }: { orderId: string; accessToken?: string | null }) {
+export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, onPaid }: { orderId: string; paymentChoice: "debit_card" | "credit_card"; accessToken?: string | null; onPaid?: () => void | Promise<void> }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const container = useRef<HTMLDivElement>(null);
+  const onPaidRef = useRef(onPaid);
+  useEffect(() => { onPaidRef.current = onPaid; }, [onPaid]);
   useEffect(() => {
     if (!ready || !container.current) return;
     let disposed = false;
@@ -57,13 +59,14 @@ export function MercadoPagoPayment({ orderId, accessToken }: { orderId: string; 
         const mp = new MercadoPago(result.data.publicKey, { locale: "es-AR" });
         const brick = await mp.bricks().create("payment", id, {
           initialization: { amount: result.data.amount, preferenceId: result.data.preferenceId, payer: { email: result.data.email } },
-          customization: { paymentMethods: { creditCard: "all", debitCard: "all", prepaidCard: "all", ticket: "all", mercadoPago: "all" } },
+          customization: { paymentMethods: paymentChoice === "debit_card" ? { debitCard: "all" } : { creditCard: "all" } },
           callbacks: {
             onReady: () => {},
             onError: () => { if (!disposed) setError("No pudimos cargar el formulario de pago. Recargá para reintentar."); },
             onSubmit: async ({ formData }: { formData: unknown }) => {
               const result = await payOrder(orderId, formData, accessToken);
               if (!result.ok) { setError(result.error ?? "No pudimos procesar el pago."); throw new Error("Payment failed"); }
+              await onPaidRef.current?.();
               router.refresh();
             },
           },
@@ -73,10 +76,28 @@ export function MercadoPagoPayment({ orderId, accessToken }: { orderId: string; 
     }
     void mount();
     return () => { disposed = true; void controller?.unmount(); };
-  }, [ready, orderId, accessToken, router]);
+  }, [ready, orderId, paymentChoice, accessToken, router]);
   return <section className="checkout-card"><h2>Completá el pago</h2><p>Los datos de tu tarjeta se procesan en Mercado Pago.</p>
     <Script src="https://sdk.mercadopago.com/js/v2" strategy="afterInteractive" onReady={() => setReady(true)} onError={() => setError("No pudimos cargar Mercado Pago.")}/>
     <div ref={container}/>{error ? <p role="alert" className="form-error">{error}</p> : null}
+  </section>;
+}
+
+export function MercadoPagoRedirect({ orderId, accessToken }: { orderId: string; accessToken?: string | null }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function redirect() {
+    if (busy) return;
+    setBusy(true); setError("");
+    try {
+      const result = await preparePayment(orderId, accessToken);
+      if (!result.ok || !result.data.initPoint) throw new Error("Pago no disponible.");
+      window.location.assign(result.data.initPoint);
+    } catch { setBusy(false); setError("No pudimos abrir Mercado Pago. Intentá nuevamente."); }
+  }
+  return <section className="checkout-card demo-payment"><h2>Continuá el pago</h2><p>Mercado Pago todavía no confirmó el pago. Podés volver al checkout seguro para completarlo.</p>
+    <button className="button button--dark" type="button" disabled={busy} onClick={() => { void redirect(); }}>{busy ? "Abriendo Mercado Pago…" : "Ir a pagar"}</button>
+    {error ? <p role="alert" className="form-error">{error}</p> : null}
   </section>;
 }
 

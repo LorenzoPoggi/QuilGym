@@ -4,30 +4,35 @@ async function checkout(page: Page) {
   await page.goto("/productos");
   await page.getByRole("button", { name: /^Agregar .* al carrito$/ }).first().click();
   await page.getByRole("link", { name: /Iniciar compra/ }).click();
-  await expect(page.getByText("Modo de prueba local", { exact: true })).toBeVisible();
+  await expect(page.getByText("La compra online se habilita pronto", { exact: true })).toBeVisible();
   await page.getByLabel("Nombre y apellido").fill("Cliente QA QuilGym");
   await page.getByLabel("Email", { exact: true }).fill("quilgym-qa@example.com");
   await page.getByLabel("Teléfono").fill("1144444444");
+  await page.getByRole("button", { name: "Seguir con entrega" }).click();
+  await expect(page.getByRole("heading", { name: "¿Te lo enviamos o retirás?" })).toBeVisible();
 }
 
-test("retiro: pedido persistente, aprobación/reembolso y privacidad", async ({ page, browser }, info) => {
+test("retiro: pago digital simulado, preparación, reembolso y privacidad", async ({ page, browser }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await checkout(page);
-  await expect(page.getByLabel("Calle", { exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Confirmar retiro y total" }).click();
+  await expect(page.getByLabel("Calle", { exact: true })).toBeHidden();
+  await page.getByRole("button", { name: "Seguir con pago" }).click();
+  await expect(page.getByRole("heading", { name: "Elegí cómo pagar" })).toBeVisible();
   await page.getByRole("checkbox", { name: /Confirmo que los datos/ }).check();
-  const submit = page.getByRole("button", { name: "Crear pedido de prueba" });
+  const submit = page.getByRole("button", { name: "Ir a pagar" });
   await expect(submit).toBeEnabled();
   await page.screenshot({ path: info.outputPath("checkout.png"), fullPage: true });
   await submit.click();
   await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+$/, { timeout: 60000 });
-  await expect(page.getByRole("heading", { name: "Recibimos tu pedido" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "¡Gracias por tu compra!" })).toBeVisible();
+  await expect(page.getByText("NÚMERO DE COMPRA")).toBeVisible();
+  await expect(page.locator(".order-steps li").nth(0)).toHaveClass(/is-done/);
+  await expect(page.locator(".order-steps li").nth(1)).toHaveClass(/is-done/);
+  await expect(page.locator(".order-steps li").nth(2)).toHaveClass(/is-current/);
   const orderUrl = page.url();
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Recibimos tu pedido" })).toBeVisible();
-  await page.getByRole("button", { name: "Simular pago aprobado" }).click();
-  await expect(page.getByRole("heading", { name: "¡Tu pago está aprobado!" })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole("heading", { name: "¡Gracias por tu compra!" })).toBeVisible({ timeout: 30000 });
   await page.screenshot({ path: info.outputPath("confirmation.png"), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole("button", { name: "Simular reembolso" }).click();
@@ -41,36 +46,71 @@ test("retiro: pedido persistente, aprobación/reembolso y privacidad", async ({ 
   expect(errors).toEqual([]);
 });
 
-test("envío y transferencia: cotización, efectivo bloqueado y rechazo", async ({ page }) => {
+test("envío y tarjeta: cotización, efectivo bloqueado y pago simulado", async ({ page }) => {
   await checkout(page);
   await page.getByRole("radio", { name: /Envío a domicilio/ }).check();
-  await expect(page.getByRole("radio", { name: /Efectivo al retirar/ })).toBeDisabled();
   await page.getByLabel("Calle", { exact: true }).fill("Calle de prueba");
   await page.getByLabel("Número", { exact: true }).fill("123");
   await page.getByRole("textbox", { name: "Código postal", exact: true }).fill("1878");
   await page.getByLabel("Localidad").fill("Quilmes");
   await page.getByLabel("Provincia").fill("Buenos Aires");
-  await page.getByRole("radio", { name: /Transferencia bancaria/ }).check();
   await page.getByRole("button", { name: "Calcular envío" }).click();
   await expect(page.getByText("Envío simulado · $4.200", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Seguir con pago" }).click();
+  await expect(page.getByRole("radio", { name: "Efectivo" })).toBeDisabled();
+  await page.getByRole("radio", { name: "Tarjeta de débito" }).check();
+  await expect(page.getByText(/En la simulación no se piden datos de tarjeta/)).toBeVisible();
   await page.getByRole("checkbox", { name: /Confirmo que los datos/ }).check();
-  await page.getByRole("button", { name: "Crear pedido de prueba" }).click();
+  await page.getByRole("button", { name: "Ir a pagar" }).click();
   await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+$/, { timeout: 60000 });
-  await expect(page.getByText(/Datos bancarios pendientes de configuración/)).toBeVisible();
-  await page.getByRole("button", { name: "Simular rechazo" }).click();
-  await expect(page.getByRole("heading", { name: "Tu pago fue rechazado" })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole("heading", { name: "¡Gracias por tu compra!" })).toBeVisible({ timeout: 30000 });
+  await expect(page.locator(".order-steps li").nth(2)).toHaveClass(/is-current/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test("efectivo solo en retiro: cancelación persistente", async ({ page }) => {
   await checkout(page);
-  await page.getByRole("radio", { name: /Efectivo al retirar/ }).check();
-  await page.getByRole("button", { name: "Confirmar retiro y total" }).click();
+  await page.getByRole("button", { name: "Seguir con pago" }).click();
+  await page.getByRole("radio", { name: "Efectivo" }).check();
   await page.getByRole("checkbox", { name: /Confirmo que los datos/ }).check();
-  await page.getByRole("button", { name: "Crear pedido de prueba" }).click();
+  await page.getByRole("button", { name: /^(?:Confirmar pedido|Crear pedido(?: de prueba)?)$/ }).click();
   await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+$/, { timeout: 60000 });
+  await expect(page.getByRole("heading", { name: "Recibimos tu pedido" })).toBeVisible();
+  const cashSteps = page.locator(".order-steps li");
+  await expect(cashSteps).toHaveCount(3);
+  await expect(cashSteps.nth(0)).toContainText("Pedido recibido");
+  await expect(cashSteps.nth(0)).toHaveClass(/is-done/);
+  await expect(cashSteps.nth(1)).toContainText("Preparación");
+  await expect(cashSteps.nth(1)).toHaveClass(/is-current/);
+  await expect(cashSteps.nth(2)).toContainText("Pago y Retiro en el local");
+  await expect(cashSteps.nth(2)).toHaveClass(/is-todo/);
   await page.getByRole("button", { name: "Simular cancelación" }).click();
   await expect(page.getByRole("heading", { name: "Tu pedido está cancelado" })).toBeVisible({ timeout: 30000 });
   await page.reload();
   await expect(page.getByRole("heading", { name: "Tu pedido está cancelado" })).toBeVisible();
+});
+
+test("modo WhatsApp: completa las tres etapas y prepara el mensaje sin crear un pedido", async ({ page }) => {
+  await page.goto("/productos");
+  await page.getByRole("button", { name: /^Agregar .* al carrito$/ }).first().click();
+  await page.getByRole("link", { name: /Iniciar compra/ }).click();
+  const whatsappMode = page.getByText("Confirmación por WhatsApp");
+  if (!await whatsappMode.isVisible().catch(() => false)) test.skip(true, "El checkout online de prueba está habilitado en este entorno.");
+  await page.getByLabel("Nombre y apellido").fill("Cliente QA WhatsApp");
+  await page.getByLabel("Email", { exact: true }).fill("whatsapp-qa@example.com");
+  await page.getByLabel("Teléfono").fill("1144444444");
+  await page.getByRole("button", { name: "Seguir con entrega" }).click();
+  await page.getByRole("radio", { name: /Retiro en Quilmes/ }).check();
+  await page.getByRole("button", { name: "Seguir con pago" }).click();
+  await page.getByRole("radio", { name: "Efectivo" }).check();
+  await page.getByRole("checkbox", { name: /Revisé mis datos/ }).check();
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: /Continuar por WhatsApp/ }).click();
+  const popup = await popupPromise;
+  await expect(popup).toHaveURL(/^https:\/\/(?:wa\.me|api\.whatsapp\.com)\//);
+  const message = new URL(popup.url()).searchParams.get("text") ?? "";
+  expect(message).toContain("Nombre: Cliente QA WhatsApp");
+  expect(message).toContain("Entrega: Retiro en Quilmes");
+  expect(message).toContain("Preferencia de pago: Efectivo");
+  await popup.close();
 });
