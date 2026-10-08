@@ -4,9 +4,10 @@ import { notFound } from "next/navigation";
 import { Check, Clock, CreditCard, Info, Landmark, RotateCcw, Store, Truck, User, Wallet, X } from "lucide-react";
 import { orderDetails } from "@/lib/order-service";
 import { orderStatusLabels } from "@/lib/checkout-types";
-import { getCheckoutConfig } from "@/lib/checkout-config";
+import { getCheckoutConfig, orderAccessSecret } from "@/lib/checkout-config";
 import { getAllProducts } from "@/lib/catalog";
 import { formatArs } from "@/lib/commerce";
+import { verifyOrderAccess } from "@/lib/order-access";
 import { DemoPayment, MercadoPagoPayment, MercadoPagoRedirect, RefreshOrder } from "@/components/order-payment";
 import { ProductImage } from "@/components/product-image";
 
@@ -24,7 +25,16 @@ export default async function ConfirmationPage({ params, searchParams }: { param
   // Link firmado del email o de la vuelta desde Mercado Pago; sin él, autoriza la cookie del carrito.
   const accessToken = typeof t === "string" ? t : null;
   const details = await orderDetails(orderId, accessToken);
-  if (!details) notFound();
+  if (!details) {
+    console.warn("[Order confirmation] Pedido no disponible", {
+      order: orderId.slice(0, 8),
+      signedLinkProvided: Boolean(accessToken),
+      signedLinkValid: verifyOrderAccess(orderId, accessToken, orderAccessSecret()),
+      environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+      deployment: process.env.VERCEL_URL,
+    });
+    notFound();
+  }
   const { order, items, payment, shipment } = details;
   const demoEnabled = getCheckoutConfig().demo;
   const pending = order.status === "pending";
