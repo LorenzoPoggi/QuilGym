@@ -12,3 +12,4 @@ AGENTS.md
 .cache/
 test-results/
 playwright-report/
+.vercel

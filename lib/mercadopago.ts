@@ -11,13 +11,33 @@ type ProviderPayment = { id: number; external_reference: string; transaction_amo
   status: string; date_last_updated: string; transaction_details?: { external_resource_url?: string } };
 
 async function request<T>(path: string, body?: object, key?: string): Promise<T> {
-  const response = await fetch(`https://api.mercadopago.com${path}`, {
-    method: body ? "POST" : "GET",
-    headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`, "Content-Type": "application/json", ...(key ? { "X-Idempotency-Key": key } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store", signal: AbortSignal.timeout(12_000),
-  });
-  if (!response.ok) throw new Error("No pudimos comunicarnos con Mercado Pago. Reintentá con el mismo pedido.");
+  let response: Response;
+  try {
+    response = await fetch(`https://api.mercadopago.com${path}`, {
+      method: body ? "POST" : "GET",
+      headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`, "Content-Type": "application/json", ...(key ? { "X-Idempotency-Key": key } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store", signal: AbortSignal.timeout(12_000),
+    });
+  } catch (error) {
+    const name = error instanceof Error ? error.name : "UnknownError";
+    console.error("[Mercado Pago] No se pudo conectar con la API", { method: body ? "POST" : "GET", path, name });
+    throw new Error("No pudimos comunicarnos con Mercado Pago. Reintentá con el mismo pedido.");
+  }
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
+    const causes = Array.isArray(payload.cause)
+      ? payload.cause.slice(0, 3).map((cause) => {
+        const item = cause && typeof cause === "object" ? cause as Record<string, unknown> : {};
+        return { code: item.code };
+      })
+      : undefined;
+    console.error("[Mercado Pago] La API rechazó la solicitud", {
+      method: body ? "POST" : "GET", path, status: response.status,
+      error: payload.error, causes,
+    });
+    throw new Error("No pudimos comunicarnos con Mercado Pago. Reintentá con el mismo pedido.");
+  }
   return response.json() as Promise<T>;
 }
 
