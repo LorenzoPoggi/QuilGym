@@ -140,6 +140,28 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
   }
 
   function invalidateQuote() { quoteVersion.current += 1; setQuote(null); }
+  function openWhatsAppInNewTab(message: string) {
+    const tab = window.open(whatsappUrl(message), "_blank");
+    if (tab) tab.opener = null;
+    else setError("El navegador bloqueó la pestaña de WhatsApp. Permití las ventanas emergentes e intentá de nuevo.");
+  }
+
+  function askShippingCost() {
+    const data = new FormData(formRef.current ?? undefined);
+    const postalCode = String(data.get("postalCode") ?? "").trim();
+    const street = String(data.get("street") ?? "").trim();
+    const streetNumber = String(data.get("streetNumber") ?? "").trim();
+    const city = String(data.get("city") ?? "").trim();
+    const message = [
+      "Hola, quisiera consultar el costo de envío para este carrito:",
+      ...cart.lines.filter((line) => line.available).map((line) => `• ${line.quantity} × ${line.name}${line.variantLabel ? ` (${line.variantLabel})` : ""}`),
+      `Dirección: ${street} ${streetNumber}, ${city}, CP ${postalCode}`,
+      `Subtotal de productos: ${formatArs(cart.totalArs)}`,
+      "¿Me confirman el costo y el total con envío?",
+    ].join("\n");
+    openWhatsAppInNewTab(message);
+  }
+
   function changeDelivery(value: DeliveryMethod) {
     setDelivery(value);
     invalidateQuote();
@@ -221,8 +243,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
         postalCode: parsed.value.postalCode, city: parsed.value.city, province: parsed.value.province,
         notes: parsed.value.notes, shippingLabel: quote?.label, shippingArs: quote?.shippingArs,
       });
-      const opened = window.open(whatsappUrl(message), "_blank", "noopener,noreferrer");
-      if (!opened) window.location.assign(whatsappUrl(message));
+      openWhatsAppInNewTab(message);
       setBusy(false); submitting.current = false;
       return;
     }
@@ -306,7 +327,9 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
             {field("province", "Provincia", { required: true, autoComplete: "address-level1", maxLength: 100 })}
           </div></div>
           <div className="form-grid">{field("notes", "Indicaciones (opcional)", { maxLength: 400, className: "span-4" })}</div>
-          {!whatsappOnly && delivery === "shipping" && config.shippingRates.length > 0 ? <button type="button" className="button button--outline" disabled={quoting || busy} onClick={() => { void calculate(); }}>{quoting ? "Calculando…" : "Calcular envío"}</button> : null}
+          {delivery === "shipping" && config.shippingRates.length > 0 ? <button type="button" className="button button--outline" disabled={quoting || busy} onClick={() => { void calculate(); }}>{quoting ? "Calculando…" : "Calcular envío"}</button> : null}
+          {delivery === "shipping" && whatsappOnly && config.shippingRates.length === 0 ? <button type="button" className="button button--outline" disabled={busy} onClick={askShippingCost}>Consultar costo por WhatsApp</button> : null}
+          {delivery === "pickup" && config.pickup ? <button type="button" className="button button--outline" disabled={quoting || busy} onClick={() => { void calculate(); }}>{quoting ? "Calculando…" : "Confirmar retiro gratis"}</button> : null}
           {quote && delivery === "shipping" ? <p className="checkout-quote" role="status"><strong>{quote.label} · {formatArs(quote.shippingArs)}</strong><br/>{quote.estimate}</p> : null}
           <div className="checkout-step-actions"><button type="button" className="button button--outline" onClick={() => goTo(1)}><ArrowLeft aria-hidden="true" size={18}/>Volver</button><button type="button" className="button button--dark" disabled={quoting || busy} onClick={() => { void continueToPayment(); }}>{quoting ? "Calculando…" : "Seguir con pago"}<ArrowRight aria-hidden="true" size={18}/></button></div>
         </section>
