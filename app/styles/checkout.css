@@ -78,7 +78,7 @@
 .payment-choices > label { min-height: 76px; display: grid; grid-template-columns: 20px 92px 1fr; align-items: center; gap: 16px; padding: 10px 16px; }
 .payment-choices > label.is-active { background: #fff; }
 .payment-choices .payment-mark { width: 88px; height: 48px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: #1d2022; font-size: .8rem; font-weight: 800; text-align: center; }
-.payment-choices .payment-mark img { width: 70px; height: 42px; object-fit: contain; }
+.payment-choices .payment-mark img { width: 56px; height: 42px; object-fit: contain; }
 .payment-choices .payment-mark--brand img { display: block; max-width: 80px; max-height: 46px; width: auto; height: auto; object-fit: contain; }
 .payment-choices .payment-mark--brand .payment-logo--mercado-credito { mix-blend-mode: multiply; transform: scale(1.06); }
 .payment-choices .payment-mark--card img { display: block; width: 56px; height: 34px; object-fit: contain; }
