@@ -15,7 +15,8 @@ test("hero: video según el ancho, pausa accesible por teclado y texto en el pri
   else await expect(reassurance).toBeVisible();
   const benefits = page.locator("main > .benefits-section");
   await expect(benefits).toHaveCount(1);
-  await expect(benefits).toBeVisible();
+  if (mobile) await expect(benefits).toBeHidden();
+  else await expect(benefits).toBeVisible();
   expect(await benefits.evaluate((section) => section.previousElementSibling?.classList.contains("hero"))).toBe(true);
   await expect(benefits.locator(".benefit")).toHaveCount(5);
   // El poster está en el HTML inicial con prioridad alta: es el candidato a LCP.

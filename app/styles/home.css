@@ -119,6 +119,7 @@
 }
 
 @media (max-width: 768px) {
+  .benefits-section { display: none; }
   .featured-product--desktop-only { display: none; }
   /* Texto abajo, apoyado sobre la cinta de marcas. */
   .hero-content { margin-bottom: 0; }
