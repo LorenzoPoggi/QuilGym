@@ -17,6 +17,7 @@ vi.mock("./db/transaction", () => ({ withOrderTransaction: mocks.transaction }))
 vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null, orderAccessSecret: () => null, pendingOrderTtlHours: () => 72 }));
 import { createOrder, findOwnedOrder, transitionOrder } from "./order-service";
 import { expirePendingOrders } from "./order-expiry";
+import { expireAbandonedCarts } from "./abandoned-cart-expiry";
 
 const pg = new PGlite();
 const database = drizzle(pg, { schema });
@@ -172,5 +173,32 @@ describe("vencimiento de pedidos pendientes", () => {
     await createOrder(demo.input, demo.cart.id);
     expect((await expirePendingOrders(new Date(Date.now() + hours(200)), 72)).cancelled).toBe(0);
     expect((await database.select().from(schema.orders)).every((order) => order.status === "pending")).toBe(true);
+  });
+});
+
+describe("limpieza de carritos abandonados", () => {
+  it("borra solo carritos inactivos sin orden y sus contadores", async () => {
+    const now = new Date("2026-10-09T12:00:00.000Z");
+    const staleFixture = await fixture({ key: "stale-cart" });
+    const protectedFixture = await fixture({ key: "ordered-cart" });
+    const recentFixture = await fixture({ key: "recent-cart" });
+    await createOrder(protectedFixture.input, protectedFixture.cart.id);
+    const cutoff = new Date(now.getTime() - 60 * 24 * 60 * 60_000);
+    await database.update(schema.carts).set({ updatedAt: new Date(cutoff.getTime() - 1) }).where(eq(schema.carts.id, staleFixture.cart.id));
+    await database.update(schema.carts).set({ updatedAt: new Date(cutoff.getTime() - 1) }).where(eq(schema.carts.id, protectedFixture.cart.id));
+    await database.insert(schema.authRateLimits).values({ id: `coupon:apply:${staleFixture.cart.id}`, key: `coupon:apply:${staleFixture.cart.id}`, count: 1, lastRequest: now.getTime() });
+
+    const result = await expireAbandonedCarts(now);
+
+    expect(result.deleted).toBe(1);
+    expect(await database.select().from(schema.carts).where(eq(schema.carts.id, staleFixture.cart.id))).toHaveLength(0);
+    expect(await database.select().from(schema.cartItems).where(eq(schema.cartItems.cartId, staleFixture.cart.id))).toHaveLength(0);
+    expect(await database.select().from(schema.carts).where(eq(schema.carts.id, protectedFixture.cart.id))).toHaveLength(1);
+    expect(await database.select().from(schema.carts).where(eq(schema.carts.id, recentFixture.cart.id))).toHaveLength(1);
+    expect(await database.select().from(schema.authRateLimits).where(eq(schema.authRateLimits.key, `coupon:apply:${staleFixture.cart.id}`))).toHaveLength(0);
+  });
+
+  it("no permite acortar la retención por debajo de la duración de la cookie", async () => {
+    await expect(expireAbandonedCarts(new Date(), 30)).rejects.toThrow("Retención de carrito fuera de rango");
   });
 });

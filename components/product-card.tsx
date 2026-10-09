@@ -6,6 +6,8 @@ import { AddToCartButton } from "./cart-buttons";
 import { ProductImage } from "./product-image";
 import { ProductCardMedia } from "./product-card-media";
 import { FavoriteButton } from "./account-controls";
+import { ComboVisual } from "./combo-visual";
+import { comboParts } from "@/lib/combo-contents";
 
 /**
  * Tarjeta de producto compartida (home, catálogo, búsqueda, ficha, favoritos, comparador y asesor).
@@ -17,12 +19,15 @@ export function ProductCard({ product, compact = false, priority = false, classN
   const highlights = paymentHighlights();
   // `?? []`: las respuestas del asesor pueden traer productos sin el campo (cachés o mocks viejos).
   const photos = product.photoUrls ?? [];
+  const combo = comboParts(product.slug);
 
   return (
     <article className={`product-card ${compact ? "product-card--compact" : ""} ${className}`}>
       <div className="product-image">
         <FavoriteButton productId={product.id} name={product.name}/>
-        {photos.length > 1
+        {combo
+          ? <Link className="card-media-single product-card__combo-visual" href={href} aria-label={`Ver ${product.name}`}><ComboVisual parts={combo} sizes="(max-width: 520px) 82vw, (max-width: 1100px) 42vw, 22vw" preload={priority}/></Link>
+          : photos.length > 1
           ? <ProductCardMedia href={href} name={product.name} photos={photos} preload={priority}/>
           : <Link className="card-media-single" href={href} aria-label={`Ver ${product.name}`}><ProductImage product={product} priority={priority} decorative/></Link>}
       </div>

@@ -3,13 +3,14 @@ import { ComboShowcase } from "@/components/combo-showcase";
 import { GoogleReviews } from "@/components/google-reviews";
 import { HeroVideo } from "@/components/hero-video";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, BadgeCheck, ClipboardList, CreditCard, Dumbbell, Flame, Gauge, HeartPulse, LayoutGrid, MessagesSquare, Pause, Play, RefreshCw, ShieldCheck, Store, Truck, Wallet, Zap } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BadgeCheck, CreditCard, Dumbbell, Flame, Gauge, HeartPulse, LayoutGrid, MessagesSquare, RefreshCw, ShieldCheck, Store, Truck, Wallet, Zap } from "lucide-react";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
 import { withLogos } from "@/lib/brand-logos";
 import { getBrands, getFeaturedProducts, getProductsByCategory } from "@/lib/catalog";
 import { commerce } from "@/lib/commerce";
+import { ADVISOR_GREETING } from "@/lib/advisor-chat-types";
 
 const objectives = [
   { title: "Masa muscular", text: "Proteínas y ganadores de peso", tone: "orange", icon: Dumbbell, href: "/productos?categoria=proteinas" },
@@ -66,7 +67,6 @@ export default async function Home() {
         <section className="hero" aria-labelledby="hero-title">
           <HeroVideo/>
           <div className="container hero-content">
-            <span className="chip">ORIGINALES · ENTREGA RÁPIDA</span>
             <h1 id="hero-title">Entrená en serio. Suplementate bien.</h1>
             <p>Proteínas, creatinas y esenciales de marcas originales. Elegí según tu objetivo y comprá con asesoramiento real.</p>
             <div className="hero-actions"><Link className="button button--light" href="/productos">Ver productos <ArrowRight aria-hidden="true"/></Link><a className="button button--ghost" href="#objetivos">Comprar por objetivo</a></div>
@@ -76,17 +76,16 @@ export default async function Home() {
               <li><Store aria-hidden="true"/>Retiro en {commerce.pickupLocation}</li>
             </ul>
           </div>
+          <section className="benefits-section benefits-section--hero" aria-label="Beneficios de QuilGym">
+            <div className="container benefits-grid">{benefits.map(({ icon: Icon, title, text }) => <div className="benefit" key={title}><span><Icon aria-hidden="true"/></span><div><strong>{title}</strong><small>{text}</small></div></div>)}</div>
+          </section>
           {logoBrands.length > 0 ? <nav id="marcas" className="hero-brands" aria-label="Marcas disponibles">
             <div className="container hero-brands-inner">
-              {/* WCAG 2.2.2: control para frenar la cinta también en pantallas táctiles, sin JS. */}
-              <label className="brand-pause"><input type="checkbox" className="sr-only" aria-label="Pausar la cinta de marcas"/><Pause aria-hidden="true"/><Play aria-hidden="true"/></label>
-              {/* Cuatro pasadas para que cada mitad supere el ancho del contenedor; solo la primera es accesible. */}
+              {/* La animación se pausa al hover/foco; las copias son decorativas y solo la primera pasada es accesible. */}
               <div className="brand-marquee"><ul className="brand-track">{[0, 1, 2, 3].flatMap((copy) => logoBrands.map(({ slug, name, count, logo }) => <li className={copy ? "brand-copy" : undefined} aria-hidden={copy ? true : undefined} key={`${copy}-${slug}`}><Link className="brand-logo" href={`/productos?marca=${slug}`} aria-label={`Ver ${count} ${count === 1 ? "producto" : "productos"} de ${name}`} tabIndex={copy ? -1 : undefined}><Image src={logo.src} alt="" width={logo.width} height={logo.height} sizes="160px" style={{ aspectRatio: `${logo.width} / ${logo.height}` }}/></Link></li>))}</ul></div>
             </div>
           </nav> : null}
         </section>
-
-        <section className="benefits-section"><div className="container benefits-grid">{benefits.map(({ icon: Icon, title, text }) => <div className="benefit" key={title}><span><Icon aria-hidden="true"/></span><div><strong>{title}</strong><small>{text}</small></div></div>)}</div></section>
 
         <section id="objetivos" className="section-pad container">
           <SectionHeading eyebrow="ENCONTRÁ TU CAMINO" title="Elegí tu objetivo" copy="Navegá por una selección pensada para acompañar tu tipo de entrenamiento y tus preferencias." link="Ver todo el catálogo" />
@@ -98,9 +97,9 @@ export default async function Home() {
             <SectionHeading eyebrow="SELECCIÓN QUILGYM" title="Destacados" copy="Una selección de básicos para empezar. Precios y stock actualizados." link="Ver todos los productos" />
             <div className="product-grid">{featured.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} className={desktopFeaturedSlugs.has(product.slug) ? (mobileFeaturedSlugs.has(product.slug) ? "" : "featured-product--desktop-only") : "featured-product--mobile-only"} />)}</div>
             <div className="advisor-banner">
-              <div className="advisor-icon"><ClipboardList aria-hidden="true"/></div>
-              <div><p className="eyebrow">TE ORIENTAMOS EN 3 MINUTOS</p><h3>¿No sabés qué suplemento elegir?</h3><p>Respondé preguntas simples sobre tu objetivo, alimentación y rutina. Te mostramos categorías para explorar, sin vueltas.</p></div>
-              <div className="advisor-cta"><Link className="button button--outline" href="/asesor">Encontrá mis suplementos <ArrowRight aria-hidden="true"/></Link><small>Sin registro · orientación informativa</small></div>
+              <div className="advisor-icon"><MessagesSquare aria-hidden="true"/></div>
+              <div><p className="eyebrow">ASESOR QUILGYM</p><h3>Tu objetivo. Tu rutina. Tu conversación.</h3><p className="advisor-preview">{ADVISOR_GREETING}</p></div>
+              <div className="advisor-cta"><Link className="button button--outline" href="/asesor">Conversar con el asesor <ArrowRight aria-hidden="true"/></Link><small>Asesor virtual · orientación informativa</small></div>
             </div>
           </div>
         </section>

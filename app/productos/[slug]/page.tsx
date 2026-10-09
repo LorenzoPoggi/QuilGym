@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Info, Store, Truck } from "lucide-react";
@@ -33,7 +32,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
   const related = await getProductsByCategory(product.category.slug, 4, product.slug);
-  const nutrition = product.images.filter((image) => image.kind === "nutrition");
   const categoryHref = `/productos?categoria=${product.category.slug}`;
   // Combos mapeados: la composición con las fotos de lo que incluye en lugar de la foto vieja del combo.
   const combo = comboParts(product.slug);
@@ -53,7 +51,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return <><Header/><main className="product-page"><div className="container">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/>
     <p className="breadcrumb"><Link href="/">Inicio</Link> / <Link href={categoryHref}>{product.category.name}</Link>{product.brand ? <> / <Link href={`${categoryHref}&marca=${product.brand.slug}`}>{product.brand.name}</Link></> : null} / {product.name}</p>
-    <section className="product-hero">
+    <section className="product-hero" id="galeria-producto">
       {combo && activeSlugs ? <ComboGallery name={product.name} parts={combo} activeSlugs={activeSlugs}/> : <ProductGallery product={product}/>}
       <div className="product-buybox">
         <div className="buybox-brand">{product.brand?.name ?? product.category.name}</div>
@@ -69,19 +67,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <TrustStrip/>
     <section className="product-info-section">
       <div className="section-heading"><div><h2>Información del producto</h2><p>Información clara para entender el producto y decidir según tu rutina.</p></div></div>
-      <div className={nutrition.length ? "product-facts-grid" : ""}>
+      <div>
         {product.description ? <RichText source={product.description} className="product-description"/> : <p className="product-description">Consultá el rótulo del envase para ver ingredientes, porción recomendada, información nutricional y advertencias.</p>}
-        {nutrition.length ? (
-          <aside className="nutrition-panel" id="informacion-nutricional">
-            <h3>Información nutricional</h3>
-            <p>Rótulo del envase. Tocá la imagen para verla en tamaño completo.</p>
-            {nutrition.map((image, index) => (
-              <a href={image.url} target="_blank" rel="noopener" className="nutrition-label" key={image.url}>
-                <Image src={image.url} alt={`Información nutricional de ${product.name}${nutrition.length > 1 ? ` (${index + 1} de ${nutrition.length})` : ""}`} width={image.width} height={image.height} sizes="(max-width: 1100px) 100vw, 40vw"/>
-              </a>
-            ))}
-          </aside>
-        ) : null}
       </div>
       <p className="compare-disclaimer"><Info aria-hidden="true"/><span>La información nutricional puede variar por lote: ante cualquier diferencia, vale lo que dice el envase que recibís. Los suplementos no reemplazan una alimentación variada; ante dudas, consultá a un profesional de la salud.</span></p>
     </section>

@@ -25,7 +25,7 @@ export default async function ComparePage() {
     { label: "Categoría", cells: compared.map((product) => ({ text: product.category.name })) },
     { label: "Stock", cells: compared.map((product) => ({ text: product.inStock ? "En stock" : "Sin stock", out: !product.inStock })) },
     { label: "Rótulo nutricional", diff: false, cells: compared.map((product, index) => details[index]?.images.some((image) => image.kind === "nutrition")
-      ? { text: "Ver rótulo nutricional", href: `/productos/${product.slug}#informacion-nutricional` }
+      ? { text: "Ver rótulo nutricional", href: `/productos/${product.slug}#galeria-producto` }
       : { text: "Sin foto del rótulo" }) },
   ];
 

@@ -23,7 +23,7 @@ export function AdvisorLauncher() {
     document.addEventListener("keydown", close); document.addEventListener("pointerdown", outside); media.addEventListener("change", reset);
     return () => { document.removeEventListener("keydown", close); document.removeEventListener("pointerdown", outside); media.removeEventListener("change", reset); };
   }, [open, dial]);
-  if (pathname.startsWith("/asesor") || pathname.startsWith("/checkout")) return null;
+  if (pathname.startsWith("/asesor") || pathname.startsWith("/checkout") || pathname === "/cuenta/ingresar" || pathname === "/cuenta/registro") return null;
   return <div className="advisor-floating" ref={region} onBlur={(event) => {
     // Con teclado, salir del grupo cierra el menú mobile. Sin relatedTarget (tap) se deja al clic afuera.
     const next = event.relatedTarget as Node | null;

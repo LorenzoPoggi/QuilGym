@@ -62,6 +62,13 @@ html:has(.lightbox[open]) { overflow: hidden; }
 .buybox-price { margin-top: 16px; font-size: 2.3rem; letter-spacing: -.02em; }
 .product-buybox .stock { font-size: .84rem; }
 .buy-actions .button { min-height: 50px; border-radius: 12px; font-size: .9rem; }
+.buy-actions > div:last-child { min-width: 0; }
+.buy-actions > div:last-child .button { color: var(--ink); background: #fff; border: 1px solid var(--ink); }
+.buy-actions > div:last-child .button--dark { color: #fff; background: var(--ink); }
+.product-page .trust-strip { gap: 14px; margin-block: 28px; padding: 16px; }
+.product-page .trust-strip > div { gap: 9px; }
+.product-page .trust-strip > div > span { width: 34px; height: 34px; flex: 0 0 34px; }
+.product-info-section > .section-heading { margin-bottom: 14px; }
 /* Barra de compra fija: solo en mobile y cuando el bloque de compra quedó arriba */
 .sticky-buy { display: none; }
 .shipping-calculator { margin-top: 16px; padding: 16px; border-radius: 16px; }
@@ -73,8 +80,6 @@ html:has(.lightbox[open]) { overflow: hidden; }
 .product-description { align-self: start; padding: 24px; background: #fff; border: 1px solid var(--line); border-radius: 18px; }
 .product-description.rich-text h3 { margin: 18px 0 6px; padding-top: 16px; border-top: 1px solid var(--line); font-size: .98rem; font-weight: 700; }
 .product-description.rich-text > h3:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
-.nutrition-panel { border-radius: 18px; }
-.nutrition-panel h3 { font-size: 1.05rem; font-weight: 700; }
 .compare-disclaimer { display: flex; align-items: center; gap: 10px; margin: 24px 0 0; padding: 16px 20px; color: #3d4447; background: #e3e6e8; border-radius: 16px; font-size: .82rem; line-height: 1.5; }
 .compare-disclaimer svg { flex-shrink: 0; width: 18px; height: 18px; color: #5d6468; }
 .similar-products .section-heading > a svg { width: 17px; height: 17px; }
@@ -112,36 +117,6 @@ html:has(.lightbox[open]) { overflow: hidden; }
 .advisor-sidebar > small { display: flex; align-items: flex-start; gap: 10px; padding: 14px; color: #c4c9cb; background: #474d50; border-radius: 14px; font-size: .78rem; line-height: 1.45; }
 .advisor-sidebar > small svg { flex-shrink: 0; width: 18px; height: 18px; color: #fff; }
 .advisor-chat { border: 1px solid var(--line); border-radius: 28px; box-shadow: 0 16px 32px rgba(31,35,37,.08); }
-.advisor-chat > header > div > span svg { width: 20px; height: 20px; }
-.advisor-chat > header small { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; }
-.advisor-chat > header small i { width: 7px; height: 7px; background: #6b7276; border-radius: 50%; }
-.advisor-chat > header button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; border-radius: 12px; font-size: .88rem; font-weight: 600; cursor: pointer; }
-.advisor-chat > header button svg { width: 17px; height: 17px; }
-.chat-message { align-items: flex-start; }
-.chat-message > span { flex-shrink: 0; width: 28px; height: 28px; display: grid; place-items: center; background: #dcdfe0; border-radius: 8px; }
-.chat-message > span svg { width: 16px; height: 16px; }
-.chat-message p { font-size: .92rem; line-height: 1.5; }
-.advisor-options button { cursor: pointer; font-size: .9rem; }
-.advisor-options button > span svg { width: 18px; height: 18px; }
-.advisor-options button.is-active > span { color: #fff; background: #34393c; }
-.advisor-options .advisor-option-check { width: 18px; height: 18px; margin-left: auto; }
-.journey .eyebrow { color: #5d6468; }
-.journey span { display: inline-flex; align-items: center; gap: 4px; font-size: .68rem; }
-.journey span svg { width: 12px; height: 12px; }
-.advisor-chat > footer .button { min-height: 46px; border-radius: 12px; }
-.advisor-chat > footer .button svg { width: 17px; height: 17px; }
-
-/* Recomendaciones */
-.recommendation-hero h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.1; letter-spacing: -.025em; }
-.recommendation-hero > div:last-child .button { display: inline-flex; align-items: center; gap: 8px; }
-.recommendation-hero > div:last-child .button svg { width: 17px; height: 17px; }
-.recommendation-note { display: flex; align-items: center; gap: 10px; margin: 18px 0 0; color: #3d4447; font-size: .86rem; }
-.recommendation-note svg { flex-shrink: 0; width: 18px; height: 18px; color: #5d6468; }
-.recommendation-label { color: #3d4447; letter-spacing: .03em; text-transform: uppercase; }
-.recommendation-item > p { align-items: flex-start; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 14px; color: #3d4447; font-size: .82rem; line-height: 1.5; }
-.recommendation-item > p svg { flex-shrink: 0; width: 17px; height: 17px; margin-top: 1px; }
-.recommendation-item:first-child > p { background: #e4e7e9; border-color: #c9ced1; }
-.selection-adjust h2 { font-weight: 800; }
 
 @media (max-width: 1100px) {
   .compare-scroll { overflow-x: auto; scroll-snap-type: x proximity; }
@@ -176,6 +151,8 @@ html:has(.lightbox[open]) { overflow: hidden; }
   .lightbox-arrow--prev { left: 16px; }
   .lightbox-arrow--next { right: 16px; }
   .lightbox-slide { padding: 0 12px 76px; }
+  .buy-actions { justify-items: start; }
+  .purchase-quantity { width: max-content; min-width: 124px; }
   .purchase-quantity button { width: 44px; height: 44px; }
   /* Comparador: cada producto es una tarjeta apilada con filas «etiqueta: valor». La tabla y la fila de tarjetas
      pasan a display: contents y `order` reagrupa las celdas por producto (hasta 3). */
@@ -203,19 +180,11 @@ html:has(.lightbox[open]) { overflow: hidden; }
   .advisor-sidebar h1 { font-size: 1.5rem; }
   .advisor-sidebar > div { margin-top: 14px; }
   .advisor-sidebar progress { margin-bottom: 0; }
-  .recommendation-hero h1 { font-size: 1.8rem; }
 }
 
 @media (max-width: 520px) {
   .product-description { padding: 18px; }
   .compare-disclaimer { align-items: flex-start; }
-  .advisor-options button { min-height: 56px; }
-  /* Recomendaciones: tarjeta horizontal para no apilar tres fotos enormes */
-  .recommendation-grid { gap: 40px; }
-  .recommendation-item .product-card { display: grid; grid-template-columns: 112px 1fr; column-gap: 12px; align-items: start; }
-  .recommendation-item .product-image { grid-row: 1 / span 6; margin: 0; }
-  .recommendation-item .product-card > :not(.product-image) { grid-column: 2; }
-  .recommendation-item .product-card h3 { min-height: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

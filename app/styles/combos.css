@@ -23,7 +23,7 @@
 .combo-visual__item--back { left: 4%; bottom: 12%; width: 54%; height: 71%; transition: transform .45s cubic-bezier(.2, .7, .2, 1); }
 .combo-visual__item--front { right: 4%; bottom: 9%; width: 58%; height: 77%; transition: transform .45s cubic-bezier(.2, .7, .2, 1); }
 .combo-visual__item--solo { left: 18%; right: 18%; bottom: 11%; height: 72%; }
-.combo-visual__plus { position: absolute; left: 50%; bottom: 8%; z-index: 2; display: grid; place-items: center; width: 30px; height: 30px; color: #fff; background: var(--ink); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 6px 14px rgba(31, 35, 37, .18); font-size: 1.1rem; font-weight: 700; line-height: 1; transform: translateX(-50%); }
+.product-card__combo-visual { position: relative; overflow: hidden; aspect-ratio: 214 / 159; background: radial-gradient(120% 90% at 50% 38%, #fbfbfa 0%, #eff0ee 58%, #e3e5e3 100%); }
 .combo-card__fallback { position: absolute; inset: 0; display: block; }
 .combo-card__fallback .product-thumb { height: 100%; aspect-ratio: auto; }
 .combo-card__fallback .product-thumb img { mix-blend-mode: multiply; }
@@ -68,7 +68,6 @@
 .combo-gallery__stage { position: relative; width: 100%; overflow: hidden; aspect-ratio: 545 / 470; max-height: 540px; border-radius: 24px; background: radial-gradient(115% 90% at 50% 36%, #fcfcfb 0%, #f0f1ef 56%, #e1e3e1 100%); isolation: isolate; }
 .combo-gallery__stage::after { content: ""; position: absolute; left: 16%; right: 16%; bottom: 9%; height: 8%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, rgba(29, 32, 34, .17), transparent); pointer-events: none; }
 .combo-gallery__stage .combo-visual { inset: 4% 6% 1%; }
-.combo-gallery__stage .combo-visual__plus { width: 46px; height: 46px; border-width: 3px; font-size: 1.55rem; box-shadow: 0 10px 22px rgba(31, 35, 37, .2); }
 .combo-gallery__count { position: absolute; top: 18px; left: 18px; z-index: 3; padding: 6px 12px; color: var(--ink); background: rgba(255, 255, 255, .88); border: 1px solid rgba(29, 32, 34, .08); border-radius: 999px; font-size: .76rem; font-weight: 700; letter-spacing: .02em; }
 
 .combo-gallery__includes .eyebrow { margin: 4px 0 10px; color: var(--muted); }
@@ -100,7 +99,6 @@ a.combo-gallery__part:hover > svg { color: var(--ink); }
   .combo-gallery { display: contents; }
   .combo-gallery__includes { order: 1; }
   .combo-gallery__stage { aspect-ratio: 1 / .76; max-height: 46svh; border-radius: 20px; }
-  .combo-gallery__stage .combo-visual__plus { width: 38px; height: 38px; font-size: 1.3rem; }
   .combo-gallery__count { top: 12px; left: 12px; }
 }
 @media (max-width: 520px) {

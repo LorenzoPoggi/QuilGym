@@ -21,7 +21,6 @@
 .hero-content { position: relative; z-index: 1; padding-block: 56px; }
 .hero-content > * { max-width: 620px; }
 .hero :where(a, button):focus-visible { outline-color: #fff; }
-.chip { display: inline-flex; margin-bottom: 20px; padding: 8px 14px; color: #fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28); border-radius: 999px; backdrop-filter: blur(10px); font-size: .7rem; font-weight: 700; letter-spacing: .04em; }
 .hero h1 { margin: 0; font-size: clamp(2.8rem, 5.4vw, 4.6rem); font-weight: 800; line-height: 1; letter-spacing: -.035em; text-wrap: balance; }
 .hero-content > p { margin: 22px 0 30px; color: #e3e6e7; font-size: 1.12rem; line-height: 1.6; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -33,11 +32,17 @@
 .hero-meta li { display: inline-flex; align-items: center; gap: 7px; }
 .hero-meta svg { width: 17px; height: 17px; color: #fff; }
 
-/* Beneficios */
-.benefit + .benefit { padding-left: 14px; border-left: 1px solid var(--line); }
-.benefit > span svg { width: 20px; height: 20px; }
-.benefit strong { font-size: .86rem; font-weight: 600; }
-.benefit small { font-size: .7rem; }
+/* Beneficios integrados al borde inferior del hero, no como una fila suelta entre secciones. */
+.benefits-section--hero { position: relative; z-index: 1; align-self: stretch; padding: 14px 0; color: #fff; background: rgba(14, 16, 17, .62); border-top: 1px solid rgba(255, 255, 255, .2); backdrop-filter: blur(8px); }
+.benefits-section--hero .benefits-grid { min-height: 0; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+.benefits-section--hero .benefit { gap: 10px; padding-inline: 14px; }
+.benefits-section--hero .benefit:first-child { padding-left: 0; }
+.benefits-section--hero .benefit + .benefit { border-left: 1px solid rgba(255, 255, 255, .2); }
+.benefits-section--hero .benefit > span { width: 34px; height: 34px; flex: 0 0 34px; color: #fff; background: rgba(255, 255, 255, .12); border-radius: 9px; }
+.benefits-section--hero .benefit > span svg { width: 18px; height: 18px; }
+.benefits-section--hero .benefit strong, .benefits-section--hero .benefit small { display: block; }
+.benefits-section--hero .benefit strong { font-size: .78rem; font-weight: 700; }
+.benefits-section--hero .benefit small { margin-top: 2px; color: #d2d6d7; font-size: .66rem; line-height: 1.35; }
 
 /* Encabezados de sección */
 .section-heading h2 { font-size: clamp(1.9rem, 2.9vw, 2.5rem); font-weight: 800; letter-spacing: -.025em; }
@@ -60,6 +65,7 @@
 .advisor-icon svg { width: 46px; height: 46px; }
 .advisor-banner h3 { margin: 0 0 8px; font-size: 2rem; font-weight: 800; letter-spacing: -.025em; }
 .advisor-banner p:not(.eyebrow) { max-width: 520px; font-size: .95rem; line-height: 1.55; }
+.advisor-banner p.advisor-preview { max-width: 560px; margin-top: 12px; padding: 12px 16px; color: #25292b; background: #fff; border-radius: 14px 14px 14px 4px; }
 .advisor-banner .eyebrow { color: #c7cbcd; }
 .advisor-cta { display: grid; justify-items: center; gap: 10px; }
 .advisor-cta .button { min-height: 52px; padding: 0 22px; border-color: #fff; border-radius: 14px; font-size: .95rem; }
@@ -70,26 +76,20 @@
 .hero-brands-inner { display: flex; align-items: center; gap: 12px; }
 .brand-marquee { flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
 .brand-track { display: flex; align-items: center; width: max-content; margin: 0; padding: 0; list-style: none; animation: marquee 48s linear infinite; }
-.brand-marquee:hover .brand-track, .brand-marquee:focus-within .brand-track, .hero-brands:has(.brand-pause :checked) .brand-track { animation-play-state: paused; }
+.brand-marquee:hover .brand-track, .brand-marquee:focus-within .brand-track { animation-play-state: paused; }
 .brand-track li { flex: none; padding-inline: 34px; }
 .brand-logo { height: 56px; display: grid; place-items: center; padding-inline: 6px; border-radius: 10px; }
 /* Todos los logos tienen fondo transparente: brightness(0) invert(1) los deja blancos y la opacidad los vuelve gris. */
 .brand-logo img { width: auto; height: 30px; max-width: 140px; object-fit: contain; opacity: .5; filter: brightness(0) invert(1); transition: opacity .25s ease; }
 .brand-logo:is(:hover, :focus-visible) img { opacity: 1; }
 .hero-brands .brand-logo:focus-visible { outline-offset: -2px; }
-/* Pausa siempre visible y discreta (también sirve en pantallas táctiles, donde no hay hover). */
-.brand-pause { position: relative; flex: none; width: 44px; height: 44px; display: grid; place-items: center; color: rgba(255,255,255,.55); border-radius: 50%; cursor: pointer; transition: color .25s ease, background-color .25s ease; }
-.brand-pause:hover, .brand-pause:has(:focus-visible) { color: #fff; background: rgba(255,255,255,.1); }
-.brand-pause:has(:focus-visible) { outline: 2px solid #fff; outline-offset: 2px; }
-.brand-pause svg { width: 16px; height: 16px; }
-.brand-pause:not(:has(:checked)) svg:nth-of-type(2), .brand-pause:has(:checked) svg:nth-of-type(1) { display: none; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
 /* Cómo comprar: mismo ritmo que el bloque destacado + 3 tarjetas de la referencia */
 .steps-grid { display: grid; grid-template-columns: 1.1fr repeat(3, 1fr); gap: 18px; }
-.steps-intro { display: flex; flex-direction: column; min-height: 230px; padding: 26px; color: #fff; background: #356b82; border-radius: 22px; box-shadow: 0 12px 24px rgba(53,107,130,.22); }
+.steps-intro { display: flex; flex-direction: column; min-height: 230px; padding: 26px; color: #fff; background: #34393c; border-radius: 22px; box-shadow: 0 12px 24px rgba(31,35,37,.16); }
 .steps-intro strong { font-size: 3rem; font-weight: 800; line-height: 1; letter-spacing: -.03em; }
-.steps-intro p { flex: 1; margin: 14px 0 18px; color: #dbe7ec; font-size: .92rem; line-height: 1.55; }
+.steps-intro p { flex: 1; margin: 14px 0 18px; color: #e0e4e5; font-size: .92rem; line-height: 1.55; }
 .steps-intro a, .step-card a { display: inline-flex; align-items: center; gap: 7px; font-size: .85rem; font-weight: 600; }
 .steps-intro svg, .step-card a svg { width: 16px; height: 16px; }
 .step-card { display: flex; flex-direction: column; min-height: 230px; padding: 22px; background: #fff; border: 1px solid #e1e2e2; border-radius: 22px; box-shadow: var(--shadow); }
@@ -124,6 +124,8 @@
 @media (max-width: 1100px) {
   /* En tablet el texto ocupa casi todo el ancho: el degradé no puede aclararse tanto a la derecha. */
   .hero-media::after { background: linear-gradient(90deg, rgba(12,14,15,.8) 0%, rgba(12,14,15,.7) 50%, rgba(12,14,15,.62) 80%, rgba(12,14,15,.4) 100%); }
+  .benefits-section--hero .benefits-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 12px; }
+  .benefits-section--hero .benefit:nth-child(4) { padding-left: 0; border-left: 0; }
   .steps-grid { grid-template-columns: repeat(2, 1fr); }
   .advisor-banner { grid-template-columns: auto 1fr; background: #33383b; }
   .advisor-cta { grid-column: 1 / -1; justify-items: start; }
@@ -131,16 +133,15 @@
 }
 
 @media (max-width: 768px) {
-  .benefits-section { display: none; }
+  .benefits-section--hero { display: none; }
   .featured-product--desktop-only { display: none; }
   /* Texto abajo, apoyado sobre la cinta de marcas. */
   .hero-content { margin-bottom: 0; }
   .hero-media::after { background: linear-gradient(180deg, rgba(12,14,15,.3) 0%, rgba(12,14,15,.4) 30%, rgba(12,14,15,.72) 62%, rgba(12,14,15,.85) 100%); }
   .hero-video-toggle { top: 16px; right: 16px; }
   .hero-video-toggle:focus-visible { top: 136px; }
-  /* El chip queda en la zona clara del degradé (cara del boxeador en el montaje): fondo oscuro para AA. */
-  .hero .chip { background: rgba(12,14,15,.5); }
-  /* El texto va abajo: el recorte sobrante sale de arriba y las caras quedan por encima del chip. */
+  .hero-meta { display: none; }
+  /* El texto va abajo, con el encuadre del video alineado al borde inferior. */
   .hero-poster, .hero-video { object-position: 50% 100%; }
   .hero-content { padding-block: 32px; }
   .hero h1 { font-size: clamp(2.3rem, 10vw, 3.2rem); }
@@ -166,7 +167,6 @@
 }
 
 @media (max-width: 520px) {
-  .chip { margin-bottom: 14px; }
   .hero-content > p { margin: 14px 0 22px; font-size: 1rem; line-height: 1.5; }
   .hero-actions { flex-direction: column; gap: 10px; }
   .hero-actions .button { width: 100%; min-height: 50px; }
@@ -191,6 +191,9 @@
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 28px 20px; }
   .footer-brand { grid-column: 1 / -1; }
   .footer-trust { gap: 12px 24px; }
+  .footer-main { padding-top: 34px; }
+  .footer-grid nav h3 { margin-bottom: 9px; }
+  .footer-bottom { gap: 8px; margin-top: 24px; padding-top: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -199,6 +202,8 @@
   /* Fila estática: sin loop, sin copias visibles y sin máscara en los bordes. */
   .brand-marquee { -webkit-mask-image: none; mask-image: none; }
   .brand-track { width: auto; flex-wrap: wrap; justify-content: center; animation: none; }
-  .brand-copy, .brand-pause { display: none; }
+  .brand-copy { display: none; }
   .brand-logo img { transition: none; }
+  .objective { transition: none; }
+  .objective:hover { transform: none; }
 }

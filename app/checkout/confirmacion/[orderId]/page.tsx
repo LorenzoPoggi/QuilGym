@@ -10,6 +10,7 @@ import { formatArs } from "@/lib/commerce";
 import { verifyOrderAccess } from "@/lib/order-access";
 import { DemoPayment, MercadoPagoPayment, MercadoPagoRedirect, RefreshOrder } from "@/components/order-payment";
 import { ProductImage } from "@/components/product-image";
+import { Logo } from "@/components/logo";
 
 export const metadata: Metadata = { title: "Tu pedido | QuilGym", robots: { index: false, follow: false }, referrer: "no-referrer" };
 
@@ -68,7 +69,7 @@ export default async function ConfirmationPage({ params, searchParams }: { param
       ]
     : null;
 
-  return <><header className="checkout-header"><div className="container"><Link href="/" className="wordmark">QUILGYM</Link></div></header>
+  return <><header className="checkout-header"><div className="container"><Link href="/" className="wordmark" aria-label="QuilGym, inicio"><Logo/></Link></div></header>
     <main className="confirmation-page"><div className="container">
       {order.isDemo ? <div className="checkout-demo-banner"><strong>Pedido de prueba</strong><span>No representa una compra real. No se cobró dinero ni se envió ningún email.</span></div> : null}
       <section className={`confirmation-hero is-${order.status}`}><span aria-hidden="true"><StatusIcon strokeWidth={2}/></span><div><p className="eyebrow">{cashPickup && pending ? "En preparación" : orderStatusLabels[order.status]}</p><h1>{cashPickup && pending ? "Recibimos tu pedido" : titles[order.status]}</h1><p>{order.name}, podés consultar los detalles y el estado desde esta página.</p></div><div><small>{order.status === "approved" ? "NÚMERO DE COMPRA" : "NÚMERO DE PEDIDO"}</small><strong className="order-id">{code}</strong><small className="order-uuid" title="Identificador completo del pedido">{order.id}</small></div></section>

@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { databaseWritesEnabled, databaseWriteSkipReason } from "./database-safety";
 
 test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout", async ({ page, browser }, info) => {
+  test.skip(!databaseWritesEnabled, databaseWriteSkipReason);
   const email = `quilgym-qa-${info.project.name}-${Date.now()}@example.com`;
   const password = "QuilGym-QA-only-2026";
   const errors: string[] = [];
@@ -48,9 +50,9 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   await page.getByLabel("Nombre y apellido").fill("Cliente QA");
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Teléfono").fill("1144444444");
-  await page.getByRole("button", { name: "Confirmar retiro y total" }).click();
+  await page.getByRole("button", { name: "Confirmar retiro gratis" }).click();
   await page.getByRole("checkbox", { name: /Confirmo que los datos/ }).check();
-  await page.getByRole("button", { name: "Crear pedido de prueba" }).click();
+  await page.getByRole("button", { name: /^Preparar pedido/ }).click();
   await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+$/, { timeout: 60000 });
   const orderUrl = page.url();
   await page.context().clearCookies({ name: "qg_cart" });
@@ -94,11 +96,29 @@ test("asesor conversacional: texto libre, contexto, tarjetas, reintento y reinic
     return route.fulfill({ json: { reply: "Por lo que contás, una opción práctica puede acompañar tus comidas sin reemplazarlas.", recommendations: [{ product: { id: 1, variantId: 1, slug: "proteina-star-nutrition-2-lb", name: "Proteína de prueba QA", category: { slug: "proteinas", name: "Proteínas" }, brand: null, priceArs: 20000, compareAtPriceArs: null, inStock: true, imageUrl: null }, reason: "Por tus horarios, podría darte practicidad cuando te cuesta incluir proteína en las comidas.", caution: "Revisá ingredientes y advertencias en el rótulo." }] } });
   });
   await page.goto("/asesor");
+  if (info.project.name === "mobile") {
+    await expect(page.locator(".advisor-sidebar")).toBeHidden();
+    await expect(page.locator(".advisor-privacy__health")).toBeVisible();
+  } else {
+    await expect(page.locator(".advisor-sidebar")).toBeVisible();
+  }
+  await expect(page.getByRole("region", { name: "Chat con el asesor QuilGym" })).toBeVisible();
+  if (info.project.name === "mobile") {
+    const conversation = page.locator(".advisor-conversation");
+    await expect(conversation).toHaveCSS("flex-grow", "1");
+    await expect(page.getByRole("textbox", { name: "Tu mensaje al asesor" })).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(await page.evaluate(() => document.documentElement.clientHeight));
+  }
   const message = page.getByRole("textbox", { name: "Tu mensaje al asesor" });
   await expect(message).toBeEnabled();
   await expect(page.getByText(/Soy tu asesor fitness virtual/)).toBeVisible();
   await expect(page.getByText("¿Tenés 18 años o más?", { exact: true })).toHaveCount(0);
   await expect(page.locator(".advisor-options")).toHaveCount(0);
+  const starters = page.locator(".advisor-starters button");
+  await expect(starters).toHaveCount(3);
+  await starters.first().click();
+  await expect(page.getByRole("textbox", { name: "Tu mensaje al asesor" })).toHaveValue("Quiero ganar masa muscular, ¿por dónde empiezo?");
+  await expect(page.getByRole("button", { name: "Enviar mensaje" })).toBeEnabled();
   await page.screenshot({ path: info.outputPath("advisor-welcome.png"), fullPage: true });
   await message.fill("Quiero ganar fuerza, entreno hace dos años tres veces por semana.");
   await page.getByRole("button", { name: "Enviar mensaje" }).click();

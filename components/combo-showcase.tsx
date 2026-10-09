@@ -8,6 +8,8 @@ import { formatArs } from "@/lib/commerce";
 import { FavoriteButton } from "./account-controls";
 import { AddToCartButton } from "./cart-buttons";
 import { ProductImage } from "./product-image";
+import { ComboVisual } from "./combo-visual";
+export { ComboVisual } from "./combo-visual";
 
 /**
  * Sección «Combos por objetivo» de la home. Cada tarjeta arma la imagen del combo con las
@@ -37,33 +39,14 @@ export async function ComboShowcase({ limit = 4 }: { limit?: number }) {
 }
 
 /**
- * Composición del combo: las fotos de los productos que incluye, una delante de la otra y
- * unidas por un «+». La usan la tarjeta de la home y la ficha del combo. Es decorativa:
+ * Composición del combo: las fotos de los productos que incluye, una delante de la otra.
+ * La usan las tarjetas, la home y la ficha del combo. Es decorativa:
  * el nombre y el detalle de lo que incluye van siempre en texto al lado.
  *
  * Las fotos tienen fondo blanco y se funden con el panel con `mix-blend-mode: multiply`
  * aplicado al contenedor de cada foto (no a la `<img>`): así el fundido sigue funcionando
  * cuando el contenedor se mueve con `transform` en el hover.
  */
-export function ComboVisual({ parts, sizes, preload = false }: { parts: ComboPart[]; sizes: string; preload?: boolean }) {
-  // Una foto por unidad: el Combo Dino muestra las dos proteínas.
-  const photos = parts.flatMap((part) => Array.from({ length: part.quantity }, () => part)).slice(0, 2);
-  if (photos.length === 2) {
-    return (
-      <span className="combo-visual combo-visual--pair">
-        <span className="combo-visual__item combo-visual__item--back"><Image src={photos[0].photoUrl} alt="" fill sizes={sizes} preload={preload}/></span>
-        <span className="combo-visual__item combo-visual__item--front"><Image src={photos[1].photoUrl} alt="" fill sizes={sizes} preload={preload}/></span>
-        <span className="combo-visual__plus" aria-hidden="true">+</span>
-      </span>
-    );
-  }
-  return (
-    <span className="combo-visual">
-      <span className="combo-visual__item combo-visual__item--solo"><Image src={photos[0].photoUrl} alt="" fill sizes={sizes} preload={preload}/></span>
-    </span>
-  );
-}
-
 function ComboCard({ combo }: { combo: ProductSummary }) {
   const href = `/productos/${combo.slug}`;
   const parts = comboParts(combo.slug);

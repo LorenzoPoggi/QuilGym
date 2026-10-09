@@ -1,14 +1,29 @@
 /* Cuenta, asesor y reseñas: comparten los tokens del sitio. */
 .advisor-layout--conversation { gap: 24px; box-shadow: none; align-items: stretch; }
-.advisor-layout--conversation .advisor-sidebar { border-radius: var(--radius-lg); }
+.advisor-layout--conversation { grid-template-columns: minmax(280px, .78fr) minmax(0, 1.5fr); }
+.advisor-layout--conversation .advisor-sidebar { min-height: 650px; padding: clamp(28px, 3vw, 44px); border-radius: var(--radius-lg); background: radial-gradient(circle at 100% 0, #4a5053 0, #34393c 42%, #252a2d 100%); }
+.advisor-layout--conversation .advisor-sidebar-icon { width: 64px; height: 64px; margin-bottom: 30px; background: #4a5053; border: 1px solid #666d70; box-shadow: 0 8px 22px #11131444; }
+.advisor-layout--conversation .advisor-sidebar .eyebrow { color: #d5dade; letter-spacing: .12em; }
+.advisor-layout--conversation .advisor-sidebar h1 { max-width: 10ch; margin: 0; font-size: clamp(2.35rem, 3vw, 3.4rem); line-height: .99; text-wrap: balance; }
+.advisor-layout--conversation .advisor-sidebar > p:not(.eyebrow) { max-width: 34ch; margin: 20px 0 32px; color: #d1d5d7; font-size: 1rem; line-height: 1.65; }
 .advisor-layout--conversation .advisor-sidebar small { margin-top: auto; display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
+.advisor-layout--conversation .advisor-sidebar small { padding: 15px; background: #ffffff12; border: 1px solid #ffffff20; border-radius: 14px; }
 .advisor-sidebar small svg { width: 20px; flex-shrink: 0; }
-.advisor-chat--conversation { min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.advisor-chat--conversation { min-width: 0; min-height: 650px; display: flex; flex-direction: column; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow); }
 .advisor-chat--conversation > header { gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.advisor-chat--conversation > header > div { display: grid; grid-template-columns: 46px minmax(0,1fr); align-items: center; gap: 2px 12px; }
+.advisor-chat--conversation > header > div > span { width: 46px; height: 46px; display: grid; grid-row: 1 / span 2; place-items: center; color: #fff; background: #34393c; border-radius: 14px; }
+.advisor-chat--conversation > header > div > span svg { width: 22px; height: 22px; }
+.advisor-chat--conversation > header > div > strong { align-self: end; font-size: 1rem; }
+.advisor-chat--conversation > header > div > small { align-self: start; color: var(--muted); }
 .advisor-chat--conversation > header button { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .advisor-chat--conversation > header button svg { width: 18px; }
-.advisor-conversation { height: 510px; overflow-y: auto; overscroll-behavior: contain; padding: 24px 4px 16px; scrollbar-width: thin; }
+.advisor-conversation { height: 510px; overflow-y: auto; overscroll-behavior: contain; padding: 28px 6px 18px; scrollbar-width: thin; }
 .advisor-entry { margin-bottom: 26px; }
+.advisor-starters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 20px 36px; }
+.advisor-starters p { flex: 0 0 100%; margin: 0; color: var(--muted); font-size: .78rem; }
+.advisor-starters button { min-height: 40px; padding: 8px 12px; color: #34393c; background: #fff; border: 1px solid var(--line); border-radius: 999px; font: inherit; font-size: .78rem; text-align: left; cursor: pointer; transition: background-color .16s ease, border-color .16s ease, transform .16s ease; }
+.advisor-starters button:hover { background: var(--soft); border-color: #aab0b3; transform: translateY(-1px); }
 .advisor-speaker { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
 .advisor-speaker svg { width: 18px; height: 18px; }
 .advisor-entry--user .advisor-speaker { justify-content: flex-end; }
@@ -17,10 +32,13 @@
 .advisor-thinking { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .85rem; }
 .advisor-thinking svg { width: 18px; animation: advisor-spin 1s linear infinite; }
 @keyframes advisor-spin { to { transform: rotate(360deg); } }
-.advisor-composer { display: flex; gap: 12px; align-items: flex-end; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; }
-.advisor-composer textarea { flex: 1; min-width: 0; max-height: 180px; resize: vertical; background: none; border: 0; padding: 8px; font: inherit; line-height: 1.5; }
-.advisor-composer textarea:focus-visible { outline: 2px solid var(--muted); border-radius: 6px; }
-.advisor-composer .button { flex-shrink: 0; min-height: 46px; }
+.advisor-composer { display: flex; gap: 12px; align-items: flex-end; padding: 10px; border: 1px solid #c6cccf; border-radius: 18px; background: #f7f8f7; transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease; }
+.advisor-composer:focus-within { border-color: #555d61; background: #fff; box-shadow: 0 0 0 3px #34393c12; }
+.advisor-composer textarea { flex: 1; min-width: 0; min-height: 54px; max-height: 180px; resize: vertical; background: none; border: 0; padding: 10px; font: inherit; line-height: 1.5; }
+.advisor-composer textarea:focus-visible { outline: 0; }
+.advisor-composer textarea::placeholder { color: #747c80; }
+.advisor-composer .button { flex-shrink: 0; min-height: 46px; border-radius: 12px; }
+.advisor-composer .button:disabled { color: #747c80; background: #e3e6e7; cursor: not-allowed; }
 .advisor-privacy { color: var(--muted); font-size: .72rem; line-height: 1.6; margin: 12px 0 0; }
 .advisor-chat-error, .advisor-config-note { font-size: .85rem; line-height: 1.6; padding: 14px; border-radius: var(--radius-sm); background: var(--soft); }
 .advisor-chat-error { color: #9b3030; margin-bottom: 12px; }
@@ -28,25 +46,56 @@
 .advisor-chat-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
 .advisor-chat-products .recommendation-reason { padding: 16px; }
 .advisor-chat-products .recommendation-reason p { font-size: .85rem; }
+.advisor-privacy__health { display: none; }
+@media (min-width: 769px) and (max-width: 1100px) {
+ .advisor-layout--conversation { grid-template-columns: minmax(250px, .8fr) minmax(0, 1.4fr); gap: 18px; }
+ .advisor-layout--conversation .advisor-sidebar { padding: 28px; }
+ .advisor-chat--conversation { padding: 22px; }
+}
 @media (max-width: 768px) {
- .advisor-layout--conversation { gap: 16px; }.advisor-layout--conversation .advisor-sidebar { padding: 24px; }
- .advisor-layout--conversation .advisor-sidebar-icon { display: none; }.advisor-layout--conversation .advisor-sidebar h1 { font-size: 1.7rem; }
- .advisor-chat--conversation { border-radius: var(--radius-lg); padding: 18px; }.advisor-conversation { height: 460px; }
+ .advisor-layout--conversation .advisor-sidebar { display: none; }
+ .advisor-privacy__health { display: inline; }
+ .advisor-layout--conversation { gap: 16px; }
+ .advisor-chat--conversation { min-height: 0; border-radius: var(--radius-lg); padding: 18px; }.advisor-conversation { height: 460px; }
  .advisor-chat--conversation > header strong { font-size: .9rem; }.advisor-chat--conversation > header small { font-size: .72rem; }
  .advisor-chat--conversation > header button { padding: 10px; font-size: .75rem; }.advisor-bubble { max-width: 100%; padding: 14px; }
  .advisor-composer { padding: 8px; gap: 4px; }.advisor-composer .button { padding-inline: 12px; }.advisor-composer .button span { display: none; }
  .advisor-chat-products { grid-template-columns: 1fr; }
+ .advisor-starters { margin-left: 0; }
+ .advisor-starters button { min-height: 44px; }
+}
+@media (max-width: 768px) {
+ /* En el asesor, el header (aviso + navegación + buscador) ocupa ~160px. El panel usa el alto restante:
+    un único historial desplazable, con encabezado, composer y aviso de privacidad siempre a la vista. */
+ .advisor-page { height: calc(100dvh - 160px); min-height: 0; padding: 8px 0 0; overflow: hidden; }
+ .advisor-page > .container, .advisor-layout--conversation { height: 100%; min-height: 0; }
+ .advisor-layout--conversation { display: block; }
+ .advisor-chat--conversation { height: 100%; min-height: 0; overflow: hidden; }
+ .advisor-chat--conversation > header, .advisor-composer, .advisor-privacy { flex: 0 0 auto; }
+ .advisor-conversation { height: auto; min-height: 0; flex: 1 1 auto; overflow-y: auto; }
+ .advisor-composer { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) { .advisor-thinking svg { animation: none; } }
 .account-page { min-height: 75vh; padding-block: 60px; }
-.auth-card { max-width: 480px; margin: auto; padding: 36px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--paper); box-shadow: var(--shadow); }
+.auth-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(420px, 1.1fr); align-items: stretch; gap: clamp(24px, 4vw, 56px); max-width: 1080px; margin-inline: auto; }
+.auth-aside { display: flex; flex-direction: column; justify-content: center; min-height: 620px; padding: clamp(28px, 4vw, 52px); color: #fff; border-radius: var(--radius-lg); background: radial-gradient(circle at 100% 0, #4a5053 0, #34393c 42%, #252a2d 100%); }
+.auth-aside .eyebrow { color: #d5dade; letter-spacing: .12em; }
+.auth-aside h2 { max-width: 12ch; margin: 10px 0 16px; font-size: clamp(2rem, 3.2vw, 3rem); line-height: 1.02; letter-spacing: -.035em; }
+.auth-aside > p:not(.eyebrow) { max-width: 38ch; color: #d1d5d7; line-height: 1.65; }
+.auth-aside ul { display: grid; gap: 20px; margin: 32px 0 0; padding: 0; list-style: none; }
+.auth-aside li { display: flex; align-items: flex-start; gap: 12px; }
+.auth-aside li > svg { width: 21px; margin-top: 2px; color: #d5dade; }
+.auth-aside li strong, .auth-aside li small { display: block; }
+.auth-aside li small { margin-top: 3px; color: #c5cbce; line-height: 1.5; }
+.auth-card { width: 100%; max-width: 540px; align-self: center; margin: auto; padding: 36px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--paper); box-shadow: var(--shadow); }
 .auth-card h1 { margin: 10px 0; font-size: 2rem; line-height: 1.15; }
 .auth-card > p { color: var(--muted); }
 .auth-card form { display: grid; gap: 18px; }
 .auth-card label { display: grid; gap: 8px; font-weight: 600; font-size: .9rem; }
 .auth-card input { width: 100%; min-height: 48px; border: 1px solid var(--line); padding: 12px 14px; border-radius: var(--radius-sm); background: #fff; }
-.google-button { margin-top: 24px; gap: 12px; }
-.google-button span { font-size: 1.25rem; font-weight: 800; }
+.google-button { margin-top: 24px; gap: 12px; color: #1f1f1f; background: #fff; border-color: #747775; }
+.google-button__icon { width: 32px; height: 32px; display: grid; place-items: center; flex: 0 0 32px; overflow: hidden; border-radius: 5px; background: #fff; }
+.google-button__icon img { width: 32px; height: 32px; }
 .auth-config-note { display: block; margin: 10px 0; color: var(--muted); }
 .auth-divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; color: var(--muted); font-size: .8rem; }
 .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
@@ -55,22 +104,6 @@
 .auth-security { display: flex; gap: 8px; align-items: center; color: var(--muted); line-height: 1.5; }
 .auth-security svg { width: 30px; flex-shrink: 0; }
 .form-error { color: #9b3030; }
-.account-dashboard { padding-block: 48px 80px; }
-.account-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.account-heading h1 { font-size: 2.3rem; margin: 8px 0; }
-.account-heading p { color: var(--muted); }
-.account-tabs { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0 42px; }
-.account-tabs a { display: flex; gap: 8px; align-items: center; padding: 12px 18px; background: var(--soft); border-radius: var(--radius-sm); font-weight: 600; }
-.account-tabs svg { width: 18px; }
-.account-dashboard section { margin-top: 46px; scroll-margin-top: 120px; }
-.account-dashboard section > p { color: var(--muted); }
-.account-empty { margin-block: 20px; padding: 40px; border: 1px dashed var(--line); border-radius: var(--radius-lg); background: var(--soft); text-align: center; }
-.account-empty > svg { width: 36px; height: 36px; color: var(--muted); }
-.account-orders { display: grid; gap: 12px; margin-top: 24px; }
-.account-orders > a { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-md); }
-.account-orders small { display: block; margin-top: 6px; color: var(--muted); }
-.account-checkbox { display: flex; align-items: flex-start; gap: 10px; margin-block: 20px 12px; }
-.account-checkbox input { width: 18px; height: 18px; accent-color: var(--ink); flex-shrink: 0; }
 .account-menu { position: relative; flex-shrink: 0; }
 .account-link--loading { display: flex; align-items: center; gap: 9px; min-width: 113px; pointer-events: none; }
 .account-link-skeleton-icon { width: 35px; height: 35px; flex: 0 0 35px; border-radius: 50%; background: #e3e6e7; }
@@ -116,7 +149,7 @@
 .account-summary-grid svg { width: 22px; height: 22px; color: #526268; }
 .account-summary-grid small { color: var(--muted); }
 .account-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 22px 0; }
-.account-toolbar input, .account-toolbar select, .account-filter { min-height: 43px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); }
+.account-toolbar input, .account-toolbar select { min-height: 43px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); }
 .account-toolbar input { flex: 1; min-width: 190px; }
 .account-toolbar--purchases { gap: 14px; margin: 26px 0 30px; padding-inline: 8px 18px; }
 .account-toolbar--purchases input, .account-toolbar--purchases select { min-height: 49px; padding: 11px 16px; border: 1.5px solid #c7cdd0; border-radius: 11px; }
@@ -188,35 +221,24 @@
 }
 @media (max-width: 520px) { .account-summary-grid { grid-template-columns: 1fr; }.account-side-nav a { font-size: .8rem; }.account-area-heading { align-items: flex-start; } }
 .product-image { position: relative; }
-.favorite-button { position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: #555e63; cursor: pointer; flex-shrink: 0; }
+.favorite-button { position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: #555e63; cursor: pointer; flex-shrink: 0; transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+.favorite-button:hover { color: #9a7300; border-color: #dbc66c; box-shadow: 0 5px 14px rgba(154,115,0,.14); transform: translateY(-1px); }
 /* Zona táctil de 48px sin agrandar el círculo visible. */
 .favorite-button::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 .product-image > .favorite-button { position: absolute; right: 10px; top: 10px; z-index: 2; }
 .favorite-button svg { width: 20px; height: 20px; }
 .favorite-button.is-saved { color: #9a7300; background: #fff9df; border-color: #dbc66c; }
+.favorite-button.is-pulsing svg { animation: favorite-heartbeat .56s ease-in-out both; }
+@keyframes favorite-heartbeat { 24% { transform: scale(1.3); } 48% { transform: scale(1); } 72% { transform: scale(1.2); } }
 .favorite-button:disabled { opacity: .6; cursor: wait; }
 .favorite-error { display: block; position: relative; z-index: 3; color: #9b3030; font-size: .8rem; }
 .product-title-row { display: flex; gap: 16px; align-items: flex-start; }
 .product-title-row h1 { flex: 1; }
-.advisor-chat .chat-message > div { flex: 1; }
-.advisor-chat .chat-message h2 { font-size: 1.35rem; margin: 14px 0 0; }
-.advisor-chat .chat-message p { padding: 0; background: none; border: 0; margin: 0; }
-.advisor-transcript { max-height: 180px; overflow-y: auto; margin-bottom: 20px; }
-.advisor-transcript:empty { display: none; }
-.advisor-transcript > div { padding: 10px 0; }
-.advisor-transcript small { color: var(--muted); }
-.advisor-transcript .chat-answer { margin: 8px 0 0 auto; }
-.advisor-step-label, .advisor-sources { color: var(--muted); font-size: .8rem; line-height: 1.6; }
-.advisor-profile-summary { display: grid; gap: 8px; padding: 20px; margin: 24px 0; background: var(--soft); border-radius: var(--radius-md); }
 .recommendation-reason { padding: 22px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; margin-top: 14px; }
 .recommendation-reason h3 { font-size: 1rem; margin-top: 0; }
 .recommendation-reason p { font-size: .9rem; line-height: 1.7; }
 .recommendation-reason small { display: flex; gap: 8px; line-height: 1.6; color: var(--muted); }
 .recommendation-reason small svg { width: 18px; flex-shrink: 0; }
-.advisor-habits { border-radius: var(--radius-lg); background: var(--soft); margin-block: 40px; padding: 28px; }
-.advisor-habits p { display: flex; align-items: center; gap: 10px; }
-.advisor-habits svg { width: 18px; flex-shrink: 0; }
-.advisor-sources a { text-decoration: underline; }
 /* --sticky-buy-h lo define la barra de compra de la ficha mobile mientras está visible (incluye la safe area). */
 .advisor-floating { position: fixed; bottom: max(calc(var(--sticky-buy-h, 0px) + 24px), calc(24px + env(safe-area-inset-bottom, 0px))); right: 24px; z-index: 25; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; transition: bottom .25s ease; }
 .advisor-floating-button { display: grid; place-items: center; width: 62px; height: 62px; margin-left: auto; border-radius: 50%; background: #42494e; border: 1px solid #6c7479; color: #fff; box-shadow: 0 6px 24px #0003; cursor: pointer; transition: transform .18s; }
@@ -300,8 +322,7 @@
 .location-caption p { color: var(--muted); font-size: .85rem; }
 .location-caption span { display: flex; align-items: center; gap: 10px; font-weight: 600; }
 @media (max-width: 768px) {
- .account-page { padding-block: 32px; }.auth-card { padding: 24px; }.account-heading { align-items: flex-start; flex-direction: column; }
- .account-orders > a { padding: 18px; }.account-empty { padding: 26px; }
+ .account-page { padding-block: 32px; }.auth-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }.auth-aside { min-height: 0; padding: 24px; }.auth-aside h2 { max-width: 18ch; font-size: 1.8rem; }.auth-aside > p:not(.eyebrow) { margin-block: 8px 0; }.auth-aside ul { grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }.auth-aside li:last-child { display: none; }.auth-aside li small { font-size: .76rem; }.auth-card { max-width: none; padding: 24px; }
  .account-toolbar--purchases { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 22px 0 26px; padding-inline: 0; }
  .account-toolbar--purchases input { grid-column: 1 / -1; min-width: 0; }
  .account-toolbar--purchases select { width: 100%; min-width: 0; padding-inline: 11px; }
@@ -316,9 +337,11 @@
  .google-reviews-layout { grid-template-columns: 1fr; }.review-card { flex-basis: 85%; }.location-card { min-height: auto; }
  .reviews-source { align-items: flex-start; }
  .visit-quilmes { grid-template-columns: 1fr; }.visit-quilmes-copy { padding: 26px 22px; }.visit-quilmes-map { min-height: 240px; }
- .advisor-chat .chat-message h2 { font-size: 1.2rem; }.advisor-profile-summary span { font-size: .9rem; }
 }
+@media (max-width: 420px) { .auth-aside ul { grid-template-columns: 1fr; }.auth-aside li:last-child { display: flex; } }
 @media (prefers-reduced-motion: reduce) {
  .cart-dialog .cart-drawer, .cart-dialog::backdrop, .advisor-popover { animation: none !important; }
  .reviews-track { scroll-behavior: auto; }.advisor-floating-button, .advisor-floating { transition: none; }.floating-dial__item { animation: none; }
+ .favorite-button, .favorite-button svg { animation: none !important; transition: none; }.favorite-button:hover { transform: none; }
+ .advisor-starters button { transition: none; }.advisor-starters button:hover { transform: none; }
 }

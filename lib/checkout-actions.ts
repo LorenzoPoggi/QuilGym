@@ -13,12 +13,14 @@ import { orders } from "./db/schema";
 import type { CheckoutQuote, CheckoutResult, DeliveryMethod, OrderStatus } from "./checkout-types";
 import { deliverOrderEmails } from "./order-email";
 import { currentUser } from "./auth";
+import { consumeRateLimit } from "./rate-limit";
 
 export async function getCheckoutQuote(delivery: DeliveryMethod, rawPostalCode: string): Promise<{ ok: true; quote: CheckoutQuote } | { ok: false; error: string }> {
   if (!["pickup", "shipping"].includes(delivery) || typeof rawPostalCode !== "string" || rawPostalCode.length > 12) return { ok: false, error: "Revisá los datos de entrega." };
   try {
     const cartId = await readCartId();
     if (!cartId) return { ok: false, error: "Agregá productos al carrito." };
+    if (!await consumeRateLimit(`checkout:quote:${cartId}`, 30, 60_000)) return { ok: false, error: "Hiciste muchas consultas de envío. Esperá un minuto y volvé a intentar." };
     const cart = await getCart(cartId);
     if (!cart.lines.length || cart.hasBlockingIssues || cart.hasPriceChanges) return { ok: false, error: "Revisá el stock y confirmá los precios en el carrito." };
     const config = getCheckoutConfig();
@@ -39,6 +41,7 @@ export async function submitCheckout(raw: unknown): Promise<CheckoutResult> {
   const cartId = await readCartId();
   if (!cartId) return { ok: false, error: "Tu sesión de carrito venció." };
   try {
+    if (!await consumeRateLimit(`checkout:submit:${cartId}`, 10, 10 * 60_000)) return { ok: false, error: "Recibimos muchos intentos para este carrito. Esperá unos minutos antes de reintentar." };
     const user = await currentUser();
     const orderId = await createOrder(parsed.value, cartId, user?.id);
     revalidatePath("/carrito");

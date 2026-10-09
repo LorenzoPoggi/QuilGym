@@ -38,6 +38,12 @@ test("carrusel de la tarjeta en mobile: swipe sin flechas y sin desborde", async
 
 test("ficha: galería sincronizada, lightbox con flechas, zoom y Escape", async ({ page }, info) => {
   await page.goto(`/productos/${slug}`);
+  await expect(page.locator(".nutrition-panel")).toHaveCount(0);
+  const facts = page.locator(".product-info-section");
+  const description = facts.locator(".product-description");
+  await expect(description).toBeVisible();
+  const [factsBox, descriptionBox] = await Promise.all([facts.boundingBox(), description.boundingBox()]);
+  expect(descriptionBox!.width).toBeGreaterThan(factsBox!.width * 0.85);
   const track = page.locator(".gallery-track");
   if (info.project.name === "desktop") {
     await page.getByRole("button", { name: "Proteína STAR 2 lb, foto 2", exact: true }).click();

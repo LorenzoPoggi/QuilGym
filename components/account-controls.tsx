@@ -51,8 +51,11 @@ export function FavoriteButton({ productId, name }: { productId: number; name: s
   const { ids, toggle, loading, error } = useAccount();
   const [pending, setPending] = useState(false);
   const [clicked, setClicked] = useState(false);
+  const [pulsing, setPulsing] = useState(false);
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saved = ids.includes(productId);
-  return <><button className={`favorite-button ${saved ? "is-saved" : ""}`} type="button" aria-label={`${saved ? "Quitar de" : "Guardar en"} favoritos: ${name}`} aria-pressed={saved} disabled={loading || pending} onClick={async () => { setPending(true); setClicked(true); try { await toggle(productId); } finally { setPending(false); } }}><Star aria-hidden="true" fill={saved ? "currentColor" : "none"}/></button>{clicked && error ? <span className="favorite-error" role="status">{error}</span> : null}</>;
+  useEffect(() => () => { if (pulseTimer.current) clearTimeout(pulseTimer.current); }, []);
+  return <><button className={`favorite-button ${saved ? "is-saved" : ""} ${pulsing ? "is-pulsing" : ""}`} type="button" aria-label={`${saved ? "Quitar de" : "Guardar en"} favoritos: ${name}`} aria-pressed={saved} disabled={loading || pending} onClick={async () => { setPending(true); setClicked(true); try { const updated = await toggle(productId); if (updated && !saved) { setPulsing(true); if (pulseTimer.current) clearTimeout(pulseTimer.current); pulseTimer.current = setTimeout(() => setPulsing(false), 560); } } finally { setPending(false); } }}><Star aria-hidden="true" fill={saved ? "currentColor" : "none"}/></button>{clicked && error ? <span className="favorite-error" role="status">{error}</span> : null}</>;
 }
 export function SignOutButton() {
   const router = useRouter();

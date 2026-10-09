@@ -2,6 +2,7 @@
 
 /* Carrito y drawer */
 .cart-drawer { width: min(480px, 100%); }
+.cart-drawer { display: flex; flex-direction: column; overflow: hidden; }
 .cart-drawer > header { margin-inline: -24px; padding-inline: 24px; }
 .cart-drawer > header :is(h1, h2) { display: flex; align-items: center; gap: 10px; font-size: 1.45rem; font-weight: 800; }
 .cart-drawer > header :is(h1, h2) span { padding: 5px 10px; color: #4a5155; font-size: .62rem; font-weight: 700; letter-spacing: .04em; }
@@ -42,6 +43,32 @@
 .cart-drawer .button--full { min-height: 46px; margin-top: 10px; font-size: .9rem; font-weight: 700; }
 .cart-drawer .button--full:first-of-type { margin-top: 18px; }
 .cart-safe { margin-top: 14px; }
+.cart-panel-scroll { min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.cart-panel-footer { flex: 0 0 auto; padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid var(--line); box-shadow: 0 -10px 20px rgba(31,35,37,.04); }
+.cart-panel-footer .cart-totals { border-top: 0; }
+.cart-panel-footer .cart-totals > p:first-child { margin-top: 0; }
+.cart-panel-footer .cart-safe { margin-bottom: 0; }
+.cart-drawer .remove-item { color: #626a6e; }
+.cart-drawer .remove-item:hover { color: #a33c3c; background: #f7eeee; border-radius: 8px; }
+.cart-page { min-height: 0; overflow: visible; padding-block: 42px 72px; }
+.cart-page-heading { margin-bottom: 28px; }
+.cart-page-heading h1 { margin: 4px 0 8px; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.035em; }
+.cart-page-heading > p:last-child { margin: 0; color: var(--muted); }
+.cart-page-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); align-items: start; gap: 28px; }
+.cart-page-panel .cart-drawer { position: relative; inset: auto; width: 100%; height: min(720px, calc(100dvh - 260px)); min-height: 500px; padding: 0 24px 0; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+.cart-page-panel .cart-drawer > header { margin-inline: -24px; padding-inline: 24px; }
+.cart-page-aside { min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; }
+.cart-page-aside h2 { margin: 4px 0 20px; font-size: 1.25rem; }
+.cart-page-aside .product-grid { grid-template-columns: 1fr; gap: 14px; }
+.cart-page-aside .product-card { display: grid; grid-template-columns: 92px minmax(0,1fr); grid-template-areas: "image brand" "image title" "image footer"; align-items: center; gap: 4px 14px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; box-shadow: none; }
+.cart-page-aside .product-card > .product-image { grid-area: image; width: 92px; height: 92px; margin: 0; }
+.cart-page-aside .product-card > .product-brand { grid-area: brand; margin: 0; }
+.cart-page-aside .product-card h3 { grid-area: title; }
+.cart-page-aside .product-card h3 { min-height: 0; margin: 0; font-size: .9rem; }
+.cart-page-aside .product-card > .product-card__footer { grid-area: footer; min-width: 0; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding: 0; }
+.cart-page-aside .product-card__meta .stock, .cart-page-aside .product-card__footer > .installments { display: none; }
+.cart-page-aside .product-card__actions { margin: 0; }
+.cart-page-aside .product-card__actions .button { min-height: 38px; }
 
 /* Checkout: tarjetas y formulario */
 .checkout-card, .checkout-summary { border-radius: 20px; }
@@ -54,9 +81,8 @@
 .form-grid input:focus { border-color: #34393c; outline: none; box-shadow: 0 0 0 3px rgba(52,57,60,.14); }
 .form-grid .form-error { font-weight: 600; }
 .checkout-card > .button--outline { min-height: 44px; font-weight: 700; }
-.checkout-delivery-detail, .checkout-quote { font-size: .88rem; line-height: 1.5; }
-.checkout-delivery-detail strong, .checkout-quote strong { font-weight: 700; }
-.checkout-delivery-detail p { margin: 4px 0 0; color: #3d4447; }
+.checkout-quote { font-size: .88rem; line-height: 1.5; }
+.checkout-quote strong { font-weight: 700; }
 .checkout-pickup-map { display: block; margin: 18px 0; }
 .checkout-pickup-map[hidden] { display: none; }
 .checkout-pickup-map__frame { position: relative; min-height: 340px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; }
@@ -82,9 +108,6 @@
 .payment-choices .payment-mark--brand img { display: block; max-width: 80px; max-height: 46px; width: auto; height: auto; object-fit: contain; }
 .payment-choices .payment-mark--brand .payment-logo--mercado-credito { mix-blend-mode: multiply; transform: scale(1.06); }
 .payment-choices .payment-mark--card img { display: block; width: 56px; height: 34px; object-fit: contain; }
-.payment-choices .payment-brand-mark { width: 58px; height: 40px; display: grid; place-items: center; color: #fff; border: 2px solid #293b8e; border-radius: 50%; }
-.payment-choices .payment-brand-mark--mp { background: #25b8e8; }
-.payment-choices .payment-brand-mark--credit { background: #4bbb96; }
 .checkout-choices > label { min-height: 78px; gap: 12px; padding: 14px 16px; background: #fff; border-radius: 14px; transition: border-color .15s, background-color .15s; }
 .checkout-choices > label:not(.is-active):hover { border-color: #9aa0a3; }
 .checkout-choices > label.is-active { border: 1px solid #34393c; box-shadow: inset 0 0 0 1px #34393c; }
@@ -135,10 +158,6 @@
 .checkout-summary-mobile__body { padding: 4px 16px 12px; border-top: 1px solid var(--line); }
 .checkout-summary-mobile .summary-lines { border-bottom: 0; }
 
-/* Checkout sin entrega o pago configurados: pedido por WhatsApp */
-.checkout-whatsapp-note { display: grid; gap: 3px; padding: 14px 18px; background: #eef8f1; border: 1px solid #cbe8d5; border-radius: 14px; }
-.checkout-whatsapp-note strong { font-size: .88rem; }
-.checkout-whatsapp-note span { color: #596166; font-size: .78rem; line-height: 1.45; }
 .checkout-stepper { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 2px; border-bottom: 1px solid var(--line); }
 .checkout-stepper__item { min-width: 0; display: grid; grid-template-rows: 1fr 3px; }
 .checkout-stepper__item button { min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 10px; color: #858c90; background: transparent; border: 0; font-size: .88rem; }
@@ -164,16 +183,9 @@
 .checkout-step-panel .terms { margin-top: 20px; }
 .checkout-step-panel > .form-error { margin: 12px 0 0; }
 .checkout-flow-error { margin: 0; }
-.checkout-unavailable { display: grid; grid-template-columns: auto 1fr; gap: 14px 16px; align-items: start; }
-.checkout-unavailable__icon { width: 46px; height: 46px; display: grid; place-items: center; color: #583d0a; background: #fff4d6; border-radius: 12px; }
-.checkout-unavailable h2 { margin: 0 0 6px; font-size: 1.3rem; font-weight: 800; }
-.checkout-unavailable p { margin: 0; color: #3d4447; font-size: .9rem; line-height: 1.5; }
-.checkout-unavailable > .button, .checkout-unavailable > small { grid-column: 2; }
-.checkout-unavailable > small { color: var(--muted); font-size: .76rem; line-height: 1.4; }
 .button--whatsapp { justify-self: start; min-height: 48px; color: var(--ink); background: #25d366; border-color: #25d366; font-size: .9rem; font-weight: 700; }
 .button--whatsapp .whatsapp-glyph { width: 20px; height: 20px; }
 .button--whatsapp:hover { background: #1ebe5b; border-color: #1ebe5b; }
-.checkout-summary--whatsapp .summary-lines { padding-bottom: 0; border-bottom: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .checkout-step-panel:not([hidden]), .checkout-stepper__track i { animation: none; transition: none; }
@@ -248,6 +260,7 @@
 
 @media (max-width: 1100px) {
   .checkout-summary-mobile { display: block; background: #fff; border: 1px solid var(--line); border-radius: 16px; }
+  .checkout-layout > .checkout-summary { display: none; }
 }
 
 @media (max-width: 768px) {
@@ -265,7 +278,18 @@
   .confirmation-hero h1 { font-size: 2.1rem; }
 }
 
+@media (max-width: 900px) {
+  .cart-page-layout { grid-template-columns: minmax(0, 1fr); }
+  .cart-page-aside { order: 2; }
+  .cart-page-panel .cart-drawer { height: min(700px, calc(100dvh - 230px)); }
+}
+
 @media (max-width: 520px) {
+  .cart-page { padding-block: 26px 48px; }
+  .cart-page-heading { margin-bottom: 18px; }
+  .cart-page-panel .cart-drawer { height: min(680px, calc(100dvh - 205px)); min-height: 460px; padding-inline: 16px; border-radius: 18px; }
+  .cart-page-panel .cart-drawer > header { margin-inline: -16px; padding-inline: 16px; }
+  .cart-page-aside { padding: 18px; }
   .cart-drawer > header { margin-inline: -16px; padding-inline: 16px; }
   .cart-items article { grid-template-columns: 72px 1fr auto; gap: 12px; }
   .cart-items article > div:last-child { grid-column: auto; flex-direction: column; align-items: end; }
@@ -273,9 +297,6 @@
   .checkout-summary article, .checkout-summary-mobile article { grid-template-columns: 56px 1fr auto; gap: 10px; }
   .checkout-summary article > b { grid-column: auto; }
   .checkout-choices > label { min-height: 72px; }
-  .checkout-unavailable { grid-template-columns: 1fr; }
-  .checkout-unavailable > .button, .checkout-unavailable > small { grid-column: auto; }
-  .checkout-unavailable > .button { justify-self: stretch; }
   .confirmation-hero { padding: 24px 20px; }
   .confirmation-hero > span { width: 60px; height: 60px; border-radius: 15px; }
   .confirmation-hero > span svg { width: 32px; height: 32px; }

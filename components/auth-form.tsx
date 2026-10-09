@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, Heart, PackageCheck, ShieldCheck } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 export function AuthForm({ register, google, available, next }: { register: boolean; google: boolean; available: boolean; next: string }) {
@@ -30,13 +31,25 @@ export function AuthForm({ register, google, available, next }: { register: bool
       router.refresh();
     } catch { setError("No pudimos conectar. Intentá nuevamente."); setPending(false); }
   }
-  return <div className="auth-card"><p className="eyebrow">TU ESPACIO QUILGYM</p><h1>{register ? "Creá tu cuenta" : "Qué bueno verte de nuevo"}</h1><p>{register ? "Guardá tus favoritos y encontrá tus pedidos en un solo lugar." : "Ingresá para seguir con tus favoritos y tus compras."}</p>
-    <button type="button" className="button button--outline button--full google-button" disabled={!google || pending} onClick={async () => { setPending(true); setError(""); try { const result = await authClient.signIn.social({ provider: "google", callbackURL: next, errorCallbackURL: "/cuenta/ingresar?error=google" }); if (result.error) throw new Error(); } catch { setError("No pudimos iniciar el acceso con Google."); setPending(false); } }}><span aria-hidden="true">G</span>Continuar con Google</button>
+  return <div className="auth-layout">
+    <aside className="auth-aside" aria-label="Beneficios de tu cuenta QuilGym">
+      <p className="eyebrow">TU ESPACIO QUILGYM</p>
+      <h2>{register ? "Tu entrenamiento, más simple." : "Todo tu recorrido, en un solo lugar."}</h2>
+      <p>{register ? "Creá tu cuenta para guardar lo que te interesa y volver a tus compras cuando quieras." : "Ingresá para encontrar tus favoritos y consultar el estado de tus pedidos."}</p>
+      <ul>
+        <li><Heart aria-hidden="true"/><span><strong>Favoritos a mano</strong><small>Guardá productos para encontrarlos después.</small></span></li>
+        <li><PackageCheck aria-hidden="true"/><span><strong>Seguimiento de compras</strong><small>Consultá el detalle y el estado de tus pedidos.</small></span></li>
+        <li><ShieldCheck aria-hidden="true"/><span><strong>Acceso protegido</strong><small>Tus datos de cuenta son privados.</small></span></li>
+      </ul>
+    </aside>
+    <div className="auth-card"><p className="eyebrow">{register ? "CREAR CUENTA" : "INICIAR SESIÓN"}</p><h1>{register ? "Creá tu cuenta" : "Qué bueno verte de nuevo"}</h1><p>{register ? "Guardá tus favoritos y encontrá tus pedidos en un solo lugar." : "Ingresá para seguir con tus favoritos y tus compras."}</p>
+    <button type="button" className="button button--outline button--full google-button" disabled={!google || pending} onClick={async () => { setPending(true); setError(""); try { const result = await authClient.signIn.social({ provider: "google", callbackURL: next, errorCallbackURL: "/cuenta/ingresar?error=google" }); if (result.error) throw new Error(); } catch { setError("No pudimos iniciar el acceso con Google."); setPending(false); } }}><span className="google-button__icon" aria-hidden="true"><Image src="/assets/google-signin-icon.svg" alt="" width={40} height={40}/></span>Continuar con Google</button>
     {!google ? <small className="auth-config-note">El acceso con Google estará disponible cuando terminemos su configuración.</small> : null}
     <div className="auth-divider"><span>o con tu email</span></div>
     <form onSubmit={submit}>{register ? <label>Nombre<input name="name" autoComplete="name" minLength={2} maxLength={80} required placeholder="Tu nombre"/></label> : null}<label>Email<input name="email" type="email" autoComplete="email" maxLength={254} required placeholder="vos@gmail.com"/></label><label>Contraseña<input name="password" type="password" autoComplete={register ? "new-password" : "current-password"} minLength={register ? 10 : undefined} maxLength={128} required placeholder={register ? "Al menos 10 caracteres" : "Tu contraseña"}/></label>{register ? <label>Repetí la contraseña<input name="confirm" type="password" autoComplete="new-password" maxLength={128} required/></label> : null}
       {error ? <p role="alert" className="form-error">{error}</p> : null}{!available ? <p role="status">Las cuentas todavía no están configuradas en este entorno.</p> : null}
       <button className="button button--dark button--full" disabled={pending || !available}>{pending ? "Un momento…" : register ? "Crear cuenta" : "Ingresar"}<ArrowRight aria-hidden="true"/></button></form>
     <p className="auth-switch">{register ? "¿Ya tenés cuenta?" : "¿Primera vez por acá?"} <Link href={`${register ? "/cuenta/ingresar" : "/cuenta/registro"}?next=${encodeURIComponent(next)}`}>{register ? "Ingresá" : "Registrate"}</Link></p><small className="auth-security"><ShieldCheck aria-hidden="true"/>Tu sesión queda guardada en este navegador. Cerrala si compartís el equipo.</small>
+    </div>
   </div>;
 }

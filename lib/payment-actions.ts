@@ -5,12 +5,15 @@ import { revalidatePath } from "next/cache";
 import { findOwnedOrder } from "./order-service";
 import { paymentSetup, submitProviderPayment } from "./mercadopago";
 import { deliverOrderEmails } from "./order-email";
+import { consumeRateLimit } from "./rate-limit";
 
 export async function preparePayment(id: string, accessToken?: string | null) {
   let stage = "order_lookup";
   try {
     const order = await findOwnedOrder(id, accessToken);
     if (!order) return { ok: false as const, error: "Pedido no disponible." };
+    stage = "rate_limit";
+    if (!await consumeRateLimit(`payment:prepare:${order.id}`, 12, 10 * 60_000)) return { ok: false as const, error: "Abriste Mercado Pago muchas veces para este pedido. Esperá unos minutos y reintentá." };
     stage = "payment_setup";
     return { ok: true as const, data: await paymentSetup(order) };
   } catch (error) {
@@ -29,6 +32,7 @@ export async function payOrder(id: string, raw: unknown, accessToken?: string | 
   const order = await findOwnedOrder(id, accessToken);
   if (!order) return { ok: false, error: "Pedido no disponible." };
   try {
+    if (!await consumeRateLimit(`payment:submit:${order.id}`, 10, 10 * 60_000)) return { ok: false, error: "Hubo muchos intentos de pago para este pedido. Esperá unos minutos y reintentá." };
     await submitProviderPayment(order, raw);
     revalidatePath(`/checkout/confirmacion/${id}`);
     after(() => deliverOrderEmails(id));

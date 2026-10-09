@@ -177,9 +177,9 @@ test("comparador: tarjetas apiladas en mobile y link al rótulo cuando existe", 
   expect(await fitsViewport(page)).toBe(true);
   if (await links.count()) {
     const href = await links.first().getAttribute("href");
-    expect(href).toMatch(/^\/productos\/[\w-]+#informacion-nutricional$/);
+    expect(href).toMatch(/^\/productos\/[\w-]+#galeria-producto$/);
     await links.first().click();
     await expect(page).toHaveURL(new RegExp(`${href}$`), { timeout: 60000 });
-    await expect(page.locator("#informacion-nutricional")).toBeInViewport();
+    await expect(page.locator("#galeria-producto")).toBeInViewport();
   }
 });

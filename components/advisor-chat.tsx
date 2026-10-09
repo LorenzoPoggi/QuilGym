@@ -76,6 +76,11 @@ export function AdvisorChat({ configured }: { configured: boolean }) {
           <p className="advisor-bubble">{message.content}</p>
           {message.recommendations?.length ? <div className="advisor-chat-products">{message.recommendations.map(({ product, reason, caution }) => <div key={product.id}><ProductCard product={product} compact/><div className="recommendation-reason"><h3>Por qué podría servirte</h3><p>{reason}</p>{caution ? <small><ShieldCheck aria-hidden="true"/>{caution}</small> : null}</div></div>)}</div> : null}
         </div>)}
+        {messages.length === 1 && !pending ? <div className="advisor-starters" aria-label="Ideas para iniciar la conversación"><p>Podés empezar por acá:</p>{[
+          "Quiero ganar masa muscular, ¿por dónde empiezo?",
+          "¿Qué diferencia hay entre creatina y proteína?",
+          "Quiero explorar opciones según mi rutina de entrenamiento.",
+        ].map((prompt) => <button type="button" key={prompt} onClick={() => { setInput(prompt); textarea.current?.focus(); }}>{prompt}</button>)}</div> : null}
         {pending ? <p className="advisor-thinking" role="status"><LoaderCircle aria-hidden="true"/>Estoy leyendo lo que me contaste…</p> : null}
       </div>
       {error ? <div className="advisor-chat-error" role="alert"><p>{error}</p>{failed ? <button className="button button--outline" type="button" onClick={() => void ask(messages)}>Reintentar mensaje</button> : null}</div> : null}
@@ -86,7 +91,7 @@ export function AdvisorChat({ configured }: { configured: boolean }) {
         <textarea ref={textarea} id="advisor-message" rows={2} value={input} maxLength={MAX_CHAT_TEXT} placeholder="Contame tu objetivo, tu rutina o tus dudas…" disabled={pending || failed || exhausted} aria-describedby="advisor-privacy" onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }}/>
         <button type="submit" className="button button--dark" aria-label="Enviar mensaje" disabled={!input.trim() || pending || failed || exhausted}><Send aria-hidden="true"/><span>Enviar</span></button>
       </form>
-      <p id="advisor-privacy" className="advisor-privacy">Al enviar, la conversación se procesa con un proveedor externo de IA. No compartas datos sensibles. QuilGym no guarda este chat en tu cuenta; se borra al salir o reiniciar. Enter envía · Shift + Enter agrega una línea.</p>
+      <p id="advisor-privacy" className="advisor-privacy"><span className="advisor-privacy__health">Soy un asesor virtual con IA, no un profesional de salud; mis sugerencias son informativas y no reemplazan una evaluación personal. </span>Al enviar, la conversación se procesa con un proveedor externo de IA. No compartas datos sensibles. QuilGym no guarda este chat en tu cuenta; se borra al salir o reiniciar. Enter envía · Shift + Enter agrega una línea.</p>
     </section>
   </div>;
 }

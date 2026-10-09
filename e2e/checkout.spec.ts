@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { databaseWritesEnabled, databaseWriteSkipReason } from "./database-safety";
 
 async function checkout(page: Page) {
   await page.goto("/productos");
@@ -13,6 +14,7 @@ async function checkout(page: Page) {
 }
 
 test("retiro: pago digital simulado, preparación, reembolso y privacidad", async ({ page, browser }, info) => {
+  test.skip(!databaseWritesEnabled, databaseWriteSkipReason);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await checkout(page);
@@ -20,11 +22,11 @@ test("retiro: pago digital simulado, preparación, reembolso y privacidad", asyn
   await page.getByRole("button", { name: "Seguir con pago" }).click();
   await expect(page.getByRole("heading", { name: "Elegí cómo pagar" })).toBeVisible();
   await page.getByRole("checkbox", { name: /Confirmo que los datos/ }).check();
-  const submit = page.getByRole("button", { name: "Ir a pagar" });
+  const submit = page.getByRole("button", { name: /^Ir a pagar/ });
   await expect(submit).toBeEnabled();
   await page.screenshot({ path: info.outputPath("checkout.png"), fullPage: true });
   await submit.click();
-  await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+$/, { timeout: 60000 });
+  await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+(?:\?.*)?$/, { timeout: 60000 });
   await expect(page.getByRole("heading", { name: "¡Gracias por tu compra!" })).toBeVisible();
   await expect(page.getByText("NÚMERO DE COMPRA")).toBeVisible();
   await expect(page.locator(".order-steps li").nth(0)).toHaveClass(/is-done/);
@@ -47,6 +49,7 @@ test("retiro: pago digital simulado, preparación, reembolso y privacidad", asyn
 });
 
 test("envío y tarjeta: cotización, efectivo bloqueado y pago simulado", async ({ page }) => {
+  test.skip(!databaseWritesEnabled, databaseWriteSkipReason);
   await checkout(page);
   await page.getByRole("radio", { name: /Envío a domicilio/ }).check();
   await page.getByLabel("Calle", { exact: true }).fill("Calle de prueba");
@@ -61,20 +64,21 @@ test("envío y tarjeta: cotización, efectivo bloqueado y pago simulado", async 
   await page.getByRole("radio", { name: "Tarjeta de débito" }).check();
   await expect(page.getByText(/En la simulación no se piden datos de tarjeta/)).toBeVisible();
   await page.getByRole("checkbox", { name: /Confirmo que los datos/ }).check();
-  await page.getByRole("button", { name: "Ir a pagar" }).click();
-  await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+$/, { timeout: 60000 });
+  await page.getByRole("button", { name: /^Ir a pagar/ }).click();
+  await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+(?:\?.*)?$/, { timeout: 60000 });
   await expect(page.getByRole("heading", { name: "¡Gracias por tu compra!" })).toBeVisible({ timeout: 30000 });
   await expect(page.locator(".order-steps li").nth(2)).toHaveClass(/is-current/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test("efectivo solo en retiro: cancelación persistente", async ({ page }) => {
+  test.skip(!databaseWritesEnabled, databaseWriteSkipReason);
   await checkout(page);
   await page.getByRole("button", { name: "Seguir con pago" }).click();
   await page.getByRole("radio", { name: "Efectivo" }).check();
   await page.getByRole("checkbox", { name: /Confirmo que los datos/ }).check();
-  await page.getByRole("button", { name: /^(?:Confirmar pedido|Crear pedido(?: de prueba)?)$/ }).click();
-  await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+$/, { timeout: 60000 });
+  await page.getByRole("button", { name: /^Preparar pedido/ }).click();
+  await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+(?:\?.*)?$/, { timeout: 60000 });
   await expect(page.getByRole("heading", { name: "Recibimos tu pedido" })).toBeVisible();
   const cashSteps = page.locator(".order-steps li");
   await expect(cashSteps).toHaveCount(3);

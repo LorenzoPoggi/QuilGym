@@ -167,7 +167,7 @@
 /* Búsqueda: el input es el buscador principal de la página, no flota sobre el header */
 .search-page-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
 .search-page-head .eyebrow { margin-top: 8px; }
-.search-page .search-help { position: static; margin: 0; color: #7e8589; font-size: .75rem; }
+.search-page .search-help { position: static; margin: 0; color: #626a6e; font-size: .75rem; }
 .search-page-input { position: relative; z-index: auto; top: auto; left: auto; width: 100%; height: 56px; margin-bottom: 18px; transform: none; padding: 0 16px; border-radius: 16px; box-shadow: 0 0 0 4px rgba(47,52,55,.08); }
 .search-page-input > svg { width: 20px; height: 20px; color: #5d6468; }
 .search-page-input input { height: 100%; font-size: 1rem; background: transparent; }
