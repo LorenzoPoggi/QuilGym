@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAccount } from "./account-provider";
 import { authClient } from "@/lib/auth-client";
 import { setMarketingConsent } from "@/lib/account-actions";
+import { ADMIN_EMAIL } from "@/lib/admin-config";
 import { AccountAvatar } from "./account-avatar";
 
 /** Hover solo con mouse en desktop: en touch el tap emula mouseenter y el clic lo volvía a cerrar. */
@@ -40,7 +41,7 @@ export function AccountLink() {
         <Link href="/cuenta/historial" onClick={() => setOpen(false)}><History aria-hidden="true"/>Historial</Link>
         <Link href="/cuenta/favoritos" onClick={() => setOpen(false)}><Star aria-hidden="true"/>Favoritos</Link>
         <Link href="/cuenta/configuracion" onClick={() => setOpen(false)}><Settings aria-hidden="true"/>Configuración</Link>
-        {user.emailVerified && user.email.trim().toLowerCase() === "quilgymnuevo@gmail.com" && <Link href="/admin/productos" onClick={() => setOpen(false)}><Boxes aria-hidden="true"/>Administración</Link>}
+        {user.emailVerified && user.email.trim().toLowerCase() === ADMIN_EMAIL && <Link href="/admin/productos" onClick={() => setOpen(false)}><Boxes aria-hidden="true"/>Administración</Link>}
       </nav>
       <button type="button" className="account-menu-signout" onClick={async () => { await authClient.signOut(); setOpen(false); router.push("/"); router.refresh(); }}><LogOut aria-hidden="true"/>Salir</button>
       <Link className="account-menu-danger" href="/cuenta/configuracion#eliminar-cuenta" onClick={() => setOpen(false)}><Trash2 aria-hidden="true"/>Eliminar cuenta</Link>
