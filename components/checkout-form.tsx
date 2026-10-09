@@ -331,7 +331,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
           {delivery === "shipping" && config.shippingRates.length > 0 ? <button type="button" className="button button--outline" disabled={quoting || busy} onClick={() => { void calculate(); }}>{quoting ? "Calculando…" : "Calcular envío"}</button> : null}
           {delivery === "shipping" && whatsappOnly && config.shippingRates.length === 0 ? <button type="button" className="button button--outline" disabled={busy} onClick={askShippingCost}>Consultar costo por WhatsApp</button> : null}
           {delivery === "pickup" && config.pickup ? <button type="button" className="button button--outline" disabled={quoting || busy} onClick={() => { void calculate(); }}>{quoting ? "Calculando…" : "Confirmar retiro gratis"}</button> : null}
-          {quote && delivery === "shipping" ? <p className="checkout-quote" role="status"><strong>{quote.label} · {formatArs(quote.shippingArs)}</strong><br/>{quote.estimate}</p> : null}
+          {quote ? <p className="checkout-quote" role="status"><strong>{quote.label} · {quote.shippingArs === 0 ? "Sin costo" : formatArs(quote.shippingArs)}</strong><br/>{quote.estimate}</p> : null}
           <div className="checkout-step-actions"><button type="button" className="button button--outline" onClick={() => goTo(1)}><ArrowLeft aria-hidden="true" size={18}/>Volver</button><button type="button" className="button button--dark" disabled={quoting || busy} onClick={() => { void continueToPayment(); }}>{quoting ? "Calculando…" : "Seguir con pago"}<ArrowRight aria-hidden="true" size={18}/></button></div>
         </section>
         <section className="checkout-card checkout-step-panel" data-direction={direction} hidden={step !== 3}><header><span>3</span><h2>{cardOrderId ? "Completá los datos de tu tarjeta" : "Elegí cómo pagar"}</h2></header>
@@ -345,7 +345,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
               ["cash", "Efectivo"],
             ] as const).map(([value, title], index) => <label key={`${title}-${index}`} className={payment === value && paymentOption === title && payments.includes(value) ? "is-active" : ""}>
               <input type="radio" name="payment-choice" value={title} checked={payment === value && paymentOption === title && payments.includes(value)} disabled={busy || !!cardOrderId || !payments.includes(value)} onChange={() => { setPayment(value); setPaymentOption(title); }}/><b className={`payment-mark payment-mark--${index < 2 ? "brand" : index < 4 ? "card" : "cash"}`} aria-hidden="true">{index === 0 ? <Image src="/assets/payments/mercado-pago-horizontal.png" alt="" width={73} height={20} unoptimized/> : index === 1 ? <Image className="payment-logo--mercado-credito" src="/assets/payments/mercado-credito.png" alt="" width={80} height={45}/> : index === 2 ? <Image src="/assets/payments/tarjeta-debito.svg" alt="" width={56} height={34}/> : index === 3 ? <Image src="/assets/payments/tarjeta-credito.svg" alt="" width={56} height={34}/> : <Image src="/assets/payments/efectivo.svg" alt="" width={56} height={42}/>}</b>
-              <span><strong>{title}</strong></span>
+              <span><strong>{title}</strong>{value === "cash" && !payments.includes("cash") ? <small className="payment-unavailable">{config.payments.cash ? "Solo al retirar en el local" : "No disponible por ahora"}</small> : null}</span>
             </label>)}
           </div>
           <input type="hidden" name="payment" value={payment}/>

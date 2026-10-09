@@ -65,9 +65,16 @@ html:has(.lightbox[open]) { overflow: hidden; }
 .buy-actions > div:last-child { min-width: 0; }
 .buy-actions > div:last-child .button { color: var(--ink); background: #fff; border: 1px solid var(--ink); }
 .buy-actions > div:last-child .button--dark { color: #fff; background: var(--ink); }
-.product-page .trust-strip { gap: 14px; margin-block: 28px; padding: 16px; }
-.product-page .trust-strip > div { gap: 9px; }
-.product-page .trust-strip > div > span { width: 34px; height: 34px; flex: 0 0 34px; }
+/* Confianza dentro de la columna de compra: grilla 2 × 2 compacta que equilibra el alto con la galería. */
+.product-buybox .trust-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; margin: 16px 0 0; padding: 16px; border-radius: 16px; }
+.product-buybox .trust-strip > div { gap: 9px; min-width: 0; }
+.product-buybox .trust-strip > div > span { width: 34px; height: 34px; flex: 0 0 34px; }
+.product-buybox .trust-strip strong { font-size: .8rem; line-height: 1.3; }
+/* Desktop: la columna de compra acompaña el scroll mientras se mira la galería. */
+@media (min-width: 1101px) {
+  .product-hero { align-items: start; }
+  .product-buybox { position: sticky; top: 112px; }
+}
 .product-info-section > .section-heading { margin-bottom: 14px; }
 /* Barra de compra fija: solo en mobile y cuando el bloque de compra quedó arriba */
 .sticky-buy { display: none; }
@@ -192,3 +199,4 @@ html:has(.lightbox[open]) { overflow: hidden; }
   .lightbox-frame, .gallery-dots i { transition: none; }
   .sticky-buy { transition: none; }
 }
+.product-compare-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px}.product-compare-link svg{width:18px;height:18px}.product-compare-link svg:last-child{width:16px;height:16px}

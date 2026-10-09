@@ -1,0 +1,38 @@
+/* Ingreso, registro y recuperación de cuenta. La base del layout (.auth-layout, .auth-aside, .auth-card) sigue en account-advisor.css. */
+.auth-aside > p.auth-aside__title { max-width: 12ch; margin: 10px 0 16px; color: #fff; font-size: clamp(2rem, 3.2vw, 3rem); font-weight: 800; line-height: 1.02; letter-spacing: -.035em; }
+.auth-layout--single { grid-template-columns: minmax(0, 1fr); max-width: 540px; }
+.auth-layout--single .auth-card { margin-top: 0; }
+.auth-card form { margin-top: 4px; }
+.auth-field { display: grid; gap: 8px; min-width: 0; }
+.auth-field > label { font-weight: 600; font-size: .9rem; }
+.auth-card input[aria-invalid="true"] { border-color: #a33c3c; box-shadow: 0 0 0 1px #a33c3c; }
+.auth-password { position: relative; }
+.auth-card .auth-password input { padding-right: 54px; }
+.auth-password__toggle { position: absolute; top: 50%; right: 2px; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; transform: translateY(-50%); }
+.auth-password__toggle:hover { color: var(--ink); background: var(--soft); }
+.auth-password__toggle svg { width: 20px; height: 20px; }
+.auth-hint { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .8rem; line-height: 1.4; }
+.auth-hint span { display: inline-flex; align-items: center; gap: 6px; }
+.auth-hint--ok { color: #1f6b3a; font-weight: 600; }
+.auth-hint svg { width: 15px; height: 15px; flex: none; }
+.auth-forgot { display: inline-flex; align-items: center; gap: 8px; justify-self: start; min-height: 44px; margin-top: -8px; color: var(--ink); font-size: .86rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.auth-forgot svg { width: 17px; height: 17px; flex: none; }
+.auth-card .auth-notice { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); background: var(--soft); font-size: .88rem; font-weight: 500; line-height: 1.5; }
+.auth-card form .auth-notice { margin: 0; }
+.auth-card .auth-notice--error { border-color: #e7c4c4; color: #8a2b2b; background: #fbf1f1; }
+.auth-card .auth-notice--success { border-color: #bfdcc8; color: #1f5c34; background: #eff8f2; }
+.auth-card .auth-notice svg { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+.auth-card .google-button[disabled] { cursor: not-allowed; opacity: .6; transform: none; }
+.auth-submit[disabled] { cursor: progress; opacity: .85; transform: none; }
+.auth-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: auth-spin .8s linear infinite; }
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+.auth-sent { display: flex; gap: 14px; margin-top: 18px; padding: 18px; border: 1px solid #bfdcc8; border-radius: var(--radius-md); background: #eff8f2; }
+.auth-sent > svg { width: 24px; height: 24px; flex: none; color: #1f6b3a; }
+.auth-sent strong { display: block; font-size: 1.05rem; }
+.auth-sent p { margin: 6px 0 4px; color: var(--ink); line-height: 1.55; }
+.auth-card > .button--full { margin-top: 20px; }
+@media (max-width: 768px) {
+ .auth-aside > p.auth-aside__title { max-width: 18ch; margin: 10px 0 16px; font-size: 1.8rem; }
+ .auth-layout--single { max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) { .auth-spinner { animation: none; border-top-color: rgba(255,255,255,.35); } }

@@ -23,7 +23,8 @@ export function AdvisorChat({ configured }: { configured: boolean }) {
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
     const region = history.current;
-    if (region) region.scrollTop = region.scrollHeight;
+    // Con solo la bienvenida se muestra desde arriba (saludo y sugerencias); después, siempre el último mensaje.
+    if (region) region.scrollTop = messages.length === 1 && !pending ? 0 : region.scrollHeight;
   }, [messages, pending, error]);
 
   async function ask(next: ChatEntry[]) {
@@ -91,7 +92,7 @@ export function AdvisorChat({ configured }: { configured: boolean }) {
         <textarea ref={textarea} id="advisor-message" rows={2} value={input} maxLength={MAX_CHAT_TEXT} placeholder="Contame tu objetivo, tu rutina o tus dudas…" disabled={pending || failed || exhausted} aria-describedby="advisor-privacy" onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }}/>
         <button type="submit" className="button button--dark" aria-label="Enviar mensaje" disabled={!input.trim() || pending || failed || exhausted}><Send aria-hidden="true"/><span>Enviar</span></button>
       </form>
-      <p id="advisor-privacy" className="advisor-privacy"><span className="advisor-privacy__health">Soy un asesor virtual con IA, no un profesional de salud; mis sugerencias son informativas y no reemplazan una evaluación personal. </span>Al enviar, la conversación se procesa con un proveedor externo de IA. No compartas datos sensibles. QuilGym no guarda este chat en tu cuenta; se borra al salir o reiniciar. Enter envía · Shift + Enter agrega una línea.</p>
+      <div id="advisor-privacy" className="advisor-privacy"><p>IA informativa, no reemplaza a un profesional de salud. La procesa un proveedor externo: no compartas datos sensibles.</p><details><summary>Más info</summary><p>Soy un asesor virtual con IA, no un profesional de salud; mis sugerencias son informativas y no reemplazan una evaluación personal. Al enviar, la conversación se procesa con un proveedor externo de IA. QuilGym no guarda este chat en tu cuenta; se borra al salir o reiniciar. Enter envía · Shift + Enter agrega una línea.</p></details></div>
     </section>
   </div>;
 }

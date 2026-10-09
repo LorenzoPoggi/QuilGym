@@ -253,3 +253,13 @@ export const orderEmails = pgTable("order_emails", {
   attempts: integer("attempts").notNull().default(0),
   ...timestamps,
 }, (t) => [uniqueIndex("order_emails_event_idx").on(t.orderId, t.event)]);
+
+/** Historial de cambios de stock hechos desde el panel. `null` = sin control de inventario. */
+export const productStockChanges = pgTable("product_stock_changes", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  variantId: integer("variant_id").references(() => productVariants.id, { onDelete: "set null" }),
+  sku: text("sku").notNull(), previousStock: integer("previous_stock"), newStock: integer("new_stock"),
+  source: text("source").notNull().default("admin"), changedBy: text("changed_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("product_stock_changes_product_idx").on(t.productId, t.createdAt)]);

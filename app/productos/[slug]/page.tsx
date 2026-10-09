@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, Info, Store, Truck } from "lucide-react";
+import { ArrowRight, Info, Scale, Store, Truck } from "lucide-react";
+import { compareHref } from "@/lib/compare";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
@@ -62,9 +63,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <p className={`stock ${product.inStock ? "" : "stock--out"}`}><span/> {product.inStock ? "En stock" : "Sin stock por el momento"}</p>
         <ProductPurchase product={product}/>
         <div className="shipping-calculator"><strong>Entrega</strong><p><Truck aria-hidden="true"/> Envíos a todo el país.</p><p><Store aria-hidden="true"/> Retiro en nuestro local de {commerce.pickupLocation}.</p></div>
+        {product.category.slug !== "combos" ? <Link className="product-compare-link" href={compareHref({ slugs: [product.slug], categoria: product.category.slug })}><Scale aria-hidden="true"/>Comparar con otras {product.category.name.toLowerCase()}<ArrowRight aria-hidden="true"/></Link> : null}
+        <TrustStrip/>
       </div>
     </section>
-    <TrustStrip/>
     <section className="product-info-section">
       <div className="section-heading"><div><h2>Información del producto</h2><p>Información clara para entender el producto y decidir según tu rutina.</p></div></div>
       <div>

@@ -140,12 +140,23 @@ export async function reconcileProviderPayment(id: string) {
     if (!order) return null;
     if (order.isDemo || order.paymentMethod !== "mercadopago" || payment.currency_id !== "ARS" || payment.transaction_amount !== order.totalArs) throw new Error("El pago no coincide con el pedido.");
     const [stored] = await tx.select().from(payments).where(eq(payments.orderId, order.id)).for("update");
-    if (stored.providerId && stored.providerId !== id) throw new Error("El pedido ya tiene otro pago asociado.");
-    if (stored.providerUpdatedAt && stored.providerUpdatedAt >= updated) return order.id;
     const status = providerStatus(payment.status);
-    const transitioned = await transitionOrder(tx, order, status);
-    if (transitioned) await tx.update(payments).set({ providerId: id, providerUpdatedAt: updated,
-      ticketUrl: safePaymentUrl(payment.transaction_details?.external_resource_url) }).where(eq(payments.id, stored.id));
+    if (stored.providerId && stored.providerId !== id) {
+      // Checkout Pro permite reintentar con otro pago: un intento fallido se reemplaza; uno fallido tardío se ignora.
+      if (status === "rejected" || status === "cancelled") return order.id;
+      if (stored.status === "approved" || stored.status === "refunded") {
+        console.error("[Mercado Pago] Segundo pago sobre un pedido ya cobrado", { order: order.id.slice(0, 8), payment: id, stored: stored.providerId });
+        throw new Error("El pedido ya tiene otro pago asociado.");
+      }
+    } else if (stored.providerUpdatedAt && stored.providerUpdatedAt >= updated) return order.id;
+    const record = { providerId: id, providerUpdatedAt: updated, ticketUrl: safePaymentUrl(payment.transaction_details?.external_resource_url) };
+    if (await transitionOrder(tx, order, status)) await tx.update(payments).set(record).where(eq(payments.id, stored.id));
+    else {
+      // El pedido ya cerró (p. ej., cancelado por vencimiento): se registra el estado real del proveedor para que el
+      // panel muestre «Pago aprobado sobre pedido cancelado» en vez de perder el cobro.
+      await tx.update(payments).set({ ...record, status }).where(eq(payments.id, stored.id));
+      if (status === "approved") console.error("[Mercado Pago] Pago aprobado sobre un pedido cerrado", { order: order.id.slice(0, 8), status: order.status, payment: id });
+    }
     return order.id;
   });
 }

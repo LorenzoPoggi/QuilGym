@@ -9,6 +9,7 @@ import { WhatsAppGlyph } from "./icons";
 export function AdvisorLauncher() {
   const [open, setOpen] = useState(false);
   const [dial, setDial] = useState(false);
+  const [covering, setCovering] = useState(false);
   const pathname = usePathname();
   const region = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -23,8 +24,25 @@ export function AdvisorLauncher() {
     document.addEventListener("keydown", close); document.addEventListener("pointerdown", outside); media.addEventListener("change", reset);
     return () => { document.removeEventListener("keydown", close); document.removeEventListener("pointerdown", outside); media.removeEventListener("change", reset); };
   }, [open, dial]);
+  // Sobre la cinta de marcas del hero los botones taparían los logos: se ocultan hasta que la cinta deja de estar debajo.
+  useEffect(() => {
+    const strip = document.querySelector("#marcas .brand-marquee");
+    if (!strip) { const reset = requestAnimationFrame(() => setCovering(false)); return () => cancelAnimationFrame(reset); }
+    let frame = 0;
+    function check() {
+      frame = 0;
+      const box = region.current?.getBoundingClientRect(), band = strip!.getBoundingClientRect();
+      if (!box || region.current?.contains(document.activeElement)) return setCovering(false);
+      setCovering(box.bottom > band.top && box.top < band.bottom && box.right > band.left && box.left < band.right);
+    }
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(check); };
+    check();
+    const observer = new ResizeObserver(schedule); observer.observe(document.body); observer.observe(strip);
+    window.addEventListener("scroll", schedule, { passive: true }); window.addEventListener("resize", schedule); window.addEventListener("load", schedule);
+    return () => { cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule); window.removeEventListener("load", schedule); };
+  }, [pathname]);
   if (pathname.startsWith("/asesor") || pathname.startsWith("/checkout") || pathname === "/cuenta/ingresar" || pathname === "/cuenta/registro") return null;
-  return <div className="advisor-floating" ref={region} onBlur={(event) => {
+  return <div className="advisor-floating" ref={region} data-covering={covering && !open && !dial ? "" : undefined} onBlur={(event) => {
     // Con teclado, salir del grupo cierra el menú mobile. Sin relatedTarget (tap) se deja al clic afuera.
     const next = event.relatedTarget as Node | null;
     if (dial && next && !event.currentTarget.contains(next)) setDial(false);

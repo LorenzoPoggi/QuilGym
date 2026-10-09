@@ -50,6 +50,13 @@
       "when": 1791420564060,
       "tag": "0006_talented_joshua_kane",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791583595166,
+      "tag": "0007_admin_stock_history",
+      "breakpoints": true
     }
   ]
 }

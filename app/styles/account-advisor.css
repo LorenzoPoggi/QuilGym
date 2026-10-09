@@ -39,14 +39,20 @@
 .advisor-composer textarea::placeholder { color: #747c80; }
 .advisor-composer .button { flex-shrink: 0; min-height: 46px; border-radius: 12px; }
 .advisor-composer .button:disabled { color: #747c80; background: #e3e6e7; cursor: not-allowed; }
-.advisor-privacy { color: var(--muted); font-size: .72rem; line-height: 1.6; margin: 12px 0 0; }
+/* Aviso legal compacto: una línea con salud y proveedor externo, el detalle completo en «Más info». */
+.advisor-privacy { margin: 10px 0 0; color: var(--muted); font-size: .72rem; line-height: 1.5; }
+.advisor-privacy > p { display: inline; margin: 0; }
+.advisor-privacy details { display: inline; }
+.advisor-privacy summary { display: inline-flex; align-items: center; min-height: 24px; margin-left: 6px; color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; list-style: none; }
+.advisor-privacy summary::-webkit-details-marker { display: none; }
+.advisor-privacy details[open] summary { margin-bottom: 4px; }
+.advisor-privacy details p { margin: 4px 0 0; }
 .advisor-chat-error, .advisor-config-note { font-size: .85rem; line-height: 1.6; padding: 14px; border-radius: var(--radius-sm); background: var(--soft); }
 .advisor-chat-error { color: #9b3030; margin-bottom: 12px; }
 .advisor-chat-error p { margin-top: 0; }
 .advisor-chat-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
 .advisor-chat-products .recommendation-reason { padding: 16px; }
 .advisor-chat-products .recommendation-reason p { font-size: .85rem; }
-.advisor-privacy__health { display: none; }
 @media (min-width: 769px) and (max-width: 1100px) {
  .advisor-layout--conversation { grid-template-columns: minmax(250px, .8fr) minmax(0, 1.4fr); gap: 18px; }
  .advisor-layout--conversation .advisor-sidebar { padding: 28px; }
@@ -54,7 +60,6 @@
 }
 @media (max-width: 768px) {
  .advisor-layout--conversation .advisor-sidebar { display: none; }
- .advisor-privacy__health { display: inline; }
  .advisor-layout--conversation { gap: 16px; }
  .advisor-chat--conversation { min-height: 0; border-radius: var(--radius-lg); padding: 18px; }.advisor-conversation { height: 460px; }
  .advisor-chat--conversation > header strong { font-size: .9rem; }.advisor-chat--conversation > header small { font-size: .72rem; }
@@ -240,13 +245,17 @@
 .recommendation-reason small { display: flex; gap: 8px; line-height: 1.6; color: var(--muted); }
 .recommendation-reason small svg { width: 18px; flex-shrink: 0; }
 /* --sticky-buy-h lo define la barra de compra de la ficha mobile mientras está visible (incluye la safe area). */
-.advisor-floating { position: fixed; bottom: max(calc(var(--sticky-buy-h, 0px) + 24px), calc(24px + env(safe-area-inset-bottom, 0px))); right: 24px; z-index: 25; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; transition: bottom .25s ease; }
-.advisor-floating-button { display: grid; place-items: center; width: 62px; height: 62px; margin-left: auto; border-radius: 50%; background: #42494e; border: 1px solid #6c7479; color: #fff; box-shadow: 0 6px 24px #0003; cursor: pointer; transition: transform .18s; }
+/* 52px y pegados al borde: a 1440 quedan fuera del contenedor y no tapan tarjetas ni franjas. */
+.advisor-floating { position: fixed; bottom: max(calc(var(--sticky-buy-h, 0px) + 20px), calc(20px + env(safe-area-inset-bottom, 0px))); right: 16px; z-index: 25; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; transition: bottom .25s ease; }
+.advisor-floating > * { transition: opacity .2s ease, visibility .2s; }
+/* Sobre la cinta de marcas del hero (AdvisorLauncher calcula data-covering) los botones se ocultan y salen del orden de foco. */
+.advisor-floating[data-covering] > * { opacity: 0; visibility: hidden; }
+.advisor-floating-button { display: grid; place-items: center; width: 52px; height: 52px; margin-left: auto; border-radius: 50%; background: #42494e; border: 1px solid #6c7479; color: #fff; box-shadow: 0 6px 24px #0003; cursor: pointer; transition: transform .18s; }
 .advisor-floating-button:hover { transform: translateY(-3px); }
-.advisor-floating-button svg { width: 30px; height: 30px; }
-.whatsapp-floating-button { display: grid; place-items: center; width: 62px; height: 62px; color: #fff; background: #25d366; border-radius: 50%; box-shadow: 0 6px 24px #0003; transition: transform .18s, background-color .18s; }
+.advisor-floating-button svg { width: 26px; height: 26px; }
+.whatsapp-floating-button { display: grid; place-items: center; width: 52px; height: 52px; color: #fff; background: #25d366; border-radius: 50%; box-shadow: 0 6px 24px #0003; transition: transform .18s, background-color .18s; }
 .whatsapp-floating-button:hover { transform: translateY(-3px); background: #1fbd5b; }
-.whatsapp-glyph { width: 32px; height: 32px; }
+.whatsapp-glyph { width: 28px; height: 28px; }
 /* Flotan sobre cualquier fondo: anillo blanco y contorno oscuro para que el foco se vea en claro y en oscuro. */
 .whatsapp-floating-button:focus-visible, .advisor-floating-button:focus-visible, .floating-dial-toggle:focus-visible, .floating-dial__item:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 2px #fff, 0 6px 24px #0003; }
 /* Menú flotante mobile: un botón de 52px que despliega WhatsApp y el asesor. */
@@ -341,7 +350,7 @@
 @media (max-width: 420px) { .auth-aside ul { grid-template-columns: 1fr; }.auth-aside li:last-child { display: flex; } }
 @media (prefers-reduced-motion: reduce) {
  .cart-dialog .cart-drawer, .cart-dialog::backdrop, .advisor-popover { animation: none !important; }
- .reviews-track { scroll-behavior: auto; }.advisor-floating-button, .advisor-floating { transition: none; }.floating-dial__item { animation: none; }
+ .reviews-track { scroll-behavior: auto; }.advisor-floating-button, .advisor-floating, .advisor-floating > * { transition: none; }.floating-dial__item { animation: none; }
  .favorite-button, .favorite-button svg { animation: none !important; transition: none; }.favorite-button:hover { transform: none; }
  .advisor-starters button { transition: none; }.advisor-starters button:hover { transform: none; }
 }
