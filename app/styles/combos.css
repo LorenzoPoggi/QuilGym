@@ -1,0 +1,111 @@
+/* Combos (components/combo-showcase.tsx): vitrina de la home y galería de la ficha de cada combo. */
+
+.combo-track { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
+.combo-track > li { display: flex; min-width: 0; }
+
+.combo-card { display: flex; flex: 1; flex-direction: column; min-width: 0; padding: 12px; background: #fff; border: 1px solid #d9dcde; border-radius: 22px; box-shadow: 0 8px 18px rgba(31, 35, 37, .07); transition: box-shadow .25s ease, transform .25s ease; }
+
+/* Escenario: las fotos de cada producto, recortadas sobre un panel suave. */
+.combo-card__stage { position: relative; overflow: hidden; aspect-ratio: 1 / .86; border-radius: 16px; background: radial-gradient(120% 90% at 50% 38%, #fbfbfa 0%, #eff0ee 58%, #e3e5e3 100%); isolation: isolate; }
+.combo-card__stage::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: 11%; height: 9%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, rgba(29, 32, 34, .16), transparent); pointer-events: none; }
+.combo-card__stage > .favorite-button { position: absolute; top: 10px; right: 10px; z-index: 3; }
+.combo-card__count { position: absolute; top: 12px; left: 12px; z-index: 3; padding: 5px 10px; color: var(--ink); background: rgba(255, 255, 255, .86); border: 1px solid rgba(29, 32, 34, .08); border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .02em; backdrop-filter: blur(6px); }
+
+.combo-card__visual { position: absolute; inset: 0; display: block; }
+
+/* Composición del combo (ComboVisual): compartida por la tarjeta y la ficha.
+   El multiply va en el contenedor de cada foto y no en la <img>: el contenedor se mueve con
+   transform en el hover y eso crea un contexto de apilamiento; si el multiply estuviera en la
+   <img>, se fundiría solo con su contenedor transparente y aparecería el fondo blanco de la foto. */
+.combo-visual { position: absolute; inset: 0; display: block; }
+.combo-visual__item { position: absolute; display: block; mix-blend-mode: multiply; }
+.combo-visual__item img { object-fit: contain; }
+.combo-visual__item--back { left: 4%; bottom: 12%; width: 54%; height: 71%; transition: transform .45s cubic-bezier(.2, .7, .2, 1); }
+.combo-visual__item--front { right: 4%; bottom: 9%; width: 58%; height: 77%; transition: transform .45s cubic-bezier(.2, .7, .2, 1); }
+.combo-visual__item--solo { left: 18%; right: 18%; bottom: 11%; height: 72%; }
+.combo-visual__plus { position: absolute; left: 50%; bottom: 8%; z-index: 2; display: grid; place-items: center; width: 30px; height: 30px; color: #fff; background: var(--ink); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 6px 14px rgba(31, 35, 37, .18); font-size: 1.1rem; font-weight: 700; line-height: 1; transform: translateX(-50%); }
+.combo-card__fallback { position: absolute; inset: 0; display: block; }
+.combo-card__fallback .product-thumb { height: 100%; aspect-ratio: auto; }
+.combo-card__fallback .product-thumb img { mix-blend-mode: multiply; }
+
+.combo-card__body { display: flex; flex: 1; flex-direction: column; padding: 14px 4px 2px; }
+.combo-card__brand { margin-bottom: 4px; color: var(--muted); text-transform: uppercase; }
+.combo-card h3 { margin: 0; font-size: 1.12rem; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; }
+.combo-card h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.combo-card__includes { margin: 8px 0 0; text-wrap: pretty; color: #4a5155; font-size: .84rem; line-height: 1.4; }
+.combo-card__includes span { display: block; margin-bottom: 2px; color: var(--muted); font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.combo-card__meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 14px; }
+.combo-card__meta .price { margin: 0; font-size: 1.35rem; letter-spacing: -.02em; }
+.combo-card__meta .stock { margin: 0; font-size: .78rem; white-space: nowrap; }
+.combo-card__actions { display: flex; gap: 8px; margin-top: 12px; }
+.combo-card__add { flex: 1; min-height: 46px; border-radius: 12px; font-size: .9rem; }
+.combo-card__add:disabled { opacity: .55; cursor: not-allowed; }
+.combo-card__link { flex: 0 0 46px; min-height: 46px; padding: 0; border-color: var(--line); border-radius: 12px; }
+.combo-card__link svg { width: 18px; height: 18px; }
+.combo-card__link:hover { border-color: var(--ink); }
+
+.combo-showcase__more { display: none; }
+
+@media (hover: hover) {
+  .combo-card:hover { box-shadow: 0 18px 36px rgba(31, 35, 37, .13); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .combo-card:hover { transform: translateY(-4px); }
+  .combo-card:hover .combo-visual__item--back { transform: translateX(-5%) rotate(-3deg); }
+  .combo-card:hover .combo-visual__item--front { transform: translateX(4%) rotate(2deg) scale(1.03); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .combo-card, .combo-visual__item--back, .combo-visual__item--front { transition: none; }
+}
+
+@media (max-width: 1100px) {
+  .combo-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .combo-card__stage { aspect-ratio: 1 / .7; }
+}
+
+/* Ficha de un combo (ComboGallery): la composición en grande y la lista de lo que incluye. */
+.combo-gallery { display: grid; gap: 14px; align-self: start; min-width: 0; }
+.combo-gallery__stage { position: relative; width: 100%; overflow: hidden; aspect-ratio: 545 / 470; max-height: 540px; border-radius: 24px; background: radial-gradient(115% 90% at 50% 36%, #fcfcfb 0%, #f0f1ef 56%, #e1e3e1 100%); isolation: isolate; }
+.combo-gallery__stage::after { content: ""; position: absolute; left: 16%; right: 16%; bottom: 9%; height: 8%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, rgba(29, 32, 34, .17), transparent); pointer-events: none; }
+.combo-gallery__stage .combo-visual { inset: 4% 6% 1%; }
+.combo-gallery__stage .combo-visual__plus { width: 46px; height: 46px; border-width: 3px; font-size: 1.55rem; box-shadow: 0 10px 22px rgba(31, 35, 37, .2); }
+.combo-gallery__count { position: absolute; top: 18px; left: 18px; z-index: 3; padding: 6px 12px; color: var(--ink); background: rgba(255, 255, 255, .88); border: 1px solid rgba(29, 32, 34, .08); border-radius: 999px; font-size: .76rem; font-weight: 700; letter-spacing: .02em; }
+
+.combo-gallery__includes .eyebrow { margin: 4px 0 10px; color: var(--muted); }
+.combo-gallery__includes ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.combo-gallery__includes li { display: flex; min-width: 0; }
+.combo-gallery__part { display: flex; flex: 1; align-items: center; gap: 12px; min-width: 0; min-height: 76px; padding: 8px 14px 8px 8px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 16px; transition: border-color .2s ease, box-shadow .2s ease; }
+a.combo-gallery__part:hover { border-color: var(--ink); box-shadow: 0 8px 18px rgba(31, 35, 37, .08); }
+.combo-gallery__thumb { position: relative; flex: 0 0 58px; height: 58px; overflow: hidden; background: var(--soft); border-radius: 12px; }
+.combo-gallery__thumb img { padding: 10%; object-fit: contain; mix-blend-mode: multiply; }
+.combo-gallery__label { display: grid; gap: 2px; min-width: 0; }
+.combo-gallery__label strong { font-size: .9rem; font-weight: 700; line-height: 1.25; text-wrap: pretty; }
+.combo-gallery__label small { color: var(--muted); font-size: .76rem; font-weight: 600; }
+.combo-gallery__part > svg { flex: 0 0 18px; width: 18px; height: 18px; margin-left: auto; color: var(--muted); }
+a.combo-gallery__part:hover > svg { color: var(--ink); }
+
+/* Mobile: carrusel horizontal con la tarjeta siguiente asomando. */
+@media (max-width: 768px) {
+  .combo-track { display: flex; gap: 12px; margin-inline: -16px; padding: 4px 16px 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; scrollbar-width: none; }
+  .combo-track::-webkit-scrollbar { display: none; }
+  .combo-track > li { flex: 0 0 78%; scroll-snap-align: start; }
+  .combo-card { padding: 10px; border-radius: 20px; }
+  .combo-card__stage { aspect-ratio: 1 / .82; border-radius: 14px; }
+  .combo-card h3 { font-size: 1.04rem; }
+  .combo-card__meta .price { font-size: 1.2rem; }
+  .combo-showcase__more { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; min-height: 44px; font-size: .875rem; font-weight: 600; }
+  .combo-showcase__more svg { width: 17px; height: 17px; }
+  /* La lista de lo que incluye baja debajo del bloque de compra para que el título y el precio
+     queden en la primera pantalla. */
+  .combo-gallery { display: contents; }
+  .combo-gallery__includes { order: 1; }
+  .combo-gallery__stage { aspect-ratio: 1 / .76; max-height: 46svh; border-radius: 20px; }
+  .combo-gallery__stage .combo-visual__plus { width: 38px; height: 38px; font-size: 1.3rem; }
+  .combo-gallery__count { top: 12px; left: 12px; }
+}
+@media (max-width: 520px) {
+  .combo-track > li { flex-basis: 82%; }
+  .combo-gallery__includes ul { grid-template-columns: 1fr; gap: 8px; }
+  .combo-gallery__part { min-height: 68px; }
+  .combo-gallery__thumb { flex-basis: 52px; height: 52px; }
+}

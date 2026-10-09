@@ -7,11 +7,13 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
 import { ProductGallery } from "@/components/product-gallery";
+import { ComboGallery } from "@/components/combo-showcase";
 import { RichText } from "@/components/rich-text";
 import { TrustStrip } from "@/components/trust-strip";
 import { ProductPurchase } from "@/components/cart-buttons";
 import { FavoriteButton } from "@/components/account-controls";
 import { getAllProducts, getProduct, getProductsByCategory } from "@/lib/catalog";
+import { comboParts } from "@/lib/combo-contents";
 import { commerce, formatArs, transferPrice } from "@/lib/commerce";
 
 type ProductPageProps = { params: Promise<{ slug: string }> };
@@ -33,6 +35,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const related = await getProductsByCategory(product.category.slug, 4, product.slug);
   const nutrition = product.images.filter((image) => image.kind === "nutrition");
   const categoryHref = `/productos?categoria=${product.category.slug}`;
+  // Combos mapeados: la composición con las fotos de lo que incluye en lugar de la foto vieja del combo.
+  const combo = comboParts(product.slug);
+  const activeSlugs = combo ? new Set((await getAllProducts()).map((item) => item.slug)) : null;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -49,7 +54,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/>
     <p className="breadcrumb"><Link href="/">Inicio</Link> / <Link href={categoryHref}>{product.category.name}</Link>{product.brand ? <> / <Link href={`${categoryHref}&marca=${product.brand.slug}`}>{product.brand.name}</Link></> : null} / {product.name}</p>
     <section className="product-hero">
-      <ProductGallery product={product}/>
+      {combo && activeSlugs ? <ComboGallery name={product.name} parts={combo} activeSlugs={activeSlugs}/> : <ProductGallery product={product}/>}
       <div className="product-buybox">
         <div className="buybox-brand">{product.brand?.name ?? product.category.name}</div>
         <div className="product-title-row"><h1>{product.name}</h1><FavoriteButton productId={product.id} name={product.name}/></div>

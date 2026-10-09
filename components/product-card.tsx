@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import type { ProductSummary } from "@/lib/catalog-types";
 import { formatArs, paymentHighlights } from "@/lib/commerce";
 import { AddToCartButton } from "./cart-buttons";
@@ -6,6 +7,11 @@ import { ProductImage } from "./product-image";
 import { ProductCardMedia } from "./product-card-media";
 import { FavoriteButton } from "./account-controls";
 
+/**
+ * Tarjeta de producto compartida (home, catálogo, búsqueda, ficha, favoritos, comparador y asesor).
+ * El pie sigue el de las tarjetas de combos: precio a la izquierda y stock a la derecha, y debajo
+ * «Agregar» en negro con la flecha a la ficha. El pie queda abajo para alinear las tarjetas de una fila.
+ */
 export function ProductCard({ product, compact = false, priority = false, className = "" }: { product: ProductSummary; compact?: boolean; priority?: boolean; className?: string }) {
   const href = `/productos/${product.slug}`;
   const highlights = paymentHighlights();
@@ -22,11 +28,17 @@ export function ProductCard({ product, compact = false, priority = false, classN
       </div>
       <p className="eyebrow product-brand">{product.brand?.name ?? product.category.name}</p>
       <h3><Link href={href}>{product.name}</Link></h3>
-      <p className="product-detail">{product.category.name}</p>
-      <p className="price">{formatArs(product.priceArs)} {product.compareAtPriceArs ? <del>{formatArs(product.compareAtPriceArs)}</del> : null}</p>
-      {highlights ? <p className="installments">{highlights}</p> : null}
-      <p className={`stock ${product.inStock ? "" : "stock--out"}`}><span/> {product.inStock ? "En stock" : "Sin stock"}</p>
-      <AddToCartButton variantId={product.variantId} name={product.name} inStock={product.inStock}/>
+      <div className="product-card__footer">
+        <div className="product-card__meta">
+          <p className="price">{formatArs(product.priceArs)} {product.compareAtPriceArs ? <del>{formatArs(product.compareAtPriceArs)}</del> : null}</p>
+          <p className={`stock ${product.inStock ? "" : "stock--out"}`}><span/> {product.inStock ? "En stock" : "Sin stock"}</p>
+        </div>
+        {highlights ? <p className="installments">{highlights}</p> : null}
+        <div className="product-card__actions">
+          <AddToCartButton variantId={product.variantId} name={product.name} inStock={product.inStock} className="button button--dark product-card__add"/>
+          <Link className="button button--outline product-card__link" href={href} aria-label={`Ver ${product.name}`}><ArrowUpRight aria-hidden="true"/></Link>
+        </div>
+      </div>
     </article>
   );
 }

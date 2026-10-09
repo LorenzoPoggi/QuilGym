@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ComboShowcase } from "@/components/combo-showcase";
 import { GoogleReviews } from "@/components/google-reviews";
 import { HeroVideo } from "@/components/hero-video";
 import Link from "next/link";
@@ -38,13 +39,12 @@ function SectionHeading({ eyebrow, title, copy, link, href = "/productos" }: { e
 }
 
 export default async function Home() {
-  const [desktopFeatured, proteins, creatines, accessories, preWorkouts, combos, brands] = await Promise.all([
+  const [desktopFeatured, proteins, creatines, accessories, preWorkouts, brands] = await Promise.all([
     getFeaturedProducts(12),
     getProductsByCategory("proteinas", 2),
     getProductsByCategory("creatinas", 2),
     getProductsByCategory("accesorios", 30),
     getProductsByCategory("pre-entrenos", 1),
-    getProductsByCategory("combos", 4),
     getBrands(),
   ]);
   const shaker = accessories.find((product) => /shaker/i.test(product.name)) ?? accessories[0];
@@ -76,6 +76,14 @@ export default async function Home() {
               <li><Store aria-hidden="true"/>Retiro en {commerce.pickupLocation}</li>
             </ul>
           </div>
+          {logoBrands.length > 0 ? <nav id="marcas" className="hero-brands" aria-label="Marcas disponibles">
+            <div className="container hero-brands-inner">
+              {/* WCAG 2.2.2: control para frenar la cinta también en pantallas táctiles, sin JS. */}
+              <label className="brand-pause"><input type="checkbox" className="sr-only" aria-label="Pausar la cinta de marcas"/><Pause aria-hidden="true"/><Play aria-hidden="true"/></label>
+              {/* Cuatro pasadas para que cada mitad supere el ancho del contenedor; solo la primera es accesible. */}
+              <div className="brand-marquee"><ul className="brand-track">{[0, 1, 2, 3].flatMap((copy) => logoBrands.map(({ slug, name, count, logo }) => <li className={copy ? "brand-copy" : undefined} aria-hidden={copy ? true : undefined} key={`${copy}-${slug}`}><Link className="brand-logo" href={`/productos?marca=${slug}`} aria-label={`Ver ${count} ${count === 1 ? "producto" : "productos"} de ${name}`} tabIndex={copy ? -1 : undefined}><Image src={logo.src} alt="" width={logo.width} height={logo.height} sizes="160px" style={{ aspectRatio: `${logo.width} / ${logo.height}` }}/></Link></li>))}</ul></div>
+            </div>
+          </nav> : null}
         </section>
 
         <section className="benefits-section"><div className="container benefits-grid">{benefits.map(({ icon: Icon, title, text }) => <div className="benefit" key={title}><span><Icon aria-hidden="true"/></span><div><strong>{title}</strong><small>{text}</small></div></div>)}</div></section>
@@ -97,17 +105,7 @@ export default async function Home() {
           </div>
         </section>
 
-        <section id="combos" className="section-pad container">
-          <SectionHeading eyebrow="COMBOS QUILGYM" title="Combos por objetivo" copy="Selecciones armadas para simplificar tu compra. En cada ficha ves qué productos incluye." link="Explorar combos" href="/productos?categoria=combos" />
-          <div className="product-grid">{combos.map((product) => <ProductCard key={product.slug} product={product} compact />)}</div>
-          <div id="marcas" className="brands-block">
-            <SectionHeading eyebrow="SELECCIÓN CONFIABLE" title="Marcas disponibles" copy="Trabajamos con marcas reconocidas y productos con trazabilidad." />
-            {/* Cuatro pasadas para que cada mitad supere el ancho del contenedor; solo la primera es accesible. */}
-            {logoBrands.length > 0 ? <div className="brand-marquee"><ul className="brand-track">{[0, 1, 2, 3].flatMap((copy) => logoBrands.map(({ slug, name, count, logo }) => <li className={copy ? "brand-copy" : undefined} aria-hidden={copy ? true : undefined} key={`${copy}-${slug}`}><Link className="brand-logo" data-tone={logo.tone} href={`/productos?marca=${slug}`} aria-label={`Ver ${count} ${count === 1 ? "producto" : "productos"} de ${name}`} tabIndex={copy ? -1 : undefined}><Image src={logo.src} alt="" width={logo.width} height={logo.height} sizes="170px" style={{ aspectRatio: `${logo.width} / ${logo.height}` }}/></Link></li>))}</ul></div> : null}
-            {/* WCAG 2.2.2: control para frenar la cinta también en pantallas táctiles, sin JS. */}
-            {logoBrands.length > 0 ? <label className="brand-pause"><input type="checkbox" className="sr-only" aria-label="Pausar la cinta de marcas"/><Pause aria-hidden="true"/><Play aria-hidden="true"/><span aria-hidden="true">Pausar</span><span aria-hidden="true">Reanudar</span></label> : null}
-          </div>
-        </section>
+        <ComboShowcase limit={4}/>
 
         <section id="como-comprar" className="section-pad section-soft">
           <div className="container">

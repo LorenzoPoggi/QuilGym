@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Lock, Mail, Store, Truck } from "lucide-react";
 import { commerce } from "@/lib/commerce";
+import { Logo } from "./logo";
 
 const groups = [
   { title: "Comprar", links: [["Todos los productos", "/productos"], ["Proteínas", "/productos?categoria=proteinas"], ["Creatinas", "/productos?categoria=creatinas"], ["Pre-entrenos", "/productos?categoria=pre-entrenos"], ["Vitaminas y minerales", "/productos?categoria=vitaminas-y-minerales"], ["Accesorios", "/productos?categoria=accesorios"]] },
@@ -30,7 +31,7 @@ export function Footer() {
       </section>
       <div className="footer-main">
         <div className="container footer-grid">
-          <div className="footer-brand"><Link href="/" className="wordmark wordmark--light">QUILGYM</Link><p>Suplementos, accesorios e información para acompañar tu entrenamiento con claridad.</p></div>
+          <div className="footer-brand"><Link href="/" className="wordmark wordmark--light" aria-label="QuilGym, volver al inicio"><Logo/></Link><p>Suplementos, accesorios e información para acompañar tu entrenamiento con claridad.</p></div>
           {groups.map((group) => <nav key={group.title} aria-label={group.title}><h3>{group.title}</h3>{group.links.map(([label, href]) => <Link key={label} href={href}>{label}</Link>)}</nav>)}
         </div>
         <div className="container footer-trust">{trust.map(({ icon: Icon, label }) => <span key={label}><Icon aria-hidden="true"/>{label}</span>)}</div>

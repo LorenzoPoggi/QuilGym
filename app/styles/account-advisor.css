@@ -108,7 +108,7 @@
 .account-side-nav a:hover, .account-side-nav a[aria-current="page"] { background: var(--soft); }
 .account-side-nav svg { width: 18px; height: 18px; }
 .account-area-content { min-width: 0; }
-.account-page-title { margin: 0 0 10px; font-size: clamp(1.7rem, 3vw, 2.3rem); }
+.account-page-title { display: flex; align-items: center; gap: 16px; margin: 0 0 10px; font-size: clamp(1.7rem, 3vw, 2.3rem); }
 .account-page-intro { margin: 0 0 26px; color: var(--muted); }
 .account-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .account-summary-grid a { display: grid; gap: 8px; min-height: 135px; padding: 23px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }

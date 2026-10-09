@@ -5,13 +5,14 @@ import { CartPill } from "./cart-buttons";
 import { SearchIcon } from "./icons";
 import { AccountLink } from "./account-controls";
 import { HeaderAutoHide } from "./header-auto-hide";
+import { Logo } from "./logo";
 
 /** En /buscar la página tiene su propio buscador: `showSearch={false}` evita dos inputs superpuestos. */
 export function Header({ showSearch = true, overlayOnHero = false }: { showSearch?: boolean; overlayOnHero?: boolean }) {
   const headerClass = ["site-header", overlayOnHero ? "site-header--hero" : ""].filter(Boolean).join(" ");
   const inner = (
     <div className="container header-inner">
-      <Link href="/" className="wordmark" aria-label="QuilGym, inicio">QUILGYM</Link>
+      <Link href="/" className="wordmark" aria-label="QuilGym, inicio"><Logo/></Link>
       <nav className="primary-nav" aria-label="Navegación principal">
         <Link href="/productos">Productos</Link>
         <Link href="/#objetivos">Objetivos</Link>

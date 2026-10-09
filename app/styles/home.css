@@ -1,8 +1,13 @@
 /* Estilos de home: se cargan después de globals.css y lo sobrescriben donde hace falta. */
 
 /* Hero: una columna sobre el video; el overlay garantiza contraste AA del texto claro */
-.home-page-shell > .site-header--hero { margin-bottom: -76px; }
-.hero { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: center; min-height: 100svh; color: #fff; background: #111314; }
+/* El header de la home flota sobre el video sin ocupar alto: el video llega al borde superior en cualquier
+   ancho, sin márgenes negativos atados al alto del header. El banner de envíos no se muestra en la home, así que
+   fixed en top: 0 se comporta igual que el sticky del resto del sitio. */
+.home-page-shell > .site-header--hero { position: fixed; top: 0; left: 0; right: 0; }
+/* Columna: el texto se centra en el espacio libre y la cinta de marcas queda abajo, siempre con lugar reservado. */
+.hero { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: center; min-height: 100svh; color: #fff; background: #111314; }
+.hero-content { margin-block: auto; }
 .hero-media { position: absolute; inset: 0; }
 .hero-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(12,14,15,.78) 0%, rgba(12,14,15,.6) 38%, rgba(12,14,15,.2) 72%, rgba(12,14,15,.05) 100%); }
 .hero-poster, .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -60,25 +65,24 @@
 .advisor-cta .button { min-height: 52px; padding: 0 22px; border-color: #fff; border-radius: 14px; font-size: .95rem; }
 .advisor-cta small { color: #4a5155; font-size: .72rem; font-weight: 600; }
 
-/* Marcas: cinta de logos en loop (cuatro pasadas, -50% = dos pasadas) */
-.brand-marquee { overflow: hidden; padding-block: 6px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-.brand-track { display: flex; width: max-content; margin: 0; padding: 0; list-style: none; animation: marquee 48s linear infinite; }
-.brand-marquee:hover .brand-track, .brand-marquee:focus-within .brand-track { animation-play-state: paused; }
-.brand-track li { flex: none; padding-inline: 30px; }
-.brand-logo { height: 76px; display: grid; place-items: center; padding-inline: 6px; border-radius: 12px; }
-.brand-logo img { width: auto; height: 40px; max-width: 160px; object-fit: contain; opacity: .7; filter: brightness(0); transition: filter .3s, opacity .3s; }
-.brand-logo[data-tone="color"] img { filter: grayscale(1) contrast(1.15); }
-/* Xtrenght es blanco: invertido se lee sobre fondo claro, también en hover. */
-.brand-logo[data-tone="light"] img { filter: invert(1); }
-.brand-logo:is(:hover, :focus-visible) img { opacity: 1; filter: none; }
-.brand-logo[data-tone="light"]:is(:hover, :focus-visible) img { filter: invert(1); }
-.brand-pause { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.brand-pause:has(:focus-visible) { position: relative; width: fit-content; height: auto; min-height: 44px; display: flex; align-items: center; gap: 8px; margin: 10px 0 0 auto; padding: 0 16px; overflow: visible; clip-path: none; white-space: normal; color: var(--muted); background: #fff; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; font-size: .8rem; font-weight: 600; }
-.brand-pause:hover { color: var(--ink); border-color: var(--ink); }
-.brand-pause:has(:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* Marcas: cinta de logos al pie del hero, monocromos en gris sobre el video (cuatro pasadas, -50% = dos pasadas) */
+.hero-brands { position: relative; z-index: 1; align-self: stretch; padding-block: 18px 22px; background: linear-gradient(180deg, rgba(12,14,15,0) 0%, rgba(12,14,15,.55) 100%); scroll-margin-top: calc(100svh - 96px); }
+.hero-brands-inner { display: flex; align-items: center; gap: 12px; }
+.brand-marquee { flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.brand-track { display: flex; align-items: center; width: max-content; margin: 0; padding: 0; list-style: none; animation: marquee 48s linear infinite; }
+.brand-marquee:hover .brand-track, .brand-marquee:focus-within .brand-track, .hero-brands:has(.brand-pause :checked) .brand-track { animation-play-state: paused; }
+.brand-track li { flex: none; padding-inline: 34px; }
+.brand-logo { height: 56px; display: grid; place-items: center; padding-inline: 6px; border-radius: 10px; }
+/* Todos los logos tienen fondo transparente: brightness(0) invert(1) los deja blancos y la opacidad los vuelve gris. */
+.brand-logo img { width: auto; height: 30px; max-width: 140px; object-fit: contain; opacity: .5; filter: brightness(0) invert(1); transition: opacity .25s ease; }
+.brand-logo:is(:hover, :focus-visible) img { opacity: 1; }
+.hero-brands .brand-logo:focus-visible { outline-offset: -2px; }
+/* Pausa siempre visible y discreta (también sirve en pantallas táctiles, donde no hay hover). */
+.brand-pause { position: relative; flex: none; width: 44px; height: 44px; display: grid; place-items: center; color: rgba(255,255,255,.55); border-radius: 50%; cursor: pointer; transition: color .25s ease, background-color .25s ease; }
+.brand-pause:hover, .brand-pause:has(:focus-visible) { color: #fff; background: rgba(255,255,255,.1); }
+.brand-pause:has(:focus-visible) { outline: 2px solid #fff; outline-offset: 2px; }
 .brand-pause svg { width: 16px; height: 16px; }
-.brand-pause:not(:has(:checked)) :is(svg:nth-of-type(2), span:last-child), .brand-pause:has(:checked) :is(svg:nth-of-type(1), span:nth-of-type(1)) { display: none; }
-.brands-block:has(.brand-pause :checked) .brand-track { animation-play-state: paused; }
+.brand-pause:not(:has(:checked)) svg:nth-of-type(2), .brand-pause:has(:checked) svg:nth-of-type(1) { display: none; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
 /* Cómo comprar: mismo ritmo que el bloque destacado + 3 tarjetas de la referencia */
@@ -127,10 +131,10 @@
 }
 
 @media (max-width: 768px) {
-  .home-page-shell > .site-header--hero { margin-bottom: -120px; }
   .benefits-section { display: none; }
   .featured-product--desktop-only { display: none; }
-  .hero { align-items: end; }
+  /* Texto abajo, apoyado sobre la cinta de marcas. */
+  .hero-content { margin-bottom: 0; }
   .hero-media::after { background: linear-gradient(180deg, rgba(12,14,15,.3) 0%, rgba(12,14,15,.4) 30%, rgba(12,14,15,.72) 62%, rgba(12,14,15,.85) 100%); }
   .hero-video-toggle { top: 16px; right: 16px; }
   .hero-video-toggle:focus-visible { top: 136px; }
@@ -140,9 +144,12 @@
   .hero-poster, .hero-video { object-position: 50% 100%; }
   .hero-content { padding-block: 32px; }
   .hero h1 { font-size: clamp(2.3rem, 10vw, 3.2rem); }
+  .hero-content { padding-bottom: 12px; }
+  .hero-brands { padding-block: 4px 14px; background: none; scroll-margin-top: calc(100svh - 72px); }
+  .hero-brands-inner { gap: 4px; }
   .brand-track li { padding-inline: 22px; }
-  .brand-logo { height: 64px; }
-  .brand-logo img { height: 32px; max-width: 128px; }
+  .brand-logo { height: 48px; }
+  .brand-logo img { height: 24px; max-width: 110px; }
   .advisor-icon { width: 64px; height: 64px; border-radius: 14px; }
   .advisor-icon svg { width: 30px; height: 30px; }
   .advisor-banner { padding: 26px; }
@@ -193,4 +200,5 @@
   .brand-marquee { -webkit-mask-image: none; mask-image: none; }
   .brand-track { width: auto; flex-wrap: wrap; justify-content: center; animation: none; }
   .brand-copy, .brand-pause { display: none; }
+  .brand-logo img { transition: none; }
 }
