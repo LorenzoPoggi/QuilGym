@@ -10,7 +10,6 @@ import { ProductCard } from "@/components/product-card";
 import { withLogos } from "@/lib/brand-logos";
 import { getBrands, getFeaturedProducts, getProductsByCategory } from "@/lib/catalog";
 import { commerce } from "@/lib/commerce";
-import { ADVISOR_GREETING } from "@/lib/advisor-chat-types";
 
 const objectives = [
   { title: "Masa muscular", text: "Proteínas y ganadores de peso", tone: "orange", icon: Dumbbell, href: "/productos?categoria=proteinas" },
@@ -76,15 +75,16 @@ export default async function Home() {
               <li><Store aria-hidden="true"/>Retiro en {commerce.pickupLocation}</li>
             </ul>
           </div>
-          <section className="benefits-section benefits-section--hero" aria-label="Beneficios de QuilGym">
-            <div className="container benefits-grid">{benefits.map(({ icon: Icon, title, text }) => <div className="benefit" key={title}><span><Icon aria-hidden="true"/></span><div><strong>{title}</strong><small>{text}</small></div></div>)}</div>
-          </section>
           {logoBrands.length > 0 ? <nav id="marcas" className="hero-brands" aria-label="Marcas disponibles">
             <div className="container hero-brands-inner">
               {/* La animación se pausa al hover/foco; las copias son decorativas y solo la primera pasada es accesible. */}
               <div className="brand-marquee"><ul className="brand-track">{[0, 1, 2, 3].flatMap((copy) => logoBrands.map(({ slug, name, count, logo }) => <li className={copy ? "brand-copy" : undefined} aria-hidden={copy ? true : undefined} key={`${copy}-${slug}`}><Link className="brand-logo" href={`/productos?marca=${slug}`} aria-label={`Ver ${count} ${count === 1 ? "producto" : "productos"} de ${name}`} tabIndex={copy ? -1 : undefined}><Image src={logo.src} alt="" width={logo.width} height={logo.height} sizes="160px" style={{ aspectRatio: `${logo.width} / ${logo.height}` }}/></Link></li>))}</ul></div>
             </div>
           </nav> : null}
+        </section>
+
+        <section className="benefits-section" aria-label="Beneficios de QuilGym">
+          <div className="container benefits-grid">{benefits.map(({ icon: Icon, title, text }) => <div className="benefit" key={title}><span><Icon aria-hidden="true"/></span><div><strong>{title}</strong><small>{text}</small></div></div>)}</div>
         </section>
 
         <section id="objetivos" className="section-pad container">
@@ -98,7 +98,7 @@ export default async function Home() {
             <div className="product-grid">{featured.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} className={desktopFeaturedSlugs.has(product.slug) ? (mobileFeaturedSlugs.has(product.slug) ? "" : "featured-product--desktop-only") : "featured-product--mobile-only"} />)}</div>
             <div className="advisor-banner">
               <div className="advisor-icon"><MessagesSquare aria-hidden="true"/></div>
-              <div><p className="eyebrow">ASESOR QUILGYM</p><h3>Tu objetivo. Tu rutina. Tu conversación.</h3><p className="advisor-preview">{ADVISOR_GREETING}</p></div>
+              <div><p className="eyebrow">TE ORIENTAMOS EN 3 MINUTOS</p><h3>¿No sabés qué suplemento elegir?</h3><p className="advisor-preview">Nuestro asesor fitness virtual puede responder tus consultas para que logres alcanzar tu objetivo</p></div>
               <div className="advisor-cta"><Link className="button button--outline" href="/asesor">Conversar con el asesor <ArrowRight aria-hidden="true"/></Link><small>Asesor virtual · orientación informativa</small></div>
             </div>
           </div>

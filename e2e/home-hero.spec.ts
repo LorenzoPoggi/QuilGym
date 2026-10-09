@@ -13,10 +13,10 @@ test("hero: video según el ancho, pausa accesible por teclado y texto en el pri
   const reassurance = hero.locator(".hero-meta");
   if (mobile) await expect(reassurance).toBeHidden();
   else await expect(reassurance).toBeVisible();
-  const benefits = hero.locator(".benefits-section--hero");
+  const benefits = page.locator("main > .benefits-section");
   await expect(benefits).toHaveCount(1);
-  if (mobile) await expect(benefits).toBeHidden();
-  else await expect(benefits).toBeVisible();
+  await expect(benefits).toBeVisible();
+  expect(await benefits.evaluate((section) => section.previousElementSibling?.classList.contains("hero"))).toBe(true);
   await expect(benefits.locator(".benefit")).toHaveCount(5);
   // El poster está en el HTML inicial con prioridad alta: es el candidato a LCP.
   await expect(hero.locator("img.hero-poster")).toHaveAttribute("fetchpriority", "high");
@@ -86,7 +86,7 @@ test("cinta de marcas: 6 links accesibles y pausa al recibir foco", async ({ pag
   expect(await fitsViewport(page)).toBe(true);
 });
 
-test("home: objetivos con contraste AA y banner del asesor con el saludo real", async ({ page }) => {
+test("home: objetivos con contraste AA y banner del asesor con el texto aprobado", async ({ page }) => {
   await page.goto("/");
   const ratios = await page.locator(".objective").evaluateAll((cards) => cards.map((card) => {
     const background = getComputedStyle(card).backgroundColor.match(/[\d.]+/g)!.slice(0, 3).map(Number);
@@ -102,8 +102,10 @@ test("home: objetivos con contraste AA y banner del asesor con el saludo real", 
     expect(ratio.textOpacity).toBe("1");
   }
   const banner = page.locator(".advisor-banner");
-  await expect(banner.getByRole("heading", { name: "Tu objetivo. Tu rutina. Tu conversación." })).toBeVisible();
-  await expect(banner.locator(".advisor-preview")).toHaveText("¡Hola! Soy tu asesor fitness virtual. Contame, ¿cuál es tu principal objetivo hoy y qué te motivó a empezar?");
+  await expect(banner.getByText("TE ORIENTAMOS EN 3 MINUTOS")).toBeVisible();
+  await expect(banner.getByRole("heading", { name: "¿No sabés qué suplemento elegir?" })).toBeVisible();
+  await expect(banner.locator(".advisor-preview")).toHaveText("Nuestro asesor fitness virtual puede responder tus consultas para que logres alcanzar tu objetivo");
+  await expect(banner.locator(".advisor-preview")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(banner.getByRole("link", { name: "Conversar con el asesor" })).toHaveAttribute("href", "/asesor");
   expect(await fitsViewport(page)).toBe(true);
 });
