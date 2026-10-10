@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { databaseWritesEnabled, databaseWriteSkipReason } from "./database-safety";
 
+// Las reseñas consumen un contador compartido en Postgres: se simulan para que el E2E no escriba en la base.
+test.beforeEach(async ({ page }) => { await page.route("**/api/reviews", (request) => request.fulfill({ json: { reviews: [] } })); });
+
 test("newsletter en mobile: el botón queda dentro del form y no tapa la nota", async ({ page }, info) => {
   test.skip(info.project.name !== "mobile", "Solo aplica al ancho de 390");
   await page.goto("/");

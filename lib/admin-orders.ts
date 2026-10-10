@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, gte, ilike, inArray, lt, or, sql, type SQL }
 import { db } from "./db";
 import { orderEmails, orderItems, orders, payments, shipments } from "./db/schema";
 import { ADMIN_ORDERS_PAGE_SIZE, type AdminOrderFilters } from "./admin-orders-types";
+import { getOrderInvoice, invoiceDraftFor, invoicingConfig } from "./invoicing";
 
 const dayStart = (date: string) => new Date(`${date}T00:00:00-03:00`);
 const nextDay = (date: string) => new Date(dayStart(date).getTime() + 24 * 60 * 60_000);
@@ -65,7 +66,19 @@ export async function getAdminOrder(id: string) {
     db.select().from(shipments).where(eq(shipments.orderId, id)).limit(1),
     db.select().from(orderEmails).where(eq(orderEmails.orderId, id)).orderBy(asc(orderEmails.createdAt)),
   ]);
-  return { order, items, payment: payment[0] ?? null, shipment: shipment[0] ?? null, emails };
+  return { order, items, payment: payment[0] ?? null, shipment: shipment[0] ?? null, emails, billing: await adminOrderBilling(order) };
+}
+
+/** Factura del pedido y datos para emitirla a mano. Sin la migración 0008 informa que no está disponible. */
+async function adminOrderBilling(order: typeof orders.$inferSelect) {
+  const config = invoicingConfig();
+  const settings = { provider: config.provider, voucherType: config.voucherType, pointOfSale: config.pointOfSale, issues: config.issues, warnings: config.warnings };
+  if (order.isDemo) return { available: false as const, reason: "demo" as const, invoice: null, draft: null, settings };
+  const { available, invoice } = await getOrderInvoice(order.id);
+  if (!available) return { available: false as const, reason: "migration" as const, invoice: null, draft: null, settings };
+  const billable = order.status === "approved" || order.status === "refunded";
+  const draft = billable ? await invoiceDraftFor(order, invoice ?? { receiverDocType: "CF", receiverDocNumber: null, receiverName: null, voucherType: config.voucherType, pointOfSale: config.pointOfSale }, invoice?.issuedAt ?? new Date()) : null;
+  return { available: true as const, reason: null, invoice, draft, settings };
 }
 
 export type AdminOrderList = Awaited<ReturnType<typeof listAdminOrders>>;

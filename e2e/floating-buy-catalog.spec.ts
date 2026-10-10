@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 
+// Las reseñas consumen un contador compartido en Postgres: se simulan para que el E2E no escriba en la base.
+test.beforeEach(async ({ page }) => { await page.route("**/api/reviews", (request) => request.fulfill({ json: { reviews: [] } })); });
+
 const fitsViewport = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const stickyHeight = (page: Page) => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--sticky-buy-h").trim());
 

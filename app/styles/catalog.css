@@ -194,7 +194,7 @@
 .search-product { transition: border-color .2s; }
 .search-product:hover { border-color: #9aa0a3; }
 .search-product .product-thumb { background: var(--soft); border-radius: 10px; }
-.search-product b { color: #4a5155; letter-spacing: .03em; text-transform: uppercase; }
+.search-product b { color: #4a5155; font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .search-product strong { margin: 2px 0; font-size: .9rem; font-weight: 700; }
 .search-product small { font-size: .74rem; }
 .search-product em { font-size: 1rem; font-weight: 800; }

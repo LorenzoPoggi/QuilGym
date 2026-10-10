@@ -144,6 +144,25 @@ describe("transacciones de órdenes en PostgreSQL aislado", () => {
   });
 });
 
+describe("DNI/CUIT para la factura (umbral configurable)", () => {
+  it("desde el umbral exige DNI/CUIT y lo guarda para la factura; debajo no lo pide", async () => {
+    const { cart, input } = await fixture();
+    mocks.config.mockReturnValue({ ...config, taxIdThresholdArs: 2000 });
+    await expect(createOrder(input, cart.id)).rejects.toThrow("DNI o CUIT");
+    expect(await database.select().from(schema.orders)).toHaveLength(0);
+    const id = await createOrder({ ...input, taxId: { type: "DNI", number: "12345678" } }, cart.id);
+    expect((await database.select().from(schema.invoices).where(eq(schema.invoices.orderId, id)))[0]).toMatchObject({ status: "pending", receiverDocType: "DNI", receiverDocNumber: "12345678", amountArs: 2000 });
+    const [order] = await database.select().from(schema.orders).where(eq(schema.orders.id, id));
+    await mocks.transaction((tx: Parameters<typeof transitionOrder>[0]) => transitionOrder(tx, order, "approved"));
+    expect((await database.select().from(schema.invoices).where(eq(schema.invoices.orderId, id)))[0]).toMatchObject({ status: "manual", receiverDocType: "DNI" });
+  });
+  it("sin umbral configurado no pide nada ni crea facturas antes del pago", async () => {
+    const { cart, input } = await fixture();
+    await createOrder(input, cart.id);
+    expect(await database.select().from(schema.invoices)).toHaveLength(0);
+  });
+});
+
 describe("vencimiento de pedidos pendientes", () => {
   const hours = (n: number) => n * 60 * 60_000;
   it("cancela un pendiente vencido, repone stock y cupón una sola vez", async () => {
@@ -157,7 +176,7 @@ describe("vencimiento de pedidos pendientes", () => {
     expect(order.resourcesReleasedAt).not.toBeNull();
     expect((await database.select().from(schema.productVariants))[0].stock).toBe(3);
     expect((await database.select().from(schema.coupons))[0].redemptions).toBe(0);
-    expect((await database.select().from(schema.orderEmails)).map((row) => row.event).sort()).toEqual(["cancelled", "created"]);
+    expect((await database.select().from(schema.orderEmails)).map((row) => row.event).sort()).toEqual(["created", "expired"]);
   });
   it("respeta los pedidos recientes", async () => {
     const { cart, input } = await fixture();

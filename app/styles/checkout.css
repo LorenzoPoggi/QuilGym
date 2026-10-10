@@ -327,3 +327,20 @@
   .order-detail article > b { grid-column: auto; }
 }
 .payment-unavailable{display:block;margin-top:2px;font-size:.78rem;font-weight:500;color:var(--muted)}
+
+/* Pago con tarjeta (Card Payment Brick) y datos para la factura */
+.card-payment { margin-bottom: 24px; scroll-margin-top: 24px; }
+.card-payment h2 { margin: 0 0 8px; font-size: 1.2rem; }
+.card-payment > p { margin: 0 0 14px; color: var(--muted); font-size: .88rem; line-height: 1.5; }
+.card-payment > .card-payment__notice, .card-payment > .card-payment__message { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; font-size: .88rem; line-height: 1.45; }
+.card-payment > .card-payment__notice, .card-payment > .card-payment__message.is-pending { color: #5c3d00; background: #fff8e8; border: 1px solid #e7c98a; }
+.card-payment > .card-payment__message.is-error { color: #7d1f1a; background: #fff1f0; border: 1px solid #e0a6a3; }
+.card-payment > .card-payment__message.is-success { color: #0f5132; background: #edf7f1; border: 1px solid #a6d3b8; }
+.card-payment > .card-payment__loading { margin: 0; color: var(--muted); font-size: .85rem; }
+.card-payment__challenge { display: grid; gap: 14px; }
+.card-payment__challenge .button { justify-self: start; }
+.checkout-tax-id { margin: 18px 0 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
+.checkout-tax-id legend { padding: 0 6px; font-size: .9rem; font-weight: 700; }
+.checkout-tax-id > p { margin: 0 0 12px; color: var(--muted); font-size: .82rem; }
+.checkout-tax-id .form-grid { margin-bottom: 0; }
+@media (max-width: 520px) { .card-payment { padding: 17px; } .card-payment__challenge .button { width: 100%; } }

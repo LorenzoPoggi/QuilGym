@@ -13,7 +13,6 @@ import { validateCheckout } from "@/lib/checkout-validation";
 import { initialCheckoutChoice, usablePayments, whatsappOrderMessage } from "@/lib/checkout-whatsapp";
 import { formatArs, whatsappUrl } from "@/lib/commerce";
 import { useCart } from "./cart-provider";
-import { MercadoPagoPayment } from "./order-payment";
 import { ProductImage } from "./product-image";
 import { WhatsAppGlyph } from "./icons";
 import { quilgymMapsUrl } from "@/lib/review-types";
@@ -52,7 +51,6 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
   const [accepted, setAccepted] = useState(false);
   const [quote, setQuote] = useState<CheckoutQuote | null>(null);
   const [busy, setBusy] = useState(false);
-  const [cardOrderId, setCardOrderId] = useState<string | null>(null);
   const [quoting, setQuoting] = useState(false);
   const [error, setError] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -228,13 +226,17 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
     const paymentChoice: CheckoutInput["paymentChoice"] = paymentOption === "Mercado Crédito" ? "mercado_credito" : paymentOption === "Tarjeta de débito" ? "debit_card" : paymentOption === "Tarjeta de crédito" ? "credit_card" : paymentOption === "Efectivo" ? "cash" : "mercadopago";
     const input = { ...Object.fromEntries(data), delivery, payment, paymentChoice, accepted, quoteToken: quote?.token ?? "whatsapp-coordinated", checkoutKey: requestKey.current ?? crypto.randomUUID() } as CheckoutInput;
     const parsed = validateCheckout(input);
-    if (!parsed.ok) {
-      setFields(parsed.fields);
+    const invalid = parsed.ok ? needsTaxId && !parsed.value.taxId ? { taxIdNumber: "Ingresá tu DNI o CUIT/CUIL para la factura." } : null : parsed.fields;
+    if (invalid) {
+      setFields(invalid);
       setError("Revisá los campos marcados antes de continuar.");
       submitting.current = false; setBusy(false);
-      goTo(Object.keys(parsed.fields).some((key) => ["name", "email", "phone"].includes(key)) ? 1 : 2);
+      const keys = Object.keys(invalid);
+      if (keys.some((key) => ["name", "email", "phone"].includes(key))) goTo(1);
+      else if (keys.some((key) => ["street", "streetNumber", "postalCode", "city", "province", "notes", "apartment", "delivery"].includes(key))) goTo(2);
       return;
     }
+    if (!parsed.ok) return;
     if (whatsappOnly) {
       const message = whatsappOrderMessage(cart, {
         name: parsed.value.name, email: parsed.value.email, phone: parsed.value.phone,
@@ -251,14 +253,13 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
       const result = await submitCheckout(parsed.value);
       if (result.ok) {
         try { sessionStorage.removeItem(checkoutDraftKey); } catch { /* Storage opcional. */ }
-        const isCardPayment = ["debit_card", "credit_card"].includes(parsed.value.paymentChoice);
-        if (!config.demo && isCardPayment) {
-          try { sessionStorage.removeItem("qg_checkout_key"); } catch { /* Storage opcional. */ }
-          setCardOrderId(result.orderId);
-          return;
-        }
         try { sessionStorage.removeItem("qg_checkout_key"); } catch { /* Storage opcional. */ }
         await refreshCart();
+        // Tarjeta: el formulario seguro vive en la página del pedido (sobrevive a recargas y permite reintentar).
+        if (!config.demo && ["debit_card", "credit_card"].includes(parsed.value.paymentChoice)) {
+          router.push(`/checkout/confirmacion/${result.orderId}#pago`);
+          return;
+        }
         if (!config.demo && ["mercadopago", "mercado_credito"].includes(parsed.value.paymentChoice)) {
           const destination = await preparePayment(result.orderId);
           if (destination.ok && destination.data.initPoint) { window.location.assign(destination.data.initPoint); return; }
@@ -270,9 +271,9 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
     finally { setBusy(false); submitting.current = false; }
   }
 
-  function field(name: string, label: string, options: { required?: boolean; type?: string; autoComplete?: string; maxLength?: number; className?: string; defaultValue?: string } = {}) {
+  function field(name: string, label: string, options: { required?: boolean; type?: string; autoComplete?: string; maxLength?: number; className?: string; defaultValue?: string; inputMode?: "numeric" } = {}) {
     return <label className={options.className} key={name}>{label}
-      <input name={name} type={options.type ?? "text"} required={options.required} autoComplete={options.autoComplete} maxLength={options.maxLength ?? 120} value={values[name] ?? options.defaultValue ?? ""}
+      <input name={name} type={options.type ?? "text"} required={options.required} autoComplete={options.autoComplete} maxLength={options.maxLength ?? 120} inputMode={options.inputMode} value={values[name] ?? options.defaultValue ?? ""}
         aria-invalid={!!fields[name]} aria-describedby={fields[name] ? `error-${name}` : undefined}
         onChange={(event) => {
           setValues((current) => ({ ...current, [name]: event.target.value }));
@@ -284,6 +285,8 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
   }
 
   const total = formatArs(quote?.totalArs ?? cart.totalArs);
+  // Facturación: desde el umbral configurado (INVOICE_ID_THRESHOLD_ARS) se pide DNI/CUIT; null = nunca.
+  const needsTaxId = !whatsappOnly && !config.demo && typeof config.taxIdThresholdArs === "number" && (quote?.totalArs ?? cart.totalArs) >= config.taxIdThresholdArs;
   const checkoutActionLabel = busy ? payment === "cash" ? "Preparando pedido…" : "Abriendo pago…" : payment === "cash" ? `Preparar pedido · ${total}` : `Ir a pagar · ${total}`;
   // Líneas y totales compartidos por el resumen lateral y el desplegable mobile.
   const summaryItems = cart.lines.map((line) => <article key={line.variantId}><div className="checkout-line-thumb"><ProductImage product={line} sizes="64px" decorative/><span aria-hidden="true">{line.quantity}</span></div><div><strong>{line.name}</strong><small>{line.quantity} × {formatArs(line.unitPriceArs)}</small></div><b>{line.available ? formatArs(line.lineTotalArs) : "Sin stock"}</b></article>);
@@ -334,8 +337,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
           {quote ? <p className="checkout-quote" role="status"><strong>{quote.label} · {quote.shippingArs === 0 ? "Sin costo" : formatArs(quote.shippingArs)}</strong><br/>{quote.estimate}</p> : null}
           <div className="checkout-step-actions"><button type="button" className="button button--outline" onClick={() => goTo(1)}><ArrowLeft aria-hidden="true" size={18}/>Volver</button><button type="button" className="button button--dark" disabled={quoting || busy} onClick={() => { void continueToPayment(); }}>{quoting ? "Calculando…" : "Seguir con pago"}<ArrowRight aria-hidden="true" size={18}/></button></div>
         </section>
-        <section className="checkout-card checkout-step-panel" data-direction={direction} hidden={step !== 3}><header><span>3</span><h2>{cardOrderId ? "Completá los datos de tu tarjeta" : "Elegí cómo pagar"}</h2></header>
-          {cardOrderId && !config.demo ? <MercadoPagoPayment orderId={cardOrderId} paymentChoice={paymentOption === "Tarjeta de débito" ? "debit_card" : "credit_card"} onPaid={async () => { await refreshCart(); router.push(`/checkout/confirmacion/${cardOrderId}`); router.refresh(); }}/> : null}
+        <section className="checkout-card checkout-step-panel" data-direction={direction} hidden={step !== 3}><header><span>3</span><h2>Elegí cómo pagar</h2></header>
           <div className="checkout-choices payment-choices">
             {([
               ["mercadopago", "Mercado Pago"],
@@ -344,14 +346,17 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
               ["mercadopago", "Tarjeta de crédito"],
               ["cash", "Efectivo"],
             ] as const).map(([value, title], index) => <label key={`${title}-${index}`} className={payment === value && paymentOption === title && payments.includes(value) ? "is-active" : ""}>
-              <input type="radio" name="payment-choice" value={title} checked={payment === value && paymentOption === title && payments.includes(value)} disabled={busy || !!cardOrderId || !payments.includes(value)} onChange={() => { setPayment(value); setPaymentOption(title); }}/><b className={`payment-mark payment-mark--${index < 2 ? "brand" : index < 4 ? "card" : "cash"}`} aria-hidden="true">{index === 0 ? <Image src="/assets/payments/mercado-pago-horizontal.png" alt="" width={73} height={20} unoptimized/> : index === 1 ? <Image className="payment-logo--mercado-credito" src="/assets/payments/mercado-credito.png" alt="" width={80} height={45}/> : index === 2 ? <Image src="/assets/payments/tarjeta-debito.svg" alt="" width={56} height={34}/> : index === 3 ? <Image src="/assets/payments/tarjeta-credito.svg" alt="" width={56} height={34}/> : <Image src="/assets/payments/efectivo.svg" alt="" width={56} height={42}/>}</b>
+              <input type="radio" name="payment-choice" value={title} checked={payment === value && paymentOption === title && payments.includes(value)} disabled={busy || !payments.includes(value)} onChange={() => { setPayment(value); setPaymentOption(title); }}/><b className={`payment-mark payment-mark--${index < 2 ? "brand" : index < 4 ? "card" : "cash"}`} aria-hidden="true">{index === 0 ? <Image src="/assets/payments/mercado-pago-horizontal.png" alt="" width={73} height={20} unoptimized/> : index === 1 ? <Image className="payment-logo--mercado-credito" src="/assets/payments/mercado-credito.png" alt="" width={80} height={45}/> : index === 2 ? <Image src="/assets/payments/tarjeta-debito.svg" alt="" width={56} height={34}/> : index === 3 ? <Image src="/assets/payments/tarjeta-credito.svg" alt="" width={56} height={34}/> : <Image src="/assets/payments/efectivo.svg" alt="" width={56} height={42}/>}</b>
               <span><strong>{title}</strong>{value === "cash" && !payments.includes("cash") ? <small className="payment-unavailable">{config.payments.cash ? "Solo al retirar en el local" : "No disponible por ahora"}</small> : null}</span>
             </label>)}
           </div>
           <input type="hidden" name="payment" value={payment}/>
-          <p className="checkout-payment-note">{whatsappOnly ? "Indicá tu preferencia: QuilGym te confirmará disponibilidad y los pasos para pagar por WhatsApp. Todavía no se realiza ningún cobro." : payment === "mercadopago" && (paymentOption === "Tarjeta de débito" || paymentOption === "Tarjeta de crédito") ? config.demo ? "En la simulación no se piden datos de tarjeta. En producción, al tocar «Ir a pagar», se abre el formulario seguro de Mercado Pago para completar número, vencimiento, código de seguridad, titular y DNI." : "Al tocar «Ir a pagar», se abre el formulario seguro de Mercado Pago para completar los datos de esta tarjeta." : payment === "mercadopago" && paymentOption === "Mercado Crédito" ? config.demo ? "Simulación local: no se realiza ningún cobro. En producción, Mercado Pago abrirá el pago con Mercado Crédito y el importe de tu compra." : "Mercado Pago abrirá el importe de la compra con Mercado Crédito preseleccionado, si está habilitado para la cuenta y disponible para vos." : payment === "mercadopago" ? config.demo ? "Simulación local: no se realiza ningún cobro. En producción, Mercado Pago abrirá el pago con el importe de tu compra." : "Mercado Pago abrirá el checkout seguro con el importe de tu compra." : "El pago en efectivo se coordina al retirar en el local."}</p>
+          <p className="checkout-payment-note">{whatsappOnly ? "Indicá tu preferencia: QuilGym te confirmará disponibilidad y los pasos para pagar por WhatsApp. Todavía no se realiza ningún cobro." : payment === "mercadopago" && (paymentOption === "Tarjeta de débito" || paymentOption === "Tarjeta de crédito") ? config.demo ? "En la simulación no se piden datos de tarjeta. En producción, al tocar «Ir a pagar», se abre el formulario seguro de Mercado Pago para completar número, vencimiento, código de seguridad, titular y DNI." : paymentOption === "Tarjeta de débito" ? "Al tocar «Ir a pagar» guardamos el pedido y se abre el formulario seguro de Mercado Pago para tu tarjeta de débito (un solo pago)." : "Al tocar «Ir a pagar» guardamos el pedido y se abre el formulario seguro de Mercado Pago, donde elegís las cuotas de tu tarjeta de crédito." : payment === "mercadopago" && paymentOption === "Mercado Crédito" ? config.demo ? "Simulación local: no se realiza ningún cobro. En producción, Mercado Pago abrirá el pago con Mercado Crédito y el importe de tu compra." : "Mercado Pago abrirá el importe de la compra con Mercado Crédito preseleccionado, si está habilitado para la cuenta y disponible para vos." : payment === "mercadopago" ? config.demo ? "Simulación local: no se realiza ningún cobro. En producción, Mercado Pago abrirá el pago con el importe de tu compra." : "Mercado Pago abrirá el checkout seguro con el importe de tu compra." : "El pago en efectivo se coordina al retirar en el local."}</p>
+          {needsTaxId ? <fieldset className="checkout-tax-id"><legend>Datos para la factura</legend><p>Por el importe de la compra, ARCA exige identificar al comprador en la factura.</p>
+            <div className="form-grid"><label>Tipo<select name="taxIdType" value={values.taxIdType ?? "DNI"} onChange={(event) => setValues((current) => ({ ...current, taxIdType: event.target.value }))}><option value="DNI">DNI</option><option value="CUIT">CUIT/CUIL</option></select></label>
+              {field("taxIdNumber", "Número", { required: true, maxLength: 13, className: "span-2", inputMode: "numeric" })}</div></fieldset> : null}
           <label className="terms"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)}/>{whatsappOnly ? "Revisé mis datos y quiero enviar esta solicitud por WhatsApp." : "Confirmo que los datos, productos y forma de entrega son correctos."}</label>
-          <div className="checkout-step-actions" hidden={!!cardOrderId && !config.demo}><button type="button" className="button button--outline" onClick={() => goTo(2)}><ArrowLeft aria-hidden="true" size={18}/>Volver</button><button className={`button ${whatsappOnly ? "button--whatsapp" : "button--dark"}`} type="submit" disabled={!canSubmit}>{whatsappOnly ? <><WhatsAppGlyph/>Continuar por WhatsApp</> : <><Lock aria-hidden="true" size={17}/><span>{checkoutActionLabel}</span><ArrowRight aria-hidden="true" size={18}/></>}</button></div>
+          <div className="checkout-step-actions"><button type="button" className="button button--outline" onClick={() => goTo(2)}><ArrowLeft aria-hidden="true" size={18}/>Volver</button><button className={`button ${whatsappOnly ? "button--whatsapp" : "button--dark"}`} type="submit" disabled={!canSubmit}>{whatsappOnly ? <><WhatsAppGlyph/>Continuar por WhatsApp</> : <><Lock aria-hidden="true" size={17}/><span>{checkoutActionLabel}</span><ArrowRight aria-hidden="true" size={18}/></>}</button></div>
         </section>
         {error ? <p className="form-error checkout-flow-error" role="alert">{error}</p> : null}
       </div>

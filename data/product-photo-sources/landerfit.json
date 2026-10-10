@@ -1,0 +1,11 @@
+{
+  "brand": "Landerfit",
+  "officialSites": ["https://landerfit.com"],
+  "products": {
+    "omega-3-landerfit": {
+      "sources": [
+        { "url": "https://landerfit.b-cdn.net/wp-content/uploads/2022/10/Omega-3.jpg", "kind": "nutrition", "sourcePage": "https://landerfit.com/producto/omega-3/" }
+      ]
+    }
+  }
+}

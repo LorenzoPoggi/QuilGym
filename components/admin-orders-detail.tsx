@@ -6,18 +6,22 @@ import { allowedShipmentStatuses, isPaidOnClosedOrder, orderCode, paymentLabel, 
 import { orderStatusLabels } from "@/lib/checkout-types";
 import { AdminOrderStatus, formatAdminDate } from "./admin-orders-list";
 import { AdminOrderActions, AdminShipmentForm } from "./admin-orders-actions";
+import { AdminOrderInvoice } from "./admin-orders-invoice";
 
-const emailLabels: Record<string, string> = { created: "Pedido recibido", ready_for_pickup: "Listo para retirar", shipped: "Pedido despachado", ...orderStatusLabels };
+const emailLabels: Record<string, string> = { ...orderStatusLabels, created: "Pedido recibido", ready_for_pickup: "Listo para retirar", shipped: "Pedido despachado",
+  payment_rejected: "Pago rechazado (puede reintentar)", expired: "Pedido vencido", invoice_issued: "Factura" };
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => <div><dt>{label}</dt><dd>{children}</dd></div>;
 
 export function AdminOrderDetailView({ detail }: { detail: AdminOrderDetail }) {
-  const { order, items, payment, shipment, emails } = detail;
+  const { order, items, payment, shipment, emails, billing } = detail;
   const alert = isPaidOnClosedOrder(order.status, payment?.status);
-  const mismatch = !alert && payment && payment.providerId && payment.status !== order.status;
+  // Un intento rechazado sobre un pedido pendiente es normal (el cliente puede reintentar): no es una discrepancia.
+  const failedAttempt = order.status === "pending" && !!payment?.providerId && (payment.status === "rejected" || payment.status === "cancelled");
+  const mismatch = !alert && !failedAttempt && payment && payment.providerId && payment.status !== order.status;
   const available = alert ? ["reactivate" as const]
     : order.status === "pending" ? [...(order.paymentMethod !== "mercadopago" ? ["confirm" as const] : []), "cancel" as const]
     : order.status === "approved" ? ["refund" as const] : [];
-  const cancelWarning = order.paymentMethod === "mercadopago" && payment?.providerId ? `Este pedido tiene un pago iniciado en Mercado Pago (#${payment.providerId}). Si se aprueba después de cancelar, aparecerá como alerta de pago.` : undefined;
+  const cancelWarning = order.paymentMethod === "mercadopago" && payment?.providerId && !failedAttempt ? `Este pedido tiene un pago iniciado en Mercado Pago (#${payment.providerId}). Si se aprueba después de cancelar, aparecerá como alerta de pago.` : undefined;
   const address = order.address;
   return <div className="admin-content admin-orders admin-order-detail">
     <Link className="admin-back" href="/admin/pedidos"><ArrowLeft size={17} aria-hidden="true"/> Pedidos</Link>
@@ -37,10 +41,11 @@ export function AdminOrderDetailView({ detail }: { detail: AdminOrderDetail }) {
             {shipment && <><Row label="Tarifa">{shipment.label}</Row><Row label="Estimación">{shipment.estimate}</Row><Row label="Estado">{shipmentLabel(shipment.status)}</Row>{shipment.trackingCode && <Row label="Seguimiento">{shipment.trackingCode}</Row>}</>}
           </dl></section>
         </div>
+        <AdminOrderInvoice orderId={order.id} orderStatus={order.status} billing={billing}/>
         <section className="admin-card"><h2>Emails al cliente</h2>{emails.length ? <ul className="admin-order-emails">{emails.map((email) => <li key={email.id}><strong>{emailLabels[email.event] ?? email.event}</strong><span>{email.sentAt ? `Enviado el ${formatAdminDate(email.sentAt)}` : email.attempts ? `Pendiente · ${email.attempts} intento${email.attempts === 1 ? "" : "s"}` : "En cola"}</span></li>)}</ul> : <p className="admin-help">{order.isDemo ? "Los pedidos de prueba no envían emails." : "Sin emails en la cola."}</p>}</section>
       </div>
       <aside className="admin-editor-side admin-order-side">
-        <section className="admin-card"><h2>Pago</h2><dl className="admin-order-dl"><Row label="Medio">{paymentLabel(order)}</Row><Row label="Estado del pago">{payment ? orderStatusLabels[payment.status] : "—"}</Row>{payment?.providerId && <Row label="ID en Mercado Pago">{payment.providerId}</Row>}{payment?.preferenceId && <Row label="Preferencia">{payment.preferenceId}</Row>}{payment?.providerUpdatedAt && <Row label="Última novedad">{formatAdminDate(payment.providerUpdatedAt)}</Row>}{payment?.ticketUrl && <Row label="Comprobante"><a href={payment.ticketUrl} target="_blank" rel="noreferrer">Ver ticket</a></Row>}{order.bankDetails && <Row label="Cuenta informada">{order.bankDetails.account}</Row>}</dl>
+        <section className="admin-card"><h2>Pago</h2><dl className="admin-order-dl"><Row label="Medio">{paymentLabel(order)}</Row><Row label="Estado del pago">{payment ? failedAttempt ? "Último intento rechazado · puede reintentar" : orderStatusLabels[payment.status] : "—"}</Row>{payment?.providerId && <Row label="ID en Mercado Pago">{payment.providerId}</Row>}{payment?.preferenceId && <Row label="Preferencia">{payment.preferenceId}</Row>}{payment?.providerUpdatedAt && <Row label="Última novedad">{formatAdminDate(payment.providerUpdatedAt)}</Row>}{payment?.ticketUrl && <Row label="Comprobante"><a href={payment.ticketUrl} target="_blank" rel="noreferrer">Ver ticket</a></Row>}{order.bankDetails && <Row label="Cuenta informada">{order.bankDetails.account}</Row>}</dl>
           <AdminOrderActions orderId={order.id} available={available} cancelWarning={cancelWarning}/></section>
         <section className="admin-card"><h2>Envío</h2><AdminShipmentForm orderId={order.id} allowed={allowedShipmentStatuses(order)} status={shipment?.status ?? "pending"} trackingCode={shipment?.trackingCode ?? null} delivery={order.delivery}/></section>
         <section className="admin-card admin-order-times"><h2>Registro</h2><dl className="admin-order-dl"><Row label="Creado">{formatAdminDate(order.createdAt)}</Row><Row label="Última actualización">{formatAdminDate(order.updatedAt)}</Row><Row label="Consentimiento">{formatAdminDate(order.consentAt)}</Row>{order.resourcesReleasedAt && <Row label="Stock liberado">{formatAdminDate(order.resourcesReleasedAt)}</Row>}{shipment && <Row label="Envío actualizado">{formatAdminDate(shipment.updatedAt)}</Row>}<Row label="ID completo"><code>{order.id}</code></Row></dl></section>

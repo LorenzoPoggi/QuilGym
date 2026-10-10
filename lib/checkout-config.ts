@@ -1,6 +1,6 @@
 import "server-only";
 import type { CheckoutConfig } from "./checkout-types";
-import { parseCheckoutEnv, readBankDetails, readOrderAccessSecret, readPaymentNotificationUrl, readPendingOrderTtlHours, readSiteUrl } from "./checkout-env";
+import { parseCheckoutEnv, readBankDetails, readCardThreeDsMode, readOrderAccessSecret, readPaymentNotificationUrl, readPendingOrderTtlHours, readSiteUrl } from "./checkout-env";
 import { orderAccessToken } from "./order-access";
 
 export function siteUrl() {
@@ -9,6 +9,10 @@ export function siteUrl() {
 
 export function paymentNotificationUrl() {
   return readPaymentNotificationUrl(process.env);
+}
+
+export function cardThreeDsMode() {
+  return readCardThreeDsMode(process.env);
 }
 
 export function bankDetails() {

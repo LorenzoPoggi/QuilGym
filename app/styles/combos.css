@@ -24,6 +24,8 @@
 .combo-visual__item--front { right: 4%; bottom: 9%; width: 58%; height: 77%; transition: transform .45s cubic-bezier(.2, .7, .2, 1); }
 .combo-visual__item--solo { left: 18%; right: 18%; bottom: 11%; height: 72%; }
 .product-card__combo-visual { position: relative; overflow: hidden; aspect-ratio: 214 / 159; background: radial-gradient(120% 90% at 50% 38%, #fbfbfa 0%, #eff0ee 58%, #e3e5e3 100%); }
+/* Tarjeta del catálogo: la composición baja y se corre a la izquierda para no quedar debajo del favorito (arriba a la derecha). */
+.product-card__combo-visual .combo-visual { inset: 15% 11% 0 3%; }
 .combo-card__fallback { position: absolute; inset: 0; display: block; }
 .combo-card__fallback .product-thumb { height: 100%; aspect-ratio: auto; }
 .combo-card__fallback .product-thumb img { mix-blend-mode: multiply; }

@@ -52,6 +52,12 @@ export default async function ConfirmationPage({ params, searchParams }: { param
   const createdAt = `${new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeZone }).format(order.createdAt)} · ${new Intl.DateTimeFormat("es-AR", { timeStyle: "short", timeZone }).format(order.createdAt)}`;
   const catalog = new Map((await getAllProducts()).map((product) => [product.slug, product]));
   const estimate = shipment?.estimate && shipment.estimate !== order.pickupDetails?.hours ? shipment.estimate : null;
+  // Mercado Pago: tras un intento rechazado o cancelado el pedido sigue pendiente y se puede reintentar;
+  // con un pago en proceso (p. ej. revisión manual) no se ofrece pagar otra vez.
+  const lastAttemptFailed = !!payment?.providerId && (payment.status === "rejected" || payment.status === "cancelled");
+  const canPay = !order.isDemo && pending && order.paymentMethod === "mercadopago" && (!payment?.providerId || lastAttemptFailed);
+  const paymentInReview = !order.isDemo && pending && order.paymentMethod === "mercadopago" && !!payment?.providerId && payment.status === "pending";
+  const cardChoice = order.paymentChoice === "debit_card" || order.paymentChoice === "credit_card" ? order.paymentChoice : null;
 
   const steps: Step[] | null = pending || order.status === "approved"
     ? cashPickup
@@ -74,6 +80,10 @@ export default async function ConfirmationPage({ params, searchParams }: { param
     <main className="confirmation-page"><div className="container">
       {order.isDemo ? <div className="checkout-demo-banner"><strong>Pedido de prueba</strong><span>No representa una compra real. No se cobró dinero ni se envió ningún email.</span></div> : null}
       <section className={`confirmation-hero is-${order.status}`}><span aria-hidden="true"><StatusIcon strokeWidth={2}/></span><div><p className="eyebrow">{cashPickup && pending ? "En preparación" : orderStatusLabels[order.status]}</p><h1>{cashPickup && pending ? "Recibimos tu pedido" : titles[order.status]}</h1><p>{order.name}, podés consultar los detalles y el estado desde esta página.</p></div><div><small>{order.status === "approved" ? "NÚMERO DE COMPRA" : "NÚMERO DE PEDIDO"}</small><strong className="order-id">{code}</strong><small className="order-uuid" title="Identificador completo del pedido">{order.id}</small></div></section>
+      {/* Misma posición con pago en proceso: el refresco cada 15 s no desmonta un desafío 3DS abierto. */}
+      {cardChoice && (canPay || paymentInReview) ? <MercadoPagoPayment orderId={order.id} paymentChoice={cardChoice} accessToken={accessToken} lastAttemptFailed={lastAttemptFailed} inReview={paymentInReview}/> : null}
+      {canPay && !cardChoice && ["mercadopago", "mercado_credito"].includes(order.paymentChoice) ? <MercadoPagoRedirect orderId={order.id} accessToken={accessToken} returnedPaymentId={returnedPaymentId && returnedPaymentId !== payment?.providerId ? returnedPaymentId : null} lastAttemptFailed={lastAttemptFailed}/> : null}
+      {paymentInReview && !cardChoice ? <section className="checkout-card card-payment" role="status"><h2>Estamos verificando tu pago</h2><p>Mercado Pago está procesando la operación. Te avisamos por email cuando se acredite. No vuelvas a pagar este pedido.</p></section> : null}
       <div className="confirmation-actions"><RefreshOrder pending={pending}/><Link className="button button--outline" href="/productos">Seguir comprando</Link><span>{pending ? "Pedido realizado" : "Compra realizada"} el {createdAt}</span></div>
       <section className="confirmation-cards">
         <article><header><span aria-hidden="true">{pickup ? <Store size={18}/> : <Truck size={18}/>}</span><h2>{pickup ? "Retiro" : "Entrega"}</h2></header>
@@ -83,7 +93,7 @@ export default async function ConfirmationPage({ params, searchParams }: { param
             : <><h3>{order.pickupDetails?.address}</h3><p>{order.pickupDetails?.hours}</p>{estimate ? <p>{estimate}</p> : null}</>}
           {shipment?.trackingCode ? <p>Seguimiento: {shipment.trackingCode}</p> : <p>Te avisaremos cuando esté preparado.</p>}
         </article>
-        <article><header><span aria-hidden="true"><MethodIcon size={18}/></span><h2>Pago</h2></header><strong>{cashPickup && pending ? "Pago al retirar" : orderStatusLabels[order.status]}</strong><h3>{methodLabel}</h3><p className="confirmation-total">Total: {formatArs(order.totalArs)}</p>{pending ? <p>{cashPickup ? "Te avisaremos cuando esté listo para abonar y retirar." : "El pedido todavía no tiene un pago aprobado."}</p> : null}</article>
+        <article><header><span aria-hidden="true"><MethodIcon size={18}/></span><h2>Pago</h2></header><strong>{cashPickup && pending ? "Pago al retirar" : orderStatusLabels[order.status]}</strong><h3>{methodLabel}</h3><p className="confirmation-total">Total: {formatArs(order.totalArs)}</p>{pending ? <p>{cashPickup ? "Te avisaremos cuando esté listo para abonar y retirar." : lastAttemptFailed ? "El último intento de pago fue rechazado. No se cobró nada." : paymentInReview ? "El pago está en revisión." : "El pedido todavía no tiene un pago aprobado."}</p> : null}</article>
         <article><header><span aria-hidden="true"><User size={18}/></span><h2>Contacto</h2></header><h3>{order.name}</h3><p>{order.email}<br/>{order.phone}</p>{order.notes ? <p>Indicaciones: {order.notes}</p> : null}</article>
       </section>
       <div className="confirmation-grid"><section className="order-detail"><header><h2>Detalle del pedido</h2><span>{units} {units === 1 ? "unidad" : "unidades"}</span></header>
@@ -105,7 +115,5 @@ export default async function ConfirmationPage({ params, searchParams }: { param
         <p className="help-order"><Info aria-hidden="true" size={18}/><span>Guardá el número <strong>{code}</strong> para consultar por tu pedido.</span></p>
       </aside></div>
       {order.isDemo && demoEnabled ? <DemoPayment orderId={order.id} status={order.status}/> : null}
-      {!order.isDemo && pending && order.paymentMethod === "mercadopago" && !payment?.providerId && ["debit_card", "credit_card"].includes(order.paymentChoice) ? <MercadoPagoPayment orderId={order.id} paymentChoice={order.paymentChoice as "debit_card" | "credit_card"} accessToken={accessToken}/> : null}
-      {!order.isDemo && pending && order.paymentMethod === "mercadopago" && !payment?.providerId && ["mercadopago", "mercado_credito"].includes(order.paymentChoice) ? <MercadoPagoRedirect orderId={order.id} accessToken={accessToken} returnedPaymentId={returnedPaymentId}/> : null}
     </div></main></>;
 }

@@ -10,6 +10,7 @@ import { transitionOrder } from "./order-service";
 import { canTransition } from "./order-state";
 import { deliverOrderEmails } from "./order-email";
 import { allowedShipmentStatuses, isPaidOnClosedOrder, isShipmentStatus, shipmentStatusLabels, TRACKING_PATTERN } from "./admin-orders-types";
+import { InvoiceActionError, parseManualInvoice, prepareInvoice, queueInvoice, registerManualInvoice, retryFailedInvoice } from "./invoicing";
 
 export type AdminOrderActionResult = { ok: true; message: string } | { ok: false; error: string };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -17,14 +18,15 @@ const denied: AdminOrderActionResult = { ok: false, error: "No tenés permisos d
 class AdminOrderError extends Error {}
 
 /** Autoriza en el servidor, bloquea la orden y revalida el panel y la confirmación pública. */
-async function run(id: unknown, work: (order: typeof orders.$inferSelect, tx: OrderTransaction) => Promise<string>): Promise<AdminOrderActionResult> {
-  if (!await getAdminUser()) return denied;
+async function run(id: unknown, work: (order: typeof orders.$inferSelect, tx: OrderTransaction, admin: { email: string }) => Promise<string>): Promise<AdminOrderActionResult> {
+  const admin = await getAdminUser();
+  if (!admin) return denied;
   if (typeof id !== "string" || !UUID.test(id)) return { ok: false, error: "Pedido inválido." };
   try {
     const message = await withOrderTransaction(async (tx) => {
       const [order] = await tx.select().from(orders).where(eq(orders.id, id)).for("update");
       if (!order) throw new AdminOrderError("No encontramos el pedido.");
-      return work(order, tx);
+      return work(order, tx, admin);
     });
     revalidatePath("/admin/pedidos");
     revalidatePath(`/admin/pedidos/${id}`);
@@ -32,7 +34,7 @@ async function run(id: unknown, work: (order: typeof orders.$inferSelect, tx: Or
     after(() => deliverOrderEmails(id));
     return { ok: true, message };
   } catch (error) {
-    if (error instanceof AdminOrderError) return { ok: false, error: error.message };
+    if (error instanceof AdminOrderError || error instanceof InvoiceActionError) return { ok: false, error: error.message };
     console.error("[Admin pedidos] No se pudo actualizar el pedido", { order: id.slice(0, 8), name: error instanceof Error ? error.name : "UnknownError" });
     return { ok: false, error: "No pudimos guardar el cambio. Reintentá en unos instantes." };
   }
@@ -94,6 +96,7 @@ export async function reactivatePaidOrder(id: string) {
     }
     await tx.update(orders).set({ status: "approved", resourcesReleasedAt: null }).where(eq(orders.id, order.id));
     if (!order.isDemo) await tx.insert(orderEmails).values({ orderId: order.id, event: "approved" }).onConflictDoNothing();
+    await queueInvoice(tx, order);
     return "Pedido reactivado como pagado. Se volvió a reservar el stock.";
   });
 }
@@ -114,5 +117,31 @@ export async function updateOrderShipment(id: string, input: { status: unknown; 
     // Un aviso por evento (índice único): corregir el tracking después no reenvía el email.
     if (!order.isDemo && (status === "ready_for_pickup" || status === "shipped")) await tx.insert(orderEmails).values({ orderId: order.id, event: status }).onConflictDoNothing();
     return "Envío actualizado.";
+  });
+}
+
+/** Registra una factura emitida en «Comprobantes en línea» (número, CAE y vencimiento) y avisa al cliente. */
+export async function registerOrderInvoice(id: string, input: Record<string, unknown>) {
+  const parsed = parseManualInvoice(input && typeof input === "object" ? input : {});
+  if (!parsed.ok) return await getAdminUser() ? { ok: false as const, error: parsed.error } : denied;
+  return run(id, async (order, tx, admin) => {
+    await registerManualInvoice(tx, order, parsed.value, admin.email);
+    return "Factura registrada. Le avisamos al cliente por email.";
+  });
+}
+
+/** Vuelve a intentar con el proveedor una factura fallida, después de revisar que no se haya emitido. */
+export async function retryOrderInvoice(id: string) {
+  return run(id, async (order, tx) => {
+    await retryFailedInvoice(tx, order);
+    return "Factura en cola: se emite en unos segundos.";
+  });
+}
+
+/** Crea la factura de un pedido pagado antes de habilitar la facturación. */
+export async function prepareOrderInvoice(id: string) {
+  return run(id, async (order, tx) => {
+    await prepareInvoice(tx, order);
+    return "Factura preparada.";
   });
 }

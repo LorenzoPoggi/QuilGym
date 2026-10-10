@@ -1,0 +1,13 @@
+{
+  "brand": "Natural Nutrition",
+  "officialSites": ["https://www.naturalnutrition.com.ar"],
+  "products": {
+    "creatina-natural-nutrition-150gr": {
+      "sources": [
+        { "url": "https://acdn-us.mitiendanube.com/stores/004/962/537/products/1-0c531c59212edeaa6e17729155866649-1024-1024.webp", "kind": "product", "sourcePage": "https://www.naturalnutrition.com.ar/productos/creatina-natural-nutrition-150g/", "crop": { "left": 40, "top": 123, "width": 980, "height": 980 } },
+        { "url": "https://acdn-us.mitiendanube.com/stores/004/962/537/products/dscn7510-2-51c343b00e0cd7ecd817835127994932-1024-1024.webp", "kind": "product", "sourcePage": "https://www.naturalnutrition.com.ar/productos/creatina-natural-nutrition-150g/" }
+      ],
+      "dropBaseline": true
+    }
+  }
+}

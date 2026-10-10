@@ -1,4 +1,6 @@
 import type { CheckoutConfig, ShippingRate } from "./checkout-types";
+import { readEmailConfig } from "./email-config";
+import { readInvoicingConfig } from "./invoicing-config";
 
 /**
  * Lectura pura de las variables de entorno del checkout. No importa `server-only`
@@ -53,6 +55,14 @@ export function readPaymentNotificationUrl(env: Env) {
     url.searchParams.set("x-vercel-protection-bypass", bypass);
   }
   return url.href;
+}
+
+/**
+ * 3-D Secure para tarjetas: con "optional" Mercado Pago decide si pide el desafío del banco
+ * (respuesta `pending_challenge`, que el sitio muestra con el Status Screen Brick). Vacío = no se solicita.
+ */
+export function readCardThreeDsMode(env: Env) {
+  return value(env, "MP_CARD_3DS") === "optional" ? "optional" as const : null;
 }
 
 export function readBankDetails(env: Env) {
@@ -124,8 +134,15 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   if (!accessSecret) warnings.push("Falta ORDER_ACCESS_SECRET (o MP_WEBHOOK_SECRET): el pedido solo se puede ver desde el navegador que lo creó y el email no incluye el link.");
   else if (accessSecret.length < MIN_ORDER_ACCESS_SECRET_LENGTH) issues.push(`${explicitAccessSecret ? "ORDER_ACCESS_SECRET" : "ORDER_ACCESS_SECRET o MP_WEBHOOK_SECRET"} debe tener al menos ${MIN_ORDER_ACCESS_SECRET_LENGTH} caracteres.`);
 
-  const emailsEnabled = Boolean(value(env, "RESEND_API_KEY") && value(env, "EMAIL_FROM"));
-  if (!emailsEnabled) warnings.push("Faltan RESEND_API_KEY y/o EMAIL_FROM: los emails quedan guardados en la outbox sin enviarse.");
+  const email = readEmailConfig(env);
+  const emailsEnabled = email.enabled;
+  issues.push(...email.issues);
+  warnings.push(...email.warnings);
+  const invoicing = readInvoicingConfig(env);
+  issues.push(...invoicing.issues);
+  warnings.push(...invoicing.warnings);
+  const threeDs = value(env, "MP_CARD_3DS");
+  if (threeDs && threeDs !== "optional") issues.push('MP_CARD_3DS solo acepta "optional" (vacío = sin 3-D Secure).');
   const cronEnabled = Boolean(value(env, "CRON_SECRET"));
   if (!cronEnabled) warnings.push("Falta CRON_SECRET: los crons de reintento de emails y vencimiento de pedidos responden 401.");
 
@@ -177,7 +194,7 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   if (cashFlag === "true" && !pickup) issues.push("CASH_PICKUP_ENABLED=true requiere PICKUP_ADDRESS y PICKUP_HOURS.");
 
   return { ...report, config: {
-    demo: false, pickup, shippingRates,
+    demo: false, pickup, shippingRates, taxIdThresholdArs: invoicing.identificationThresholdArs,
     payments: {
       mercadopago: Boolean(accessToken && publicKey && value(env, "MP_WEBHOOK_SECRET") && notificationUrl
         && accessToken.startsWith("TEST-") === publicKey.startsWith("TEST-")),

@@ -20,7 +20,7 @@ vi.mock("next/server", () => ({ after: mocks.after }));
 vi.mock("./order-email", () => ({ deliverOrderEmails: mocks.deliver }));
 vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null, orderAccessSecret: () => null, orderPageUrl: () => null, siteUrl: () => "https://quilgym.test" }));
 import { createOrder } from "./order-service";
-import { cancelAdminOrder, confirmOrderPayment, markOrderRefunded, reactivatePaidOrder, updateOrderShipment } from "./admin-orders-actions";
+import { cancelAdminOrder, confirmOrderPayment, markOrderRefunded, reactivatePaidOrder, registerOrderInvoice, updateOrderShipment } from "./admin-orders-actions";
 import { getAdminOrder, listAdminOrders } from "./admin-orders";
 import { reconcileProviderMerchantOrder, reconcileProviderPayment } from "./mercadopago";
 import { allowedShipmentStatuses, parseAdminOrderFilters } from "./admin-orders-types";
@@ -130,6 +130,36 @@ describe("acciones sobre pedidos", () => {
   });
 });
 
+describe("facturación manual (ARCA, migración 0008)", () => {
+  const manual = (number: string) => ({ voucherType: "C", pointOfSale: "3", number, cae: "71234567890123", caeDueDate: "2026-10-20", issuedAt: "2026-10-10", pdfUrl: "" });
+  it("al aprobarse el pago queda una factura manual a consumidor final; se registra número/CAE una vez y avisa al cliente", async () => {
+    const { id } = await order();
+    await confirmOrderPayment(id);
+    const [queued] = await database.select().from(schema.invoices).where(eq(schema.invoices.orderId, id));
+    expect(queued).toMatchObject({ status: "manual", provider: "manual", receiverDocType: "CF", amountArs: 2000 });
+    expect(await registerOrderInvoice(id, { ...manual("125"), cae: "123" })).toMatchObject({ ok: false, error: expect.stringContaining("CAE") });
+    expect(await registerOrderInvoice(id, manual("125"))).toMatchObject({ ok: true });
+    expect((await database.select().from(schema.invoices).where(eq(schema.invoices.orderId, id)))[0]).toMatchObject({ status: "issued", voucherType: "C", pointOfSale: 3, number: 125, registeredBy: "admin@example.com" });
+    expect(await events(id)).toEqual(["approved", "created", "invoice_issued"]);
+    expect(await registerOrderInvoice(id, manual("126"))).toMatchObject({ ok: false, error: expect.stringContaining("ya tiene") });
+  });
+  it("no factura pedidos pendientes ni repite un número de comprobante en otro pedido", async () => {
+    const { id: pending } = await order();
+    expect(await registerOrderInvoice(pending, manual("200"))).toMatchObject({ ok: false, error: expect.stringContaining("pagado") });
+    const { id: first } = await order();
+    const { id: second } = await order();
+    await confirmOrderPayment(first); await confirmOrderPayment(second);
+    expect((await registerOrderInvoice(first, manual("300"))).ok).toBe(true);
+    expect(await registerOrderInvoice(second, manual("300"))).toMatchObject({ ok: false, error: expect.stringContaining("ya está registrado") });
+  });
+  it("sin permisos de admin no registra nada", async () => {
+    const { id } = await order();
+    await confirmOrderPayment(id);
+    mocks.admin.mockResolvedValue(null);
+    expect((await registerOrderInvoice(id, manual("400"))).ok).toBe(false);
+  });
+});
+
 describe("envíos", () => {
   it("efectivo al retirar: se puede avisar «listo para retirar» antes del cobro, una sola vez", async () => {
     const { id } = await order();
@@ -234,11 +264,15 @@ describe("pago aprobado sobre pedido cancelado (§8.4)", () => {
     expect(await stockOf(variantId)).toBe(3);
     expect((await database.select().from(schema.coupons).where(eq(schema.coupons.code, couponCode!)))[0].redemptions).toBe(1);
   });
-  it("un reintento aprobado tras un pago rechazado queda registrado como alerta", async () => {
-    const { id } = await order({ payment: "mercadopago", choice: "mercadopago" });
+  it("un rechazo deja el pedido pendiente y un reintento aprobado lo aprueba", async () => {
+    const { id, variantId } = await order({ payment: "mercadopago", choice: "mercadopago" });
     providerPayment({ id: 700, orderId: id, status: "rejected", updated: "2026-10-09T10:00:00.000Z" });
     await reconcileProviderPayment("700");
-    expect((await read(id)).status).toBe("rejected");
+    // El intento rechazado no cierra el pedido: sigue reservado para reintentar con otra tarjeta o medio.
+    expect((await read(id)).status).toBe("pending");
+    expect(await stockOf(variantId)).toBe(1);
+    expect((await database.select().from(schema.payments).where(eq(schema.payments.orderId, id)))[0]).toMatchObject({ status: "rejected", providerId: "700" });
+    expect(await events(id)).toEqual(["created", "payment_rejected"]);
     providerPayment({ id: 701, orderId: id, status: "approved", updated: "2026-10-09T10:05:00.000Z" });
     vi.spyOn(console, "error").mockImplementation(() => {});
     await reconcileProviderPayment("701");
@@ -246,6 +280,7 @@ describe("pago aprobado sobre pedido cancelado (§8.4)", () => {
     providerPayment({ id: 700, orderId: id, status: "rejected", updated: "2026-10-09T10:01:00.000Z" });
     await reconcileProviderPayment("700");
     expect((await database.select().from(schema.payments).where(eq(schema.payments.orderId, id)))[0].providerId).toBe("701");
+    expect((await read(id)).status).toBe("approved");
     expect((await getAdminOrder(id))?.payment?.status).toBe("approved");
   });
   it("un segundo pago aprobado sobre un pedido cobrado se rechaza para revisión", async () => {

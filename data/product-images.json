@@ -10,9 +10,10 @@
     {
       "path": "/assets/products/proteina-star-2lb/02.webp",
       "kind": "product",
-      "width": 936,
-      "height": 936,
-      "source": "t2"
+      "width": 1188,
+      "height": 1188,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/WP-2Lb-Chocolate.png",
+      "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack"
     },
     {
       "path": "/assets/products/proteina-star-2lb/03.webp",
@@ -26,9 +27,10 @@
     {
       "path": "/assets/products/creatina-star-300gr-doypack/01.webp",
       "kind": "product",
-      "width": 1098,
-      "height": 1098,
-      "source": "t0"
+      "width": 1121,
+      "height": 1121,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/Creatine_300.png",
+      "sourcePage": "https://starnutrition.com.ar/products/creatina-monohidrato-300g-sinsabor-doypack"
     },
     {
       "path": "/assets/products/creatina-star-300gr-doypack/02.webp",
@@ -84,29 +86,6 @@
       "source": "o2"
     }
   ],
-  "combo-classic": [
-    {
-      "path": "/assets/products/combo-classic/01.webp",
-      "kind": "product",
-      "width": 600,
-      "height": 600,
-      "source": "t0"
-    },
-    {
-      "path": "/assets/products/combo-classic/02.webp",
-      "kind": "product",
-      "width": 600,
-      "height": 710,
-      "source": "t1"
-    },
-    {
-      "path": "/assets/products/combo-classic/03.webp",
-      "kind": "product",
-      "width": 1093,
-      "height": 1093,
-      "source": "t2"
-    }
-  ],
   "citrato-de-magnesio-ena": [
     {
       "path": "/assets/products/citrato-de-magnesio-ena/01.webp",
@@ -150,19 +129,12 @@
     {
       "path": "/assets/products/creatina-star-300gr-clasica/02.webp",
       "kind": "product",
-      "width": 564,
-      "height": 564,
-      "source": "t3"
-    },
-    {
-      "path": "/assets/products/creatina-star-300gr-clasica/03.webp",
-      "kind": "product",
       "width": 1024,
       "height": 1024,
       "source": "t2"
     },
     {
-      "path": "/assets/products/creatina-star-300gr-clasica/04.webp",
+      "path": "/assets/products/creatina-star-300gr-clasica/03.webp",
       "kind": "nutrition",
       "width": 998,
       "height": 1101,
@@ -202,6 +174,14 @@
     },
     {
       "path": "/assets/products/creatina-gold-300-gr/02.webp",
+      "kind": "product",
+      "width": 1600,
+      "height": 1600,
+      "source": "https://www.goldnutrition.com.ar/imagenes/galeria-creatina-6.webp",
+      "sourcePage": "https://www.goldnutrition.com.ar/creatinas/creatine-monohydrate-300g"
+    },
+    {
+      "path": "/assets/products/creatina-gold-300-gr/03.webp",
       "kind": "nutrition",
       "width": 608,
       "height": 951,
@@ -283,12 +263,21 @@
     {
       "path": "/assets/products/creatina-one-fit-200-gr/01.webp",
       "kind": "product",
-      "width": 1064,
-      "height": 1064,
-      "source": "t0"
+      "width": 980,
+      "height": 980,
+      "source": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/Creatine200-f_retoque_1.png",
+      "sourcePage": "https://tiendaxnutrition.com/products/poweraded-creatine-micronized"
     },
     {
       "path": "/assets/products/creatina-one-fit-200-gr/02.webp",
+      "kind": "product",
+      "width": 1004,
+      "height": 1004,
+      "source": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/Creatine200-d_retoque_1.png",
+      "sourcePage": "https://tiendaxnutrition.com/products/poweraded-creatine-micronized"
+    },
+    {
+      "path": "/assets/products/creatina-one-fit-200-gr/03.webp",
       "kind": "nutrition",
       "width": 692,
       "height": 688,
@@ -354,9 +343,10 @@
     {
       "path": "/assets/products/citrato-de-magnesio-star/01.webp",
       "kind": "product",
-      "width": 1111,
-      "height": 1111,
-      "source": "t0"
+      "width": 1174,
+      "height": 1174,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/CitratoMagnesio_36ac50e8-5662-4aa0-8b90-10edd71b1236.png",
+      "sourcePage": "https://starnutrition.com.ar/products/citrato-de-magnesio-60capsulas"
     },
     {
       "path": "/assets/products/citrato-de-magnesio-star/02.webp",
@@ -440,6 +430,14 @@
     },
     {
       "path": "/assets/products/proteina-gold-nutrition-2lb/02.webp",
+      "kind": "product",
+      "width": 1100,
+      "height": 1300,
+      "source": "https://www.goldnutrition.com.ar/imagenes/galeria-whey-8.webp",
+      "sourcePage": "https://www.goldnutrition.com.ar/proteinas/100-whey-protein-2lb"
+    },
+    {
+      "path": "/assets/products/proteina-gold-nutrition-2lb/03.webp",
       "kind": "nutrition",
       "width": 1029,
       "height": 1010,
@@ -450,9 +448,10 @@
     {
       "path": "/assets/products/creatina-star-1-kg/01.webp",
       "kind": "product",
-      "width": 991,
-      "height": 991,
-      "source": "t0"
+      "width": 1089,
+      "height": 1089,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/CreatineM-1Kg_3095f1e3-5758-4f7e-8b63-d49c583050e0.png",
+      "sourcePage": "https://starnutrition.com.ar/products/creatina-monohidrato-1kg"
     },
     {
       "path": "/assets/products/creatina-star-1-kg/02.webp",
@@ -466,12 +465,21 @@
     {
       "path": "/assets/products/pre-entreno-star-nutricion/01.webp",
       "kind": "product",
-      "width": 961,
-      "height": 961,
-      "source": "t0"
+      "width": 1044,
+      "height": 1044,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PumpV8-WMEL_256a8bca-27cd-4ba8-8dc8-edffe507986d.png",
+      "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr"
     },
     {
       "path": "/assets/products/pre-entreno-star-nutricion/02.webp",
+      "kind": "product",
+      "width": 1044,
+      "height": 1044,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PumpV8-GRAPE_4ea8875d-bfe5-400d-b041-c17199de0a27.png",
+      "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr"
+    },
+    {
+      "path": "/assets/products/pre-entreno-star-nutricion/03.webp",
       "kind": "nutrition",
       "width": 593,
       "height": 1065,
@@ -482,85 +490,35 @@
     {
       "path": "/assets/products/creatina-star-150-gr/01.webp",
       "kind": "product",
-      "width": 1038,
-      "height": 1038,
-      "source": "t0"
+      "width": 1123,
+      "height": 1123,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/CreatineM-150g.png",
+      "sourcePage": "https://starnutrition.com.ar/products/creatina-star-nutrition-150gs"
     },
     {
       "path": "/assets/products/creatina-star-150-gr/02.webp",
-      "kind": "product",
-      "width": 1147,
-      "height": 1147,
-      "source": "t1"
-    },
-    {
-      "path": "/assets/products/creatina-star-150-gr/03.webp",
       "kind": "nutrition",
       "width": 815,
       "height": 1026,
       "source": "t2"
     }
   ],
-  "combo-arnold": [
-    {
-      "path": "/assets/products/combo-arnold/01.webp",
-      "kind": "product",
-      "width": 1024,
-      "height": 1024,
-      "source": "t0"
-    },
-    {
-      "path": "/assets/products/combo-arnold/02.webp",
-      "kind": "product",
-      "width": 1093,
-      "height": 1093,
-      "source": "t1"
-    },
-    {
-      "path": "/assets/products/combo-arnold/03.webp",
-      "kind": "product",
-      "width": 510,
-      "height": 510,
-      "source": "t2"
-    }
-  ],
-  "combo-body-advance": [
-    {
-      "path": "/assets/products/combo-body-advance/01.webp",
-      "kind": "product",
-      "width": 1024,
-      "height": 1024,
-      "source": "t0"
-    }
-  ],
   "colageno-ena-sport-407g": [
     {
       "path": "/assets/products/colageno-ena-sport-407g/01.webp",
       "kind": "product",
-      "width": 983,
-      "height": 983,
-      "source": "t0"
+      "width": 889,
+      "height": 889,
+      "source": "https://cdn.shopify.com/s/files/1/0599/3683/3741/files/CsportN.webp",
+      "sourcePage": "https://enasport.com/products/colageno-sport"
     },
     {
       "path": "/assets/products/colageno-ena-sport-407g/02.webp",
       "kind": "product",
-      "width": 843,
-      "height": 843,
-      "source": "t1"
-    },
-    {
-      "path": "/assets/products/colageno-ena-sport-407g/03.webp",
-      "kind": "product",
-      "width": 1000,
-      "height": 1000,
-      "source": "o2"
-    },
-    {
-      "path": "/assets/products/colageno-ena-sport-407g/04.webp",
-      "kind": "product",
-      "width": 1600,
-      "height": 1600,
-      "source": "o3"
+      "width": 982,
+      "height": 982,
+      "source": "https://cdn.shopify.com/s/files/1/0599/3683/3741/files/ColagenosSport-FP.jpg",
+      "sourcePage": "https://enasport.com/products/colageno-sport"
     }
   ],
   "creatina-star-300-gr-frutos-rojos": [
@@ -583,9 +541,10 @@
     {
       "path": "/assets/products/resveratrol-star-nutrition/01.webp",
       "kind": "product",
-      "width": 1081,
-      "height": 1081,
-      "source": "t0"
+      "width": 1123,
+      "height": 1123,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/Resceratrol500.png",
+      "sourcePage": "https://starnutrition.com.ar/products/resveratrol-500-x-60-caps"
     },
     {
       "path": "/assets/products/resveratrol-star-nutrition/02.webp",
@@ -611,43 +570,6 @@
       "source": "t1"
     }
   ],
-  "combo-gold-nutrition": [
-    {
-      "path": "/assets/products/combo-gold-nutrition/01.webp",
-      "kind": "product",
-      "width": 600,
-      "height": 600,
-      "source": "t0"
-    },
-    {
-      "path": "/assets/products/combo-gold-nutrition/02.webp",
-      "kind": "product",
-      "width": 1058,
-      "height": 1058,
-      "source": "t1"
-    },
-    {
-      "path": "/assets/products/combo-gold-nutrition/03.webp",
-      "kind": "product",
-      "width": 951,
-      "height": 951,
-      "source": "t3"
-    },
-    {
-      "path": "/assets/products/combo-gold-nutrition/04.webp",
-      "kind": "nutrition",
-      "width": 1029,
-      "height": 1010,
-      "source": "t2"
-    },
-    {
-      "path": "/assets/products/combo-gold-nutrition/05.webp",
-      "kind": "nutrition",
-      "width": 608,
-      "height": 951,
-      "source": "t4"
-    }
-  ],
   "shaker-ena": [
     {
       "path": "/assets/products/shaker-ena/01.webp",
@@ -655,22 +577,6 @@
       "width": 1058,
       "height": 1058,
       "source": "t0"
-    }
-  ],
-  "combo-dino": [
-    {
-      "path": "/assets/products/combo-dino/01.webp",
-      "kind": "product",
-      "width": 1024,
-      "height": 1024,
-      "source": "t0"
-    },
-    {
-      "path": "/assets/products/combo-dino/02.webp",
-      "kind": "product",
-      "width": 800,
-      "height": 800,
-      "source": "t1"
     }
   ],
   "cafeina-ena": [
@@ -698,43 +604,30 @@
       "source": "t0"
     }
   ],
-  "combo-one-fit": [
-    {
-      "path": "/assets/products/combo-one-fit/01.webp",
-      "kind": "product",
-      "width": 1024,
-      "height": 1024,
-      "source": "t0"
-    },
-    {
-      "path": "/assets/products/combo-one-fit/02.webp",
-      "kind": "nutrition",
-      "width": 692,
-      "height": 688,
-      "source": "t1"
-    },
-    {
-      "path": "/assets/products/combo-one-fit/03.webp",
-      "kind": "nutrition",
-      "width": 692,
-      "height": 688,
-      "source": "t2"
-    }
-  ],
   "proteina-one-fit-2lb": [
     {
       "path": "/assets/products/proteina-one-fit-2lb/01.webp",
       "kind": "product",
-      "width": 1079,
-      "height": 1079,
-      "source": "t0"
+      "width": 1400,
+      "height": 1400,
+      "source": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/ClassicWhey2Lb_F.png",
+      "sourcePage": "https://tiendaxnutrition.com/products/classic-whey-protein-2-lbs"
     },
     {
       "path": "/assets/products/proteina-one-fit-2lb/02.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/ClassicWhey2Lb_d.png",
+      "sourcePage": "https://tiendaxnutrition.com/products/classic-whey-protein-2-lbs"
+    },
+    {
+      "path": "/assets/products/proteina-one-fit-2lb/03.webp",
       "kind": "nutrition",
-      "width": 692,
-      "height": 688,
-      "source": "t1"
+      "width": 1340,
+      "height": 1333,
+      "source": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/CLASSIC-06.jpg",
+      "sourcePage": "https://tiendaxnutrition.com/products/classic-whey-protein-2-lbs"
     }
   ],
   "shaker-gentech": [
@@ -748,21 +641,31 @@
     {
       "path": "/assets/products/shaker-gentech/02.webp",
       "kind": "product",
-      "width": 233,
-      "height": 233,
-      "source": "t1"
+      "width": 1400,
+      "height": 1400,
+      "source": "https://www.gentech.com.ar/web/image/product.template/104/image_1920?unique=2d43c15",
+      "sourcePage": "https://www.gentech.com.ar/es/shop/shaker-gentech-104"
     }
   ],
   "bcaa-star-nutrition": [
     {
       "path": "/assets/products/bcaa-star-nutrition/01.webp",
       "kind": "product",
-      "width": 968,
-      "height": 968,
-      "source": "t0"
+      "width": 1044,
+      "height": 1044,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MtorBCAA-270g-_2.png",
+      "sourcePage": "https://starnutrition.com.ar/products/mtor-bcaa-270g"
     },
     {
       "path": "/assets/products/bcaa-star-nutrition/02.webp",
+      "kind": "product",
+      "width": 1400,
+      "height": 1400,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/STANUT2022BCO_1.png",
+      "sourcePage": "https://starnutrition.com.ar/products/mtor-bcaa-270g"
+    },
+    {
+      "path": "/assets/products/bcaa-star-nutrition/03.webp",
       "kind": "nutrition",
       "width": 655,
       "height": 1098,
@@ -844,23 +747,18 @@
     {
       "path": "/assets/products/creatina-natural-nutrition-150gr/01.webp",
       "kind": "product",
-      "width": 544,
-      "height": 544,
-      "source": "t0"
+      "width": 980,
+      "height": 980,
+      "source": "https://acdn-us.mitiendanube.com/stores/004/962/537/products/1-0c531c59212edeaa6e17729155866649-1024-1024.webp",
+      "sourcePage": "https://www.naturalnutrition.com.ar/productos/creatina-natural-nutrition-150g/"
     },
     {
       "path": "/assets/products/creatina-natural-nutrition-150gr/02.webp",
       "kind": "product",
       "width": 1024,
       "height": 1366,
-      "source": "t1"
-    },
-    {
-      "path": "/assets/products/creatina-natural-nutrition-150gr/03.webp",
-      "kind": "product",
-      "width": 240,
-      "height": 320,
-      "source": "t2"
+      "source": "https://acdn-us.mitiendanube.com/stores/004/962/537/products/dscn7510-2-51c343b00e0cd7ecd817835127994932-1024-1024.webp",
+      "sourcePage": "https://www.naturalnutrition.com.ar/productos/creatina-natural-nutrition-150g/"
     }
   ],
   "colageno-hidrolizado-star-210g": [
@@ -890,18 +788,36 @@
     {
       "path": "/assets/products/oxido-nitrico-ena/01.webp",
       "kind": "product",
-      "width": 924,
-      "height": 924,
-      "source": "t0"
+      "width": 925,
+      "height": 925,
+      "source": "https://cdn.shopify.com/s/files/1/0599/3683/3741/files/Oxido_Nitrico.webp",
+      "sourcePage": "https://enasport.com/products/oxido-nitrico"
     }
   ],
   "glutamina-one-fit-200g": [
     {
       "path": "/assets/products/glutamina-one-fit-200g/01.webp",
       "kind": "product",
-      "width": 937,
-      "height": 937,
-      "source": "t0"
+      "width": 1005,
+      "height": 1005,
+      "source": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/Glutamine-f_retoque_035fb774-c6bb-4b94-85c8-ab07bb1442a5.png",
+      "sourcePage": "https://tiendaxnutrition.com/products/glutamine-micronized"
+    },
+    {
+      "path": "/assets/products/glutamina-one-fit-200g/02.webp",
+      "kind": "product",
+      "width": 998,
+      "height": 998,
+      "source": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/Glutamine-d_retoque_f6703c33-3907-47b3-97f5-7fe702076139.png",
+      "sourcePage": "https://tiendaxnutrition.com/products/glutamine-micronized"
+    },
+    {
+      "path": "/assets/products/glutamina-one-fit-200g/03.webp",
+      "kind": "nutrition",
+      "width": 1340,
+      "height": 1334,
+      "source": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/GLUTA-07.jpg",
+      "sourcePage": "https://tiendaxnutrition.com/products/glutamine-micronized"
     }
   ],
   "barritas-mervick-65g-banana": [
@@ -938,13 +854,6 @@
       "width": 881,
       "height": 881,
       "source": "t0"
-    },
-    {
-      "path": "/assets/products/barritas-proteicas-bravas-arandanos/02.webp",
-      "kind": "product",
-      "width": 1024,
-      "height": 1024,
-      "source": "t1"
     }
   ],
   "barritas-proteicas-bravas-datiles": [
@@ -954,13 +863,6 @@
       "width": 881,
       "height": 881,
       "source": "t0"
-    },
-    {
-      "path": "/assets/products/barritas-proteicas-bravas-datiles/02.webp",
-      "kind": "product",
-      "width": 1024,
-      "height": 1024,
-      "source": "t1"
     }
   ],
   "omega-3-landerfit": [
@@ -970,33 +872,24 @@
       "width": 909,
       "height": 909,
       "source": "t0"
+    },
+    {
+      "path": "/assets/products/omega-3-landerfit/02.webp",
+      "kind": "nutrition",
+      "width": 755,
+      "height": 596,
+      "source": "https://landerfit.b-cdn.net/wp-content/uploads/2022/10/Omega-3.jpg",
+      "sourcePage": "https://landerfit.com/producto/omega-3/"
     }
   ],
   "preentreno-beast-blood": [
     {
       "path": "/assets/products/preentreno-beast-blood/01.webp",
       "kind": "product",
-      "width": 196,
-      "height": 196,
-      "source": "t0"
-    }
-  ],
-  "combo-laid": [
-    {
-      "path": "/assets/products/combo-laid/01.webp",
-      "kind": "product",
-      "width": 1024,
-      "height": 1024,
-      "source": "t0"
-    }
-  ],
-  "combo-mentzer": [
-    {
-      "path": "/assets/products/combo-mentzer/01.webp",
-      "kind": "product",
-      "width": 1024,
-      "height": 1024,
-      "source": "t0"
+      "width": 871,
+      "height": 871,
+      "source": "https://bodyadvancenutrition.com/wp-content/uploads/2026/06/beast-blood-multifruta.png",
+      "sourcePage": "https://bodyadvancenutrition.com/product/beast-blood-pre-entreno-multifruta-2/"
     }
   ],
   "multivitaminico-star": [
@@ -1005,7 +898,8 @@
       "kind": "product",
       "width": 1400,
       "height": 1400,
-      "source": "o0"
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/STANUT004030.png",
+      "sourcePage": "https://starnutrition.com.ar/products/allinonemultivitamin"
     },
     {
       "path": "/assets/products/multivitaminico-star/02.webp",
@@ -1055,20 +949,6 @@
     },
     {
       "path": "/assets/products/proteina-just-plant-2lb/03.webp",
-      "kind": "product",
-      "width": 1200,
-      "height": 1200,
-      "source": "o2"
-    },
-    {
-      "path": "/assets/products/proteina-just-plant-2lb/04.webp",
-      "kind": "product",
-      "width": 615,
-      "height": 1200,
-      "source": "o3"
-    },
-    {
-      "path": "/assets/products/proteina-just-plant-2lb/05.webp",
       "kind": "nutrition",
       "width": 625,
       "height": 771,
@@ -1079,9 +959,10 @@
     {
       "path": "/assets/products/eaa-s-star-nutrition/01.webp",
       "kind": "product",
-      "width": 965,
-      "height": 965,
-      "source": "t0"
+      "width": 1044,
+      "height": 1044,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/EEAS-Aminos.png",
+      "sourcePage": "https://starnutrition.com.ar/products/essential-amino-limon-360"
     },
     {
       "path": "/assets/products/eaa-s-star-nutrition/02.webp",
@@ -1093,9 +974,10 @@
     {
       "path": "/assets/products/eaa-s-star-nutrition/03.webp",
       "kind": "nutrition",
-      "width": 568,
-      "height": 1084,
-      "source": "t1"
+      "width": 547,
+      "height": 1050,
+      "source": "https://cdn.shopify.com/s/files/1/0567/4716/3735/products/EAAS-Info-n.png",
+      "sourcePage": "https://starnutrition.com.ar/products/essential-amino-limon-360"
     }
   ],
   "pre-entreno-painlabs": [
@@ -1128,13 +1010,6 @@
       "width": 636,
       "height": 1073,
       "source": "o5"
-    },
-    {
-      "path": "/assets/products/mutant-mass-5-kg/03.webp",
-      "kind": "nutrition",
-      "width": 1106,
-      "height": 924,
-      "source": "t1"
     }
   ],
   "shaker-ena-plus": [
@@ -1160,43 +1035,6 @@
       "width": 908,
       "height": 908,
       "source": "t1"
-    },
-    {
-      "path": "/assets/products/shaker-got-600-ml/03.webp",
-      "kind": "product",
-      "width": 1071,
-      "height": 1071,
-      "source": "t2"
-    },
-    {
-      "path": "/assets/products/shaker-got-600-ml/04.webp",
-      "kind": "product",
-      "width": 193,
-      "height": 193,
-      "source": "t3"
-    }
-  ],
-  "combo-popeye": [
-    {
-      "path": "/assets/products/combo-popeye/01.webp",
-      "kind": "product",
-      "width": 1024,
-      "height": 1024,
-      "source": "t0"
-    },
-    {
-      "path": "/assets/products/combo-popeye/02.webp",
-      "kind": "product",
-      "width": 800,
-      "height": 800,
-      "source": "t1"
-    },
-    {
-      "path": "/assets/products/combo-popeye/03.webp",
-      "kind": "product",
-      "width": 528,
-      "height": 528,
-      "source": "t2"
     }
   ]
 }

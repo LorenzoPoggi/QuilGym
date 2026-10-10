@@ -19,6 +19,8 @@ export type CheckoutInput = {
   province: string;
   notes: string;
   accepted: boolean;
+  /** DNI/CUIT para la factura: solo cuando el total supera el umbral configurado (o si el comprador lo informa). */
+  taxId?: { type: "DNI" | "CUIT"; number: string } | null;
 };
 export type ShippingRate = { id: string; label: string; postalCodes: string[]; priceArs: number; estimate: string };
 export type CheckoutConfig = {
@@ -26,6 +28,8 @@ export type CheckoutConfig = {
   pickup: { address: string; hours: string } | null;
   shippingRates: ShippingRate[];
   payments: { mercadopago: boolean; transfer: boolean; cash: boolean };
+  /** Desde este total se pide DNI/CUIT para facturar (INVOICE_ID_THRESHOLD_ARS). null/ausente = no se pide. */
+  taxIdThresholdArs?: number | null;
 };
 export type CheckoutQuote = { token: string; shippingArs: number; totalArs: number; label: string; estimate: string };
 export type CheckoutResult = { ok: true; orderId: string } | { ok: false; error: string; fields?: Record<string, string> };

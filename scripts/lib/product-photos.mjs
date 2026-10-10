@@ -43,6 +43,8 @@ export async function loadPhotoSources(catalogSlugs) {
         if (!["product", "nutrition"].includes(source.kind)) errors.push(`${label}: "kind" debe ser "product" o "nutrition"`);
         const page = hostOf(source.sourcePage ?? "");
         if (!page || !sites.some((site) => page === site || page.endsWith(`.${site}`))) errors.push(`${label}: "sourcePage" debe ser una página de ${sites.join(" / ")} (officialSites)`);
+        if (source.append !== undefined && typeof source.append !== "boolean") errors.push(`${label}: "append" es true o false`);
+        if (source.distinct !== undefined && typeof source.distinct !== "boolean") errors.push(`${label}: "distinct" es true o false`);
         if (source.crop && !["left", "top", "width", "height"].every((key) => Number.isInteger(source.crop[key]) && source.crop[key] >= 0)) errors.push(`${label}: "crop" necesita left/top/width/height enteros en píxeles del original`);
       }
       if (entry.dropBaseline !== undefined && entry.dropBaseline !== true && !Array.isArray(entry.dropBaseline)) errors.push(`${at}: "dropBaseline" es true o una lista de refs ("t0", "o2"…)`);

@@ -1,0 +1,36 @@
+{
+  "brand": "ENA Sport",
+  "officialSites": [
+    "https://enasport.com"
+  ],
+  "products": {
+    "colageno-ena-sport-407g": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0599/3683/3741/files/CsportN.webp",
+          "kind": "product",
+          "sourcePage": "https://enasport.com/products/colageno-sport"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0599/3683/3741/files/ColagenosSport-FP.jpg",
+          "kind": "product",
+          "sourcePage": "https://enasport.com/products/colageno-sport"
+        }
+      ],
+      "dropBaseline": true,
+      "_doc": "El sitio oficial publica el frente de los dos sabores (Naranja y Fruit Punch) y fotos ambientadas; no publica dorso ni rótulo."
+    },
+    "oxido-nitrico-ena": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0599/3683/3741/files/Oxido_Nitrico.webp",
+          "kind": "product",
+          "sourcePage": "https://enasport.com/products/oxido-nitrico"
+        }
+      ],
+      "dropBaseline": [
+        "t0"
+      ]
+    }
+  }
+}

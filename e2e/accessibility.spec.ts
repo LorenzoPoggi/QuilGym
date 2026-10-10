@@ -10,6 +10,9 @@ const routes = [
   ["carrito vacío", "/carrito"],
   ["ingreso", "/cuenta/ingresar"],
   ["asesor", "/asesor"],
+  ["términos", "/legales/terminos"],
+  ["privacidad", "/legales/privacidad"],
+  ["botón de arrepentimiento", "/arrepentimiento"],
 ] as const;
 
 for (const [name, route] of routes) {

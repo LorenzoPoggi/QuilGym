@@ -34,8 +34,8 @@ const previous = JSON.parse(await readFile(manifestPath, "utf8"));
 const { entries: overlays, errors } = await loadPhotoSources(new Set(catalog.products.map((product) => product.siteSlug)));
 for (const error of errors) console.error(`✗ ${error}`);
 if (errors.length) { console.error("Corregí los JSON de data/product-photo-sources antes de construir."); process.exit(1); }
-if (!dryRun && (!only?.length || only.some((slug) => !overlays.has(slug)))) {
-  console.error("--apply requiere --only=slug1,slug2 y fuentes oficiales revisadas para cada producto seleccionado.");
+if (!dryRun && (!only?.length || only.some((slug) => !overlays.has(slug) && !curation.products[slug]))) {
+  console.error("--apply requiere --only=slug1,slug2 con productos de la curaduría o con fuentes oficiales revisadas.");
   process.exit(1);
 }
 
@@ -113,12 +113,15 @@ function merge(kind, official, base, entry) {
   if (!official.length) return { images: base, notes };
   const rest = [];
   for (const image of base) {
-    const twin = official.find((item) => !item.replacedBy && hammingDistance(item.hash, image.hash) <= 8);
+    // "distinct": true = otra variante oficial (p. ej. otro sabor) casi idéntica en forma: nunca es «la misma foto».
+    const twin = official.find((item) => !item.replacedBy && !item.distinct && hammingDistance(item.hash, image.hash) <= 8);
     if (!twin) { rest.push(image); continue; }
     if (side(image) > side(twin)) { twin.replacedBy = image; notes.push(`${image.ref} es la misma foto que ${twin.source} en más resolución: se conserva la de la base`); }
   }
   const limit = Math.max(official.length, kind === "product" ? entry.maxProduct ?? 2 : entry.maxNutrition ?? 1);
-  const combined = [...official.map((item) => item.replacedBy ?? item), ...rest];
+  // "append": true deja la oficial después de las de la base (p. ej. una segunda vista ambientada detrás del frente).
+  const resolved = official.map((item) => item.replacedBy ?? item);
+  const combined = [...resolved.filter((item) => !item.append), ...rest, ...resolved.filter((item) => item.append)];
   const images = combined.slice(0, limit);
   for (const removed of combined.slice(limit)) {
     const worse = official.filter((item) => !item.replacedBy && !item.allowSmaller && side(item) < side(removed));
@@ -156,7 +159,7 @@ for (const [slug, selection] of Object.entries(curation.products)) {
         const { buffer } = await cachedSource(slug, source.url, { offline: dryRun });
         const report = await inspectSource(buffer, source);
         if (report.problems.length) { error = `${source.url}: ${report.problems.join("; ")}`; break; }
-        official.push(await candidate(source.kind, await applyCrop(buffer, source.crop), { ref: source.url, source: source.url, sourcePage: source.sourcePage, allowSmaller: source.allowSmaller }));
+        official.push(await candidate(source.kind, await applyCrop(buffer, source.crop), { ref: source.url, source: source.url, sourcePage: source.sourcePage, allowSmaller: source.allowSmaller, append: source.append === true, distinct: source.distinct === true }));
       } catch (caught) { error = caught.message; break; }
     }
     const merged = error ? null : ["product", "nutrition"].map((kind) => merge(kind, official.filter((item) => item.kind === kind), kept.filter((item) => item.kind === kind), entry));

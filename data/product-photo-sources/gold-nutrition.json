@@ -1,0 +1,17 @@
+{
+  "brand": "Gold Nutrition",
+  "officialSites": ["https://www.goldnutrition.com.ar"],
+  "_doc": "El sitio oficial no publica dorso ni rótulo descargable (las URLs de información nutricional del propio sitio responden 404). Se suma una foto oficial ambientada del mismo envase como segunda vista.",
+  "products": {
+    "creatina-gold-300-gr": {
+      "sources": [
+        { "url": "https://www.goldnutrition.com.ar/imagenes/galeria-creatina-6.webp", "kind": "product", "sourcePage": "https://www.goldnutrition.com.ar/creatinas/creatine-monohydrate-300g", "append": true }
+      ]
+    },
+    "proteina-gold-nutrition-2lb": {
+      "sources": [
+        { "url": "https://www.goldnutrition.com.ar/imagenes/galeria-whey-8.webp", "kind": "product", "sourcePage": "https://www.goldnutrition.com.ar/proteinas/100-whey-protein-2lb", "append": true }
+      ]
+    }
+  }
+}

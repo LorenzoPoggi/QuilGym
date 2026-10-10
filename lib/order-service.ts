@@ -13,6 +13,8 @@ import { quoteDelivery, UUID_PATTERN } from "./checkout-validation";
 import { canTransition } from "./order-state";
 import type { CheckoutInput, OrderStatus } from "./checkout-types";
 import { currentUser } from "./auth";
+import { queueInvoice, saveCheckoutReceiver } from "./invoicing";
+import { taxIdRequired } from "./invoicing-config";
 
 export class CheckoutError extends Error {}
 
@@ -83,6 +85,8 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
     }
     const totalArs = subtotalArs - discountArs + delivery.shippingArs;
     if (totalArs <= 0 || !Number.isSafeInteger(totalArs)) throw new CheckoutError("No se puede procesar el importe de este pedido.");
+    // Facturación (RG 5700/2025): desde el umbral configurado hay que identificar al consumidor final.
+    if (!config.demo && taxIdRequired(config.taxIdThresholdArs, totalArs) && !input.taxId) throw new CheckoutError("Para este importe necesitamos tu DNI o CUIT para la factura.");
     if (quote.fingerprint !== checkoutFingerprint(snapshots, discountArs, cart.couponCode) || quote.shippingArs !== delivery.shippingArs || quote.totalArs !== totalArs) {
       throw new CheckoutError("El importe cambió. Actualizá la cotización antes de confirmar.");
     }
@@ -104,6 +108,7 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
     }
     await tx.insert(payments).values({ orderId: order.id, status: initialStatus });
     await tx.insert(shipments).values({ orderId: order.id, label: delivery.label, estimate: delivery.estimate });
+    if (input.taxId && !config.demo) await saveCheckoutReceiver(tx, order, input.taxId);
     if (!config.demo) await tx.insert(orderEmails).values({ orderId: order.id, event: "created" });
     await tx.delete(cartItems).where(eq(cartItems.cartId, cartId));
     await tx.update(carts).set({ couponCode: null, updatedAt: new Date() }).where(eq(carts.id, cartId));
@@ -111,8 +116,11 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
   });
 }
 
-/** Bloquea la orden: duplicados/reintentos no liberan stock ni cupones dos veces. */
-export async function transitionOrder(tx: OrderTransaction, order: typeof orders.$inferSelect, status: OrderStatus) {
+/**
+ * Bloquea la orden: duplicados/reintentos no liberan stock ni cupones dos veces. `emailEvent` permite
+ * distinguir el aviso (por ejemplo «expired» cuando el cron vence el pedido) sin agregar estados.
+ */
+export async function transitionOrder(tx: OrderTransaction, order: typeof orders.$inferSelect, status: OrderStatus, emailEvent: string = status) {
   if (!canTransition(order.status, status)) return false;
   if (status === order.status) return true;
   // Reembolsar dinero no implica que la mercadería haya vuelto al inventario.
@@ -124,6 +132,8 @@ export async function transitionOrder(tx: OrderTransaction, order: typeof orders
   }
   await tx.update(orders).set({ status, ...(release ? { resourcesReleasedAt: new Date() } : {}) }).where(eq(orders.id, order.id));
   await tx.update(payments).set({ status }).where(eq(payments.orderId, order.id));
-  if (!order.isDemo) await tx.insert(orderEmails).values({ orderId: order.id, event: status }).onConflictDoNothing();
+  if (!order.isDemo) await tx.insert(orderEmails).values({ orderId: order.id, event: emailEvent }).onConflictDoNothing();
+  // Pago aprobado → factura en cola (si la migración 0008 está aplicada). La emisión ocurre fuera de la transacción.
+  if (status === "approved") await queueInvoice(tx, order);
   return true;
 }

@@ -1,0 +1,30 @@
+{
+  "brand": "One Fit Nutrition",
+  "officialSites": ["https://onefitnutrition.com.ar", "https://tiendaxnutrition.com"],
+  "_doc": "onefitnutrition.com.ar redirige a la tienda oficial del fabricante (tiendaxnutrition.com).",
+  "products": {
+    "creatina-one-fit-200-gr": {
+      "sources": [
+        { "url": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/Creatine200-f_retoque_1.png", "kind": "product", "sourcePage": "https://tiendaxnutrition.com/products/poweraded-creatine-micronized", "allowSmaller": true },
+        { "url": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/Creatine200-d_retoque_1.png", "kind": "product", "sourcePage": "https://tiendaxnutrition.com/products/poweraded-creatine-micronized" }
+      ],
+      "dropBaseline": ["t0"]
+    },
+    "glutamina-one-fit-200g": {
+      "sources": [
+        { "url": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/Glutamine-f_retoque_035fb774-c6bb-4b94-85c8-ab07bb1442a5.png", "kind": "product", "sourcePage": "https://tiendaxnutrition.com/products/glutamine-micronized" },
+        { "url": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/Glutamine-d_retoque_f6703c33-3907-47b3-97f5-7fe702076139.png", "kind": "product", "sourcePage": "https://tiendaxnutrition.com/products/glutamine-micronized" },
+        { "url": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/GLUTA-07.jpg", "kind": "nutrition", "sourcePage": "https://tiendaxnutrition.com/products/glutamine-micronized" }
+      ],
+      "dropBaseline": true
+    },
+    "proteina-one-fit-2lb": {
+      "sources": [
+        { "url": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/ClassicWhey2Lb_F.png", "kind": "product", "sourcePage": "https://tiendaxnutrition.com/products/classic-whey-protein-2-lbs" },
+        { "url": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/ClassicWhey2Lb_d.png", "kind": "product", "sourcePage": "https://tiendaxnutrition.com/products/classic-whey-protein-2-lbs" },
+        { "url": "https://cdn.shopify.com/s/files/1/0737/1086/2524/files/CLASSIC-06.jpg", "kind": "nutrition", "sourcePage": "https://tiendaxnutrition.com/products/classic-whey-protein-2-lbs" }
+      ],
+      "dropBaseline": true
+    }
+  }
+}

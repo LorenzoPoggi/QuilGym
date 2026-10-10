@@ -8,11 +8,12 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("next/server", () => ({ after: mocks.after }));
 vi.mock("./order-service", () => ({ findOwnedOrder: mocks.findOwnedOrder }));
-vi.mock("./mercadopago", () => ({ paymentSetup: mocks.paymentSetup, submitProviderPayment: mocks.submitProviderPayment, reconcileProviderPayment: mocks.reconcileProviderPayment }));
+vi.mock("./mercadopago", () => ({ paymentSetup: mocks.paymentSetup, cardPaymentSetup: vi.fn(), submitProviderPayment: mocks.submitProviderPayment, reconcileProviderPayment: mocks.reconcileProviderPayment }));
 vi.mock("./order-email", () => ({ deliverOrderEmails: mocks.deliverOrderEmails }));
 vi.mock("./rate-limit", () => ({ consumeRateLimit: mocks.consumeRateLimit }));
 
 import { payOrder, preparePayment, verifyReturnedPayment } from "./payment-actions";
+import { CardPaymentError, MercadoPagoApiError } from "./mercadopago-card";
 
 const orderId = "00000000-0000-4000-8000-000000000001";
 const order = { id: orderId, isDemo: false, paymentMethod: "mercadopago" };
@@ -39,7 +40,7 @@ describe("límites del flujo de pago", () => {
 
   it("limita intentos del Brick por pedido antes de enviar el pago", async () => {
     mocks.consumeRateLimit.mockResolvedValue(false);
-    const result = await payOrder(orderId, { token: "token-de-prueba" });
+    const result = await payOrder(orderId, { formData: { token: "token-de-prueba" } });
     expect(result).toMatchObject({ ok: false, error: expect.stringContaining("muchos intentos") });
     expect(mocks.consumeRateLimit).toHaveBeenCalledWith(`payment:submit:${orderId}`, 10, 600_000);
     expect(mocks.submitProviderPayment).not.toHaveBeenCalled();
@@ -47,7 +48,7 @@ describe("límites del flujo de pago", () => {
 
   it("un error del contador falla cerrado y nunca intenta cobrar", async () => {
     mocks.consumeRateLimit.mockRejectedValue(new Error("database unavailable"));
-    const result = await payOrder(orderId, { token: "token-de-prueba" });
+    const result = await payOrder(orderId, { formData: { token: "token-de-prueba" } });
     expect(result.ok).toBe(false);
     expect(mocks.submitProviderPayment).not.toHaveBeenCalled();
   });
@@ -65,5 +66,23 @@ describe("límites del flujo de pago", () => {
     mocks.reconcileProviderPayment.mockResolvedValue("otro-pedido");
     expect((await verifyReturnedPayment(orderId, "123")).ok).toBe(false);
     expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("devuelve el resultado del cobro y pasa formData/additionalData al servidor", async () => {
+    mocks.submitProviderPayment.mockResolvedValue({ outcome: "rejected", message: "Tu banco rechazó el pago.", paymentId: "9", challenge: null });
+    const result = await payOrder(orderId, { formData: { token: "t" }, additionalData: { paymentTypeId: "credit_card" } });
+    expect(result).toEqual({ ok: true, outcome: "rejected", message: "Tu banco rechazó el pago.", paymentId: "9", challenge: null });
+    expect(mocks.submitProviderPayment).toHaveBeenCalledWith(order, { token: "t" }, { paymentTypeId: "credit_card" });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/checkout/confirmacion/${orderId}`);
+  });
+
+  it("muestra el motivo de una validación previa y un 4xx de Mercado Pago sin detalles internos", async () => {
+    mocks.submitProviderPayment.mockRejectedValueOnce(new CardPaymentError("La tarjeta de débito se paga en una sola cuota."));
+    expect(await payOrder(orderId, { formData: {} })).toEqual({ ok: false, error: "La tarjeta de débito se paga en una sola cuota." });
+    mocks.submitProviderPayment.mockRejectedValueOnce(new MercadoPagoApiError(400));
+    expect(await payOrder(orderId, { formData: {} })).toMatchObject({ ok: false, error: expect.stringContaining("no se cobró nada") });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.submitProviderPayment.mockRejectedValueOnce(new MercadoPagoApiError(0));
+    expect(await payOrder(orderId, { formData: {} })).toMatchObject({ ok: false, error: expect.stringContaining("Actualizar estado") });
   });
 });

@@ -1,14 +1,22 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "./db";
-import { orders, payments } from "./db/schema";
+import { orderEmails, orderItems, orders, payments } from "./db/schema";
 import { withOrderTransaction } from "./db/transaction";
-import { getCheckoutConfig, orderPageUrl, paymentNotificationUrl, siteUrl } from "./checkout-config";
+import { cardThreeDsMode, getCheckoutConfig, orderPageUrl, paymentNotificationUrl, siteUrl } from "./checkout-config";
 import { providerStatus } from "./order-state";
 import { transitionOrder } from "./order-service";
+import { commerce } from "./commerce";
+import { CardPaymentError, cardIdempotencyKey, excludedCardTypes, cardStatusMessage, isCardChoice, maxInstallmentsFor, MercadoPagoApiError, parseCardSubmission, splitPayerName, type CardOutcome } from "./mercadopago-card";
+
+export { CardPaymentError, MercadoPagoApiError } from "./mercadopago-card";
 
 type ProviderPayment = { id: number; external_reference: string; transaction_amount: number; currency_id: string;
-  status: string; date_last_updated: string; transaction_details?: { external_resource_url?: string } };
+  status: string; status_detail?: string; payment_type_id?: string; date_last_updated: string;
+  transaction_details?: { external_resource_url?: string };
+  three_ds_info?: { external_resource_url?: string; creq?: string } };
+/** Un intento fallido (rechazado o cancelado) no cierra el pedido: el comprador puede reintentar. */
+export const isFailedAttempt = (status: string | null | undefined) => status === "rejected" || status === "cancelled";
 type ProviderMerchantOrder = { id: number; external_reference: string; preference_id: string;
   payments?: { id: number; status: string }[] };
 
@@ -24,7 +32,7 @@ async function request<T>(path: string, body?: object, key?: string): Promise<T>
   } catch (error) {
     const name = error instanceof Error ? error.name : "UnknownError";
     console.error("[Mercado Pago] No se pudo conectar con la API", { method: body ? "POST" : "GET", path, name });
-    throw new Error("No pudimos comunicarnos con Mercado Pago. Reintentá con el mismo pedido.");
+    throw new MercadoPagoApiError(0);
   }
   if (!response.ok) {
     const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
@@ -38,7 +46,7 @@ async function request<T>(path: string, body?: object, key?: string): Promise<T>
       method: body ? "POST" : "GET", path, status: response.status,
       error: payload.error, causes,
     });
-    throw new Error("No pudimos comunicarnos con Mercado Pago. Reintentá con el mismo pedido.");
+    throw new MercadoPagoApiError(response.status);
   }
   return response.json() as Promise<T>;
 }
@@ -55,13 +63,14 @@ export function safePaymentUrl(raw: string | undefined) {
 export async function paymentSetup(order: typeof orders.$inferSelect) {
   let stage = "eligibility";
   try {
-    if (order.isDemo || order.paymentMethod !== "mercadopago" || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
+    if (order.isDemo || order.paymentMethod !== "mercadopago" || isCardChoice(order.paymentChoice) || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
     const notificationUrl = paymentNotificationUrl();
     if (!notificationUrl) throw new Error("El webhook de Mercado Pago no está disponible en este entorno.");
     stage = "payment_record";
     return await withOrderTransaction(async (tx) => {
       const [payment] = await tx.select().from(payments).where(eq(payments.orderId, order.id)).for("update");
-      if (!payment) throw new Error("Pago no disponible.");
+      // Con un pago en curso o aprobado no se ofrece pagar de nuevo; tras un rechazo sí.
+      if (!payment || (payment.providerId && !isFailedAttempt(payment.status))) throw new Error("Pago no disponible.");
       let preferenceId = payment.preferenceId;
       let initPoint: string | undefined;
       if (!preferenceId) {
@@ -106,34 +115,61 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
   }
 }
 
-/** Lista permitida: descarta cualquier monto, referencia o dato de tarjeta crudo enviado por el navegador. */
-export async function submitProviderPayment(order: typeof orders.$inferSelect, raw: unknown) {
-  if (order.isDemo || order.paymentMethod !== "mercadopago" || !["debit_card", "credit_card"].includes(order.paymentChoice) || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
+/** Datos públicos para montar el Card Payment Brick. El monto lo fija el servidor y se vuelve a fijar al cobrar. */
+export async function cardPaymentSetup(order: typeof orders.$inferSelect) {
+  if (order.isDemo || order.paymentMethod !== "mercadopago" || !isCardChoice(order.paymentChoice) || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
+  const [payment] = await db.select().from(payments).where(eq(payments.orderId, order.id)).limit(1);
+  if (!payment || (payment.providerId && !isFailedAttempt(payment.status))) throw new Error("Pago no disponible.");
+  return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, amount: order.totalArs, email: order.email,
+    paymentType: order.paymentChoice, excludedTypes: excludedCardTypes(order.paymentChoice), maxInstallments: maxInstallmentsFor(order.paymentChoice, commerce.maxCardInstallments) };
+}
+
+export type CardPaymentResult = { outcome: CardOutcome; message: string; paymentId: string;
+  challenge: { externalResourceUrl: string; creq: string } | null };
+
+/**
+ * Cobra con el token del Card Payment Brick. Lista permitida: descarta cualquier monto, referencia o dato crudo
+ * enviado por el navegador. Un rechazo deja el pedido pendiente para reintentar con otra tarjeta; un pago en
+ * proceso o aprobado bloquea nuevos intentos. La conciliación vuelve a consultar el pago y valida ID/importe.
+ */
+export async function submitProviderPayment(order: typeof orders.$inferSelect, rawFormData: unknown, rawAdditional?: unknown): Promise<CardPaymentResult> {
+  if (order.isDemo || order.paymentMethod !== "mercadopago" || !isCardChoice(order.paymentChoice) || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new CardPaymentError("Este pedido ya no admite pagos con tarjeta.");
   const notificationUrl = paymentNotificationUrl();
-  if (!notificationUrl) throw new Error("El webhook de Mercado Pago no está disponible en este entorno.");
-  if (!raw || typeof raw !== "object") throw new Error("Datos de pago inválidos.");
-  const value = raw as Record<string, unknown>;
-  const method = typeof value.payment_method_id === "string" && /^[\w-]{1,60}$/.test(value.payment_method_id) ? value.payment_method_id : null;
-  if (!method) throw new Error("Elegí un medio de pago válido.");
-  const token = typeof value.token === "string" && /^[a-zA-Z0-9_-]{1,256}$/.test(value.token) ? value.token : undefined;
-  if (!token && !["rapipago", "pagofacil"].includes(method)) throw new Error("La tarjeta debe ser tokenizada por Mercado Pago.");
-  const rawPayer = value.payer && typeof value.payer === "object" ? value.payer as Record<string, unknown> : {};
-  const rawId = rawPayer.identification && typeof rawPayer.identification === "object" ? rawPayer.identification as Record<string, unknown> : {};
-  const identification = typeof rawId.type === "string" && /^[a-zA-Z]{2,10}$/.test(rawId.type) && typeof rawId.number === "string" && /^[\w.-]{3,30}$/.test(rawId.number)
-    ? { type: rawId.type, number: rawId.number } : undefined;
-  const installments = Number.isInteger(value.installments) && Number(value.installments) > 0 && Number(value.installments) <= 48 ? value.installments : 1;
+  if (!notificationUrl) throw new CardPaymentError("El pago con tarjeta no está disponible en este entorno.");
+  const parsed = parseCardSubmission(rawFormData, rawAdditional, order.paymentChoice, commerce.maxCardInstallments);
+  if (!parsed.ok) throw new CardPaymentError(parsed.error);
   const [payment] = await db.select().from(payments).where(eq(payments.orderId, order.id));
-  if (!payment) throw new Error("Pedido no disponible.");
-  if (payment.providerId) return reconcileProviderPayment(payment.providerId);
+  if (!payment) throw new CardPaymentError("Pedido no disponible.");
+  if (payment.providerId && !isFailedAttempt(payment.status)) {
+    // Ya hay un pago en proceso o aprobado: no se cobra otra vez; se informa el estado real.
+    await reconcileProviderPayment(payment.providerId);
+    const [current] = await db.select().from(payments).where(eq(payments.orderId, order.id));
+    return { ...cardStatusMessage(current?.status === "approved" ? "approved" : "in_process", null), paymentId: payment.providerId, challenge: null };
+  }
+  const card = parsed.value;
+  const lines = await db.select().from(orderItems).where(eq(orderItems.orderId, order.id)).orderBy(asc(orderItems.id));
+  const payer = splitPayerName(order.name);
+  const threeDs = cardThreeDsMode();
   const result = await request<ProviderPayment>("/v1/payments", {
-    transaction_amount: order.totalArs, description: "Pedido QuilGym", external_reference: order.id,
+    transaction_amount: order.totalArs, description: `Pedido QuilGym QG-${order.id.slice(0, 8).toUpperCase()}`, external_reference: order.id,
     notification_url: notificationUrl,
-    payment_method_id: method, token, installments,
-    issuer_id: typeof value.issuer_id === "string" && /^\d{1,20}$/.test(value.issuer_id) ? value.issuer_id : undefined,
-    payer: { email: order.email, first_name: order.name.split(" ")[0], last_name: order.name.split(" ").slice(1).join(" ") || order.name, identification },
-  }, payment.id);
+    payment_method_id: card.paymentMethodId, token: card.token, installments: card.installments,
+    ...(card.issuerId ? { issuer_id: card.issuerId } : {}),
+    payer: { email: order.email, ...payer, ...(card.identification ? { identification: card.identification } : {}) },
+    // Información que Mercado Pago recomienda para su análisis de riesgo. No incluye datos de tarjeta.
+    additional_info: {
+      items: lines.slice(0, 50).map((line) => ({ id: line.sku, title: line.name.slice(0, 120), quantity: line.quantity, unit_price: line.unitPriceArs })),
+      payer: { ...payer, phone: { number: order.phone.replace(/\D/g, "").slice(-12) } },
+    },
+    ...(threeDs ? { three_d_secure_mode: threeDs } : {}),
+  }, cardIdempotencyKey(payment.id, card.token));
+  if (!result || !/^\d{1,30}$/.test(String(result.id))) throw new Error("Respuesta de pago inválida.");
   // La conciliación bloquea la orden y verifica ID/importe antes de guardar el vínculo.
-  return reconcileProviderPayment(String(result.id));
+  await reconcileProviderPayment(String(result.id));
+  const info = result.three_ds_info;
+  const challenge = result.status_detail === "pending_challenge" && info?.creq && info.external_resource_url && /^https:\/\//.test(info.external_resource_url)
+    ? { externalResourceUrl: info.external_resource_url, creq: info.creq } : null;
+  return { ...cardStatusMessage(result.status, result.status_detail), paymentId: String(result.id), challenge };
 }
 
 export async function reconcileProviderPayment(id: string) {
@@ -147,15 +183,24 @@ export async function reconcileProviderPayment(id: string) {
     if (order.isDemo || order.paymentMethod !== "mercadopago" || payment.currency_id !== "ARS" || payment.transaction_amount !== order.totalArs) throw new Error("El pago no coincide con el pedido.");
     const [stored] = await tx.select().from(payments).where(eq(payments.orderId, order.id)).for("update");
     const status = providerStatus(payment.status);
+    const failed = isFailedAttempt(status);
     if (stored.providerId && stored.providerId !== id) {
-      // Checkout Pro permite reintentar con otro pago: un intento fallido se reemplaza; uno fallido tardío se ignora.
-      if (status === "rejected" || status === "cancelled") return order.id;
+      // Se puede reintentar con otro pago (Checkout Pro o tarjeta): un intento fallido se reemplaza por el nuevo;
+      // un fallido tardío no pisa un pago en curso o aprobado; entre dos fallidos queda el más reciente.
+      if (failed && (!isFailedAttempt(stored.status) || (stored.providerUpdatedAt && stored.providerUpdatedAt >= updated))) return order.id;
       if (stored.status === "approved" || stored.status === "refunded") {
         console.error("[Mercado Pago] Segundo pago sobre un pedido ya cobrado", { order: order.id.slice(0, 8), payment: id, stored: stored.providerId });
         throw new Error("El pedido ya tiene otro pago asociado.");
       }
     } else if (stored.providerUpdatedAt && stored.providerUpdatedAt >= updated) return order.id;
-    const record = { providerId: id, providerUpdatedAt: updated, ticketUrl: safePaymentUrl(payment.transaction_details?.external_resource_url) };
+    const record = { providerId: id, providerUpdatedAt: updated, ticketUrl: safePaymentUrl(payment.transaction_details?.external_resource_url), status };
+    if (failed && order.status === "pending") {
+      // Rechazo o cancelación de un intento: el pedido sigue pendiente y reservado hasta vencer (PENDING_ORDER_TTL_HOURS),
+      // así el comprador puede reintentar con otra tarjeta o medio. Se avisa por email una sola vez por pedido.
+      await tx.update(payments).set(record).where(eq(payments.id, stored.id));
+      if (!order.isDemo) await tx.insert(orderEmails).values({ orderId: order.id, event: "payment_rejected" }).onConflictDoNothing();
+      return order.id;
+    }
     if (await transitionOrder(tx, order, status)) await tx.update(payments).set(record).where(eq(payments.id, stored.id));
     else {
       // El pedido ya cerró (p. ej., cancelado por vencimiento): se registra el estado real del proveedor para que el
