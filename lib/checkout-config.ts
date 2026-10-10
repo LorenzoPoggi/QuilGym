@@ -1,10 +1,14 @@
 import "server-only";
 import type { CheckoutConfig } from "./checkout-types";
-import { parseCheckoutEnv, readBankDetails, readOrderAccessSecret, readPendingOrderTtlHours, readSiteUrl } from "./checkout-env";
+import { parseCheckoutEnv, readBankDetails, readOrderAccessSecret, readPaymentNotificationUrl, readPendingOrderTtlHours, readSiteUrl } from "./checkout-env";
 import { orderAccessToken } from "./order-access";
 
 export function siteUrl() {
   return readSiteUrl(process.env);
+}
+
+export function paymentNotificationUrl() {
+  return readPaymentNotificationUrl(process.env);
 }
 
 export function bankDetails() {

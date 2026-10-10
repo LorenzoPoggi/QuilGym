@@ -13,18 +13,18 @@
  * Los combos no llevan fotos propias (usan ComboVisual): se omiten y sus carpetas se listan para borrar
  * después de correr db:sync-images en cada base.
  *
- *   npm run images:official:build -- --dry-run          (no escribe: muestra qué archivos cambiarían)
- *   npm run images:official:build -- --only=slug1,slug2 (el resto del manifiesto queda igual)
- *   npm run images:official:build -- --prune            (borra NN.webp sobrantes; solo después del sync)
+ *   npm run images:official:build                         (dry-run offline por defecto)
+ *   npm run images:official:build -- --only=slug1,slug2    (filtra el informe)
+ *   npm run images:official:build -- --only=slug --apply   (solo tras revisar la fuente y autorizar el reemplazo)
+ * Los sobrantes se listan, nunca se borran en este script.
  */
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { applyCrop, cachedSource, hammingDistance, headers, inspectSource, isCombo, loadPhotoSources, photoHash, renderNutrition, renderProduct, root, trimmed } from "./lib/product-photos.mjs";
 
 const arg = (name) => process.argv.find((value) => value.startsWith(`--${name}=`))?.split("=")[1];
-const dryRun = process.argv.includes("--dry-run");
-const prune = process.argv.includes("--prune");
+const dryRun = !process.argv.includes("--apply") || process.argv.includes("--dry-run");
 const only = arg("only")?.split(",");
 
 const curation = JSON.parse(await readFile(path.join(root, "data/product-gallery-curation.json"), "utf8"));
@@ -34,6 +34,31 @@ const previous = JSON.parse(await readFile(manifestPath, "utf8"));
 const { entries: overlays, errors } = await loadPhotoSources(new Set(catalog.products.map((product) => product.siteSlug)));
 for (const error of errors) console.error(`✗ ${error}`);
 if (errors.length) { console.error("Corregí los JSON de data/product-photo-sources antes de construir."); process.exit(1); }
+if (!dryRun && (!only?.length || only.some((slug) => !overlays.has(slug)))) {
+  console.error("--apply requiere --only=slug1,slug2 y fuentes oficiales revisadas para cada producto seleccionado.");
+  process.exit(1);
+}
+
+if (dryRun) {
+  const missing = [];
+  for (const [slug, selection] of Object.entries(curation.products)) {
+    if (isCombo(slug) || (only && !only.includes(slug))) continue;
+    for (const slot of [...selection.product, ...selection.nutrition]) for (const ref of slot.split("|")) {
+      const index = Number(ref.slice(1));
+      if (ref.startsWith("t")) {
+        if (!existsSync(path.join(root, ".cache/tiendanube", slug, `${index + 1}.webp`))) missing.push(`${slug}/${ref}`);
+      } else {
+        const dir = path.join(root, ".cache/official", slug);
+        if (!existsSync(dir) || !(await readdir(dir)).some((name) => name.startsWith(`${index}.`))) missing.push(`${slug}/${ref}`);
+      }
+    }
+  }
+  if (missing.length) {
+    console.log(`[dry-run] Faltan ${missing.length} originales en caché local. No se usó la red ni se modificaron assets.`);
+    console.log(`  ${missing.slice(0, 20).join("\n  ")}${missing.length > 20 ? "\n  ..." : ""}`);
+    process.exit(1);
+  }
+}
 
 const officialImages = new Map();
 async function officialImageUrls(source) {
@@ -54,6 +79,7 @@ async function loadRef(slug, ref) {
   const dir = path.join(root, ".cache/official", slug);
   const cached = existsSync(dir) ? (await readdir(dir)).find((name) => name.startsWith(`${index}.`)) : null;
   if (cached) return readFile(path.join(dir, cached));
+  if (dryRun) throw new Error(`sin caché local para ${slug}/${ref}; dry-run no usa la red`);
   const url = (await officialImageUrls(curation.officialSource[slug]))[index];
   const response = await fetch(url, { headers });
   if (!response.ok) throw new Error(`${response.status} ${url}`);
@@ -103,7 +129,7 @@ function merge(kind, official, base, entry) {
 }
 
 const manifest = {};
-const changes = [], stale = [], failures = [];
+const changes = [], pendingWrites = [], stale = [], failures = [];
 const comboDirs = [];
 
 for (const [slug, selection] of Object.entries(curation.products)) {
@@ -127,7 +153,7 @@ for (const [slug, selection] of Object.entries(curation.products)) {
     let error = null;
     for (const source of entry.sources) {
       try {
-        const { buffer } = await cachedSource(slug, source.url);
+        const { buffer } = await cachedSource(slug, source.url, { offline: dryRun });
         const report = await inspectSource(buffer, source);
         if (report.problems.length) { error = `${source.url}: ${report.problems.join("; ")}`; break; }
         official.push(await candidate(source.kind, await applyCrop(buffer, source.crop), { ref: source.url, source: source.url, sourcePage: source.sourcePage, allowSmaller: source.allowSmaller }));
@@ -150,23 +176,28 @@ for (const [slug, selection] of Object.entries(curation.products)) {
     const current = existsSync(target) ? await readFile(target) : null;
     if (!current || !current.equals(image.data)) {
       changes.push(`${slug}/${file}${current ? "" : " (nueva)"}`);
-      if (!dryRun) { await mkdir(dir, { recursive: true }); await writeFile(target, image.data); }
+      if (!dryRun) pendingWrites.push({ dir, target, data: image.data });
     }
     manifest[slug].push({ path: `/assets/products/${slug}/${file}`, kind: image.kind, width: image.info.width, height: image.info.height, source: image.source, ...(image.sourcePage ? { sourcePage: image.sourcePage } : {}) });
   }
   const extra = existsSync(dir) ? (await readdir(dir)).filter((name) => /^\d+\.webp$/.test(name) && Number.parseInt(name) > images.length) : [];
   for (const name of extra) {
     stale.push(`public/assets/products/${slug}/${name}`);
-    if (prune && !dryRun) await rm(path.join(dir, name));
   }
   console.log(`${slug}: ${manifest[slug].map((image) => `${image.kind[0]}:${image.source.startsWith("http") ? "oficial" : image.source}:${image.width}`).join(" ")}`);
 }
 
 for (const name of await readdir(path.join(root, "public/assets/products"))) if (isCombo(name)) comboDirs.push(`public/assets/products/${name}/`);
 
-if (!dryRun) await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+if (failures.length) {
+  console.error(`\n✗ ${failures.join("\n✗ ")}`);
+  process.exit(1);
+}
+if (!dryRun) {
+  for (const { dir, target, data } of pendingWrites) { await mkdir(dir, { recursive: true }); await writeFile(target, data); }
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+}
 console.log(`\n${dryRun ? "[dry run] " : ""}${Object.values(manifest).flat().length} imágenes en ${Object.keys(manifest).length} productos; ${changes.length} archivo(s) ${dryRun ? "cambiarían" : "escritos"}.`);
 if (changes.length) console.log(`  ${changes.join("\n  ")}`);
-if (stale.length) console.log(`\nSobrantes${prune && !dryRun ? " (borrados)" : " (borrar con --prune después de correr db:sync-images en cada base)"}:\n  ${stale.join("\n  ")}`);
+if (stale.length) console.log(`\nSobrantes (solo inventario; no se borraron):\n  ${stale.join("\n  ")}`);
 if (comboDirs.length) console.log(`\nCarpetas de combos fuera del pipeline (borrar después de db:sync-images en cada base):\n  ${comboDirs.join("\n  ")}`);
-if (failures.length) { console.error(`\n✗ ${failures.join("\n✗ ")}`); process.exitCode = 1; }

@@ -42,7 +42,7 @@ describe("origen del retorno de Mercado Pago", () => {
   });
   it("permite configurar MP en Preview sin usar el dominio de producción", () => {
     const report = parseCheckoutEnv({ NODE_ENV: "production", VERCEL_ENV: "preview",
-      VERCEL_URL: deployment, MP_ACCESS_TOKEN: "TEST-token", NEXT_PUBLIC_MP_PUBLIC_KEY: "TEST-key",
+      VERCEL_URL: deployment, VERCEL_AUTOMATION_BYPASS_SECRET: "bypass-para-webhook", MP_ACCESS_TOKEN: "TEST-token", NEXT_PUBLIC_MP_PUBLIC_KEY: "TEST-key",
       MP_WEBHOOK_SECRET: "s".repeat(32) });
     expect(report.config.payments.mercadopago).toBe(true);
   });

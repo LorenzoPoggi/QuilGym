@@ -69,4 +69,8 @@
 @media (prefers-reduced-motion: reduce) {
   .compare-picker__categories a { transition: none; }
 }
-@media (min-width: 1101px) { .compare-products, .compare-row { grid-template-columns: 190px repeat(var(--compare-count, 3), minmax(0, 340px)); } }
+@media (min-width: 1101px) {
+  /* El fondo y el borde terminan junto a la última tarjeta si hay menos de tres. */
+  .compare-products, .compare-table { width: min(100%, calc(218px + var(--compare-count, 3) * 354px)); }
+  .compare-products, .compare-row { grid-template-columns: 190px repeat(var(--compare-count, 3), minmax(0, 340px)); }
+}

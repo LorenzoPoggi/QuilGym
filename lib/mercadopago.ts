@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { orders, payments } from "./db/schema";
 import { withOrderTransaction } from "./db/transaction";
-import { getCheckoutConfig, orderPageUrl, siteUrl } from "./checkout-config";
+import { getCheckoutConfig, orderPageUrl, paymentNotificationUrl, siteUrl } from "./checkout-config";
 import { providerStatus } from "./order-state";
 import { transitionOrder } from "./order-service";
 
@@ -54,6 +54,8 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
   let stage = "eligibility";
   try {
     if (order.isDemo || order.paymentMethod !== "mercadopago" || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
+    const notificationUrl = paymentNotificationUrl();
+    if (!notificationUrl) throw new Error("El webhook de Mercado Pago no está disponible en este entorno.");
     stage = "payment_record";
     return await withOrderTransaction(async (tx) => {
       const [payment] = await tx.select().from(payments).where(eq(payments.orderId, order.id)).for("update");
@@ -69,7 +71,7 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
           payer: { email: order.email }, external_reference: order.id,
           ...(order.paymentChoice === "mercado_credito" ? { purpose: "onboarding_credits" } : {}),
           ...(order.paymentChoice === "mercadopago" ? { payment_methods: { excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }, { id: "prepaid_card" }, { id: "ticket" }] } } : {}),
-          notification_url: `${siteUrl()}/api/payments/mercadopago/webhook`,
+          notification_url: notificationUrl,
           back_urls: { success: returnUrl, pending: returnUrl, failure: returnUrl },
           auto_return: "approved",
         }, payment.id);
@@ -89,7 +91,7 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
     });
   } catch (error) {
     const value = error && typeof error === "object" ? error as { name?: unknown; code?: unknown; status?: unknown } : {};
-    const knownReason = error instanceof Error && ["Pago no disponible.", "Mercado Pago no devolvió un enlace de pago seguro."].includes(error.message)
+    const knownReason = error instanceof Error && ["Pago no disponible.", "Mercado Pago no devolvió un enlace de pago seguro.", "El webhook de Mercado Pago no está disponible en este entorno."].includes(error.message)
       ? error.message : undefined;
     console.error("[Mercado Pago] No se pudo configurar la preferencia", {
       stage,
@@ -105,6 +107,8 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
 /** Lista permitida: descarta cualquier monto, referencia o dato de tarjeta crudo enviado por el navegador. */
 export async function submitProviderPayment(order: typeof orders.$inferSelect, raw: unknown) {
   if (order.isDemo || order.paymentMethod !== "mercadopago" || !["debit_card", "credit_card"].includes(order.paymentChoice) || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
+  const notificationUrl = paymentNotificationUrl();
+  if (!notificationUrl) throw new Error("El webhook de Mercado Pago no está disponible en este entorno.");
   if (!raw || typeof raw !== "object") throw new Error("Datos de pago inválidos.");
   const value = raw as Record<string, unknown>;
   const method = typeof value.payment_method_id === "string" && /^[\w-]{1,60}$/.test(value.payment_method_id) ? value.payment_method_id : null;
@@ -121,7 +125,7 @@ export async function submitProviderPayment(order: typeof orders.$inferSelect, r
   if (payment.providerId) return reconcileProviderPayment(payment.providerId);
   const result = await request<ProviderPayment>("/v1/payments", {
     transaction_amount: order.totalArs, description: "Pedido QuilGym", external_reference: order.id,
-    notification_url: `${siteUrl()}/api/payments/mercadopago/webhook`,
+    notification_url: notificationUrl,
     payment_method_id: method, token, installments,
     issuer_id: typeof value.issuer_id === "string" && /^\d{1,20}$/.test(value.issuer_id) ? value.issuer_id : undefined,
     payer: { email: order.email, first_name: order.name.split(" ")[0], last_name: order.name.split(" ").slice(1).join(" ") || order.name, identification },

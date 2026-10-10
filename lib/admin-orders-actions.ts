@@ -83,10 +83,14 @@ export async function reactivatePaidOrder(id: string) {
       const variants = reserved.length ? await tx.select().from(productVariants).where(inArray(productVariants.id, reserved.map((line) => line.variantId))).orderBy(asc(productVariants.id)).for("update") : [];
       for (const line of reserved) {
         const variant = variants.find((row) => row.id === line.variantId);
-        if (variant && variant.stock !== null && variant.stock < line.quantity) throw new AdminOrderError(`No hay stock suficiente de ${line.name} para reactivar el pedido. Reembolsá el pago desde Mercado Pago o ajustá el stock.`);
+        if (!variant || variant.stock === null || variant.stock < line.quantity) throw new AdminOrderError(`No hay stock controlado suficiente de ${line.name} para reactivar el pedido. Reembolsá el pago desde Mercado Pago o ajustá el stock.`);
+      }
+      const [coupon] = order.couponCode ? await tx.select().from(coupons).where(eq(coupons.code, order.couponCode)).for("update") : [];
+      if (order.couponCode && (!coupon || (coupon.maxRedemptions !== null && coupon.redemptions >= coupon.maxRedemptions))) {
+        throw new AdminOrderError("El cupón del pedido ya no tiene cupo para reactivarlo. Revisá el caso y gestioná el reembolso.");
       }
       for (const line of reserved) await tx.update(productVariants).set({ stock: sql`${productVariants.stock} - ${line.quantity}` }).where(sql`${productVariants.id} = ${line.variantId} and ${productVariants.stock} is not null`);
-      if (order.couponCode) await tx.update(coupons).set({ redemptions: sql`${coupons.redemptions} + 1` }).where(eq(coupons.code, order.couponCode));
+      if (coupon) await tx.update(coupons).set({ redemptions: sql`${coupons.redemptions} + 1` }).where(eq(coupons.id, coupon.id));
     }
     await tx.update(orders).set({ status: "approved", resourcesReleasedAt: null }).where(eq(orders.id, order.id));
     if (!order.isDemo) await tx.insert(orderEmails).values({ orderId: order.id, event: "approved" }).onConflictDoNothing();

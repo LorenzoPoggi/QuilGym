@@ -3,7 +3,8 @@
  * a .cache/tiendanube/<slug>/<n>.webp (caché local, no versionada).
  * Después correr scripts/build-product-images.mjs. Saltea lo ya descargado.
  *
- *   node scripts/fetch-product-images.mjs
+ *   node scripts/fetch-product-images.mjs           (dry-run, sin red)
+ *   node scripts/fetch-product-images.mjs --apply   (solo con autorización para descargar)
  */
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -12,6 +13,7 @@ import path from "node:path";
 const root = path.resolve(import.meta.dirname, "..");
 const catalog = JSON.parse(await readFile(path.join(root, "data/tiendanube-catalog.json"), "utf8"));
 const headers = { "user-agent": "Mozilla/5.0 (QuilGym catalog migration)" };
+const apply = process.argv.includes("--apply") && !process.argv.includes("--dry-run");
 
 const slugify = (value) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/&#?\w+;/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
@@ -27,6 +29,11 @@ let total = 0;
 for (const product of catalog.products) {
   const slug = product.siteSlug ?? slugify(product.name);
   const dir = path.join(root, ".cache/tiendanube", slug);
+  if (!apply) {
+    console.log(`[dry-run] ${slug}: ${product.sourceUrl}`);
+    total++;
+    continue;
+  }
   await mkdir(dir, { recursive: true });
 
   const urls = await galleryUrls(product.sourceUrl);
@@ -41,4 +48,4 @@ for (const product of catalog.products) {
   console.log(`${slug}: ${urls.length}`);
 }
 
-console.log(`Listo: ${total} imágenes en .cache/tiendanube.`);
+console.log(apply ? `Listo: ${total} imágenes en .cache/tiendanube.` : `[dry-run] ${total} fichas; no se descargó ni modificó ningún archivo.`);

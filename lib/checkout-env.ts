@@ -42,6 +42,19 @@ export function readSiteUrl(env: Env) {
   } catch { return null; }
 }
 
+/** Un Preview protegido necesita el bypass de Vercel para recibir POST de Mercado Pago. */
+export function readPaymentNotificationUrl(env: Env) {
+  const site = readSiteUrl(env);
+  if (!site) return null;
+  const url = new URL("/api/payments/mercadopago/webhook", site);
+  if (value(env, "VERCEL_ENV") === "preview") {
+    const bypass = value(env, "VERCEL_AUTOMATION_BYPASS_SECRET");
+    if (!bypass) return null;
+    url.searchParams.set("x-vercel-protection-bypass", bypass);
+  }
+  return url.href;
+}
+
 export function readBankDetails(env: Env) {
   const account = value(env, "TRANSFER_ACCOUNT");
   const holder = value(env, "TRANSFER_HOLDER");
@@ -151,6 +164,8 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
     issues.push("Las credenciales de Mercado Pago mezclan sandbox (TEST-) y producción (APP_USR-).");
   }
   if (mpPresent.length === mpKeys.length && !site) issues.push("Mercado Pago necesita una URL https para el webhook y la vuelta del pago (VERCEL_URL en Preview; NEXT_PUBLIC_SITE_URL fuera de Preview).");
+  const notificationUrl = readPaymentNotificationUrl(env);
+  if (mpPresent.length === mpKeys.length && site && !notificationUrl) issues.push("Preview necesita VERCEL_AUTOMATION_BYPASS_SECRET para que Mercado Pago pueda notificar un pago sin iniciar sesión en Vercel.");
 
   const bank = readBankDetails(env);
   const bankPresent = ["TRANSFER_ACCOUNT", "TRANSFER_HOLDER", "TRANSFER_TAX_ID"].filter((key) => value(env, key));
@@ -164,7 +179,7 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   return { ...report, config: {
     demo: false, pickup, shippingRates,
     payments: {
-      mercadopago: Boolean(accessToken && publicKey && value(env, "MP_WEBHOOK_SECRET") && site
+      mercadopago: Boolean(accessToken && publicKey && value(env, "MP_WEBHOOK_SECRET") && notificationUrl
         && accessToken.startsWith("TEST-") === publicKey.startsWith("TEST-")),
       transfer: Boolean(bank),
       // Cash is available by default whenever pickup is configured; set the flag

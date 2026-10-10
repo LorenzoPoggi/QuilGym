@@ -34,6 +34,19 @@ test("la selección de la URL se valida en el servidor y no se indexa", async ({
   expect(await fitsViewport(page)).toBe(true);
 });
 
+test("en escritorio las superficies de uno y dos productos no ocupan todo el ancho", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "La tabla mobile se compone en tarjetas verticales.");
+  for (const url of ["/comparar?p=creatina-gold-300-gr", "/comparar?p=creatina-gold-300-gr,proteina-star-2lb"]) {
+    await page.goto(url);
+    const section = await page.locator(".compare-products").boundingBox();
+    const table = await page.locator(".compare-table").boundingBox();
+    const container = await page.locator(".compare-page .container").boundingBox();
+    expect(section && table && container).toBeTruthy();
+    expect(section!.width).toBeLessThan(container!.width - 100);
+    expect(table!.width).toBeLessThan(container!.width - 100);
+  }
+});
+
 test("agregar, cambiar y quitar productos con enlaces", async ({ page }) => {
   await page.goto("/comparar?p=creatina-gold-300-gr&categoria=creatinas");
   await expect(cards(page)).toHaveCount(1);
@@ -71,6 +84,7 @@ test("buscar en el selector filtra sin perder la selección", async ({ page }) =
 });
 
 test("axe WCAG 2.1 A/AA en el comparador con selección", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.route("**/api/reviews", (request) => request.fulfill({ json: { reviews: [] } }));
   for (const url of [selection, "/comparar?p=creatina-gold-300-gr,proteina-star-2lb&cambiar=proteina-star-2lb#elegir-productos", "/comparar?p="]) {
     await page.goto(url);

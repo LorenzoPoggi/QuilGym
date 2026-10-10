@@ -98,7 +98,8 @@ test("asesor conversacional: texto libre, contexto, tarjetas, reintento y reinic
   await page.goto("/asesor");
   if (info.project.name === "mobile") {
     await expect(page.locator(".advisor-sidebar")).toBeHidden();
-    await expect(page.locator(".advisor-privacy__health")).toBeVisible();
+    await expect(page.locator("#advisor-privacy > p")).toContainText("no reemplaza a un profesional de salud");
+    await expect(page.locator("#advisor-privacy summary")).toHaveText("Más info");
   } else {
     await expect(page.locator(".advisor-sidebar")).toBeVisible();
   }

@@ -189,6 +189,28 @@ describe("pago aprobado sobre pedido cancelado (§8.4)", () => {
     await cancelAdminOrder(other.id);
     expect((await reactivatePaidOrder(other.id)).ok).toBe(false);
   });
+  it("no reactiva una reserva de stock que dejó de estar controlada", async () => {
+    const { id, variantId } = await order({ payment: "mercadopago", choice: "mercadopago" });
+    await cancelAdminOrder(id);
+    await database.update(schema.productVariants).set({ stock: null }).where(eq(schema.productVariants.id, variantId));
+    providerPayment({ id: 557, orderId: id, status: "approved" });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await reconcileProviderPayment("557");
+    expect(await reactivatePaidOrder(id)).toMatchObject({ ok: false, error: expect.stringContaining("stock") });
+    expect((await read(id)).status).toBe("cancelled");
+  });
+  it("no excede el cupo de un cupón al reactivar un pago tardío", async () => {
+    const { id, variantId, couponCode } = await order({ coupon: true, payment: "mercadopago", choice: "mercadopago" });
+    await cancelAdminOrder(id);
+    await database.update(schema.coupons).set({ maxRedemptions: 1, redemptions: 1 }).where(eq(schema.coupons.code, couponCode!));
+    providerPayment({ id: 558, orderId: id, status: "approved", amount: 1800 });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await reconcileProviderPayment("558");
+    expect(await reactivatePaidOrder(id)).toMatchObject({ ok: false, error: expect.stringContaining("cupón") });
+    expect((await read(id)).status).toBe("cancelled");
+    expect(await stockOf(variantId)).toBe(3);
+    expect((await database.select().from(schema.coupons).where(eq(schema.coupons.code, couponCode!)))[0].redemptions).toBe(1);
+  });
   it("un reintento aprobado tras un pago rechazado queda registrado como alerta", async () => {
     const { id } = await order({ payment: "mercadopago", choice: "mercadopago" });
     providerPayment({ id: 700, orderId: id, status: "rejected", updated: "2026-10-09T10:00:00.000Z" });
