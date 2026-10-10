@@ -5,14 +5,14 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import { db } from "./db";
 import { users, authSessions, authAccounts, authVerifications, authRateLimits } from "./db/schema";
-import { authBaseUrlOption, authEnabled, googleEnabled, googleUsableOnHost, requestTrustedOrigins, staticTrustedOrigins } from "./auth-origins";
+import { authBaseUrl, authEnabled, googleEnabled, googleUsableOnHost, requestTrustedOrigins } from "./auth-origins";
 import { authEmailConfigured, sendAuthEmail } from "./auth-email";
 
 export function authConfigured() { return authEnabled(process.env); }
 export function googleConfigured() { return googleEnabled(process.env); }
 /** Recuperar contraseña y verificar email solo existen con Resend configurado. */
 export function authEmailAvailable() { return authConfigured() && authEmailConfigured(process.env); }
-/** Google solo en el host registrado para el callback (alias estable de Preview o dominio de producción). */
+/** Google solo en el host registrado para el callback (deployment exacto en Preview). */
 export async function googleAvailableHere() { return googleConfigured() && googleUsableOnHost(process.env, (await headers()).get("host")); }
 
 /** Los envíos corren después de responder: así la respuesta no revela si el email existe. */
@@ -24,8 +24,8 @@ function createAuth() {
   const email = authEmailConfigured(process.env);
   return betterAuth({
     appName: "QuilGym",
-    baseURL: authBaseUrlOption(process.env),
-    trustedOrigins: async (request) => [...staticTrustedOrigins(process.env), ...requestTrustedOrigins(process.env, request)],
+    baseURL: authBaseUrl(process.env) ?? "http://localhost:3000",
+    trustedOrigins: async (request) => requestTrustedOrigins(process.env, request),
     secret: process.env.BETTER_AUTH_SECRET || "quilgym-development-only-auth-secret-never-use-in-production",
     database: drizzleAdapter(db, { provider: "pg", schema: {
       user: users, session: authSessions, account: authAccounts, verification: authVerifications, rateLimit: authRateLimits,

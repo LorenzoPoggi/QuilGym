@@ -25,42 +25,21 @@ export function authBaseUrl(env: Env) {
   if (isDev(env)) return httpOrigin(value(env, "BETTER_AUTH_URL"), false) ?? DEV_FALLBACK;
   return httpOrigin(value(env, "BETTER_AUTH_URL"), true);
 }
-/** Better Auth resuelve el host real de cada request, limitado a los dos hosts de este Preview. */
-export function authBaseUrlOption(env: Env) {
-  const deployment = vercelHost(value(env, "VERCEL_URL"));
-  const branch = vercelHost(value(env, "VERCEL_BRANCH_URL"));
-  if (isPreview(env) && deployment) {
-    return { allowedHosts: [...new Set([deployment, branch].filter((host): host is string => Boolean(host)))], protocol: "https" as const };
-  }
-  return authBaseUrl(env) ?? DEV_FALLBACK;
-}
-export function previewBranchOrigin(env: Env) {
-  if (!isPreview(env)) return null;
-  const branch = vercelHost(value(env, "VERCEL_BRANCH_URL"));
-  return branch ? `https://${branch}` : null;
-}
 export function authSecretValid(env: Env) { return (value(env, "BETTER_AUTH_SECRET")?.length ?? 0) >= 32; }
 /** Desarrollo funciona con el secreto local; Preview y producción fallan cerrados sin secreto ≥ 32 y URL https. */
 export function authEnabled(env: Env) {
   if (isDev(env) && !isPreview(env)) return true;
   return authSecretValid(env) && Boolean(authBaseUrl(env)?.startsWith("https://"));
 }
-/** Google en Preview usa el alias estable de rama como callback registrado. */
+/** Preview usa el host exacto de VERCEL_URL; no requiere BETTER_AUTH_URL. */
 export function googleEnabled(env: Env) {
-  if (!value(env, "GOOGLE_CLIENT_ID") || !value(env, "GOOGLE_CLIENT_SECRET") || !authSecretValid(env) || !authEnabled(env)) return false;
-  return !isPreview(env) || Boolean(previewBranchOrigin(env) && httpOrigin(value(env, "BETTER_AUTH_URL"), true) === previewBranchOrigin(env));
+  return Boolean(value(env, "GOOGLE_CLIENT_ID") && value(env, "GOOGLE_CLIENT_SECRET") && authEnabled(env));
 }
 /** El botón de Google solo sirve si la página se abrió en el mismo host que el callback (las cookies de estado son por host). */
 export function googleUsableOnHost(env: Env, host: string | null | undefined) {
-  const base = previewBranchOrigin(env) ?? authBaseUrl(env);
+  const base = authBaseUrl(env);
   if (!base || !host) return false;
   return new URL(base).host === host.toLowerCase();
-}
-/** Orígenes fijos extra: el alias de rama en Preview. */
-export function staticTrustedOrigins(env: Env) {
-  if (!isPreview(env)) return [];
-  const branch = vercelHost(value(env, "VERCEL_BRANCH_URL"));
-  return branch ? [`https://${branch}`] : [];
 }
 const privateIpv4 = (host: string) => {
   const parts = host.split(".");
