@@ -22,7 +22,7 @@ vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetai
 import { createOrder } from "./order-service";
 import { cancelAdminOrder, confirmOrderPayment, markOrderRefunded, reactivatePaidOrder, updateOrderShipment } from "./admin-orders-actions";
 import { getAdminOrder, listAdminOrders } from "./admin-orders";
-import { reconcileProviderPayment } from "./mercadopago";
+import { reconcileProviderMerchantOrder, reconcileProviderPayment } from "./mercadopago";
 import { allowedShipmentStatuses, parseAdminOrderFilters } from "./admin-orders-types";
 
 const pg = new PGlite();
@@ -157,6 +157,29 @@ describe("envíos", () => {
 });
 
 describe("pago aprobado sobre pedido cancelado (§8.4)", () => {
+  it("concilia una notificación merchant_order solo tras verificar preferencia y pago en Mercado Pago", async () => {
+    const { id } = await order({ payment: "mercadopago", choice: "mercadopago" });
+    await database.update(schema.payments).set({ preferenceId: "pref-test" }).where(eq(schema.payments.orderId, id));
+    const fetchSpy = vi.fn(async (url: string) => ({ ok: true, json: async () =>
+      url.endsWith("/merchant_orders/900")
+        ? { id: 900, external_reference: id, preference_id: "pref-test", payments: [{ id: 901, status: "approved" }] }
+        : { id: 901, external_reference: id, transaction_amount: 2000, currency_id: "ARS", status: "approved", date_last_updated: new Date().toISOString() } }));
+    vi.stubGlobal("fetch", fetchSpy);
+    expect(await reconcileProviderMerchantOrder("900")).toBe(id);
+    expect((await read(id)).status).toBe("approved");
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect((await database.select().from(schema.payments).where(eq(schema.payments.orderId, id)))[0]).toMatchObject({ providerId: "901", status: "approved" });
+  });
+  it("rechaza una orden comercial con preferencia ajena sin consultar el pago", async () => {
+    const { id } = await order({ payment: "mercadopago", choice: "mercadopago" });
+    await database.update(schema.payments).set({ preferenceId: "pref-test" }).where(eq(schema.payments.orderId, id));
+    const fetchSpy = vi.fn(async () => ({ ok: true, json: async () =>
+      ({ id: 900, external_reference: id, preference_id: "otra", payments: [{ id: 901, status: "approved" }] }) }));
+    vi.stubGlobal("fetch", fetchSpy);
+    await expect(reconcileProviderMerchantOrder("900")).rejects.toThrow("preferencia");
+    expect((await read(id)).status).toBe("pending");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
   it("registra el pago del proveedor, lo muestra como alerta y permite reactivar con stock", async () => {
     const { id, variantId } = await order({ payment: "mercadopago", choice: "mercadopago" });
     await cancelAdminOrder(id);

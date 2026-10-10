@@ -9,6 +9,8 @@ import { transitionOrder } from "./order-service";
 
 type ProviderPayment = { id: number; external_reference: string; transaction_amount: number; currency_id: string;
   status: string; date_last_updated: string; transaction_details?: { external_resource_url?: string } };
+type ProviderMerchantOrder = { id: number; external_reference: string; preference_id: string;
+  payments?: { id: number; status: string }[] };
 
 async function request<T>(path: string, body?: object, key?: string): Promise<T> {
   let response: Response;
@@ -163,4 +165,24 @@ export async function reconcileProviderPayment(id: string) {
     }
     return order.id;
   });
+}
+
+/** IPN no trae firma verificable: solo se usa su ID para consultar la API autenticada. */
+export async function reconcileProviderMerchantOrder(id: string) {
+  if (!/^\d{1,30}$/.test(id) || !process.env.MP_ACCESS_TOKEN) throw new Error("Orden comercial inválida.");
+  const merchantOrder = await request<ProviderMerchantOrder>(`/merchant_orders/${id}`);
+  if (String(merchantOrder.id) !== id || !merchantOrder.external_reference || !merchantOrder.preference_id) throw new Error("Respuesta de orden comercial inválida.");
+  const [order] = await db.select().from(orders).where(eq(orders.id, merchantOrder.external_reference));
+  if (!order || order.isDemo || order.paymentMethod !== "mercadopago") return null;
+  const [stored] = await db.select().from(payments).where(eq(payments.orderId, order.id));
+  if (!stored || !stored.preferenceId || stored.preferenceId !== merchantOrder.preference_id) throw new Error("La orden comercial no coincide con la preferencia.");
+  const candidates = Array.isArray(merchantOrder.payments) ? merchantOrder.payments : [];
+  if (candidates.length > 20) throw new Error("Orden comercial con demasiados pagos.");
+  // Un intento aprobado prevalece sobre los rechazados anteriores. El detalle
+  // final siempre se vuelve a consultar en /v1/payments y se valida allí.
+  const selected = candidates.find((item) => item.status === "approved")
+    ?? candidates.find((item) => String(item.id) === stored.providerId)
+    ?? candidates.at(-1);
+  if (!selected || !/^\d{1,30}$/.test(String(selected.id))) return null;
+  return reconcileProviderPayment(String(selected.id));
 }
