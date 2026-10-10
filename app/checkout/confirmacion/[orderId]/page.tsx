@@ -20,11 +20,12 @@ const timeZone = "America/Argentina/Buenos_Aires";
 
 type Step = { number: number; title: string; copy: string; state: "done" | "current" | "todo" };
 
-export default async function ConfirmationPage({ params, searchParams }: { params: Promise<{ orderId: string }>; searchParams: Promise<{ t?: string | string[] }> }) {
+export default async function ConfirmationPage({ params, searchParams }: { params: Promise<{ orderId: string }>; searchParams: Promise<{ t?: string | string[]; payment_id?: string | string[]; collection_id?: string | string[] }> }) {
   const { orderId } = await params;
-  const { t } = await searchParams;
+  const { t, payment_id, collection_id } = await searchParams;
   // Link firmado del email o de la vuelta desde Mercado Pago; sin él, autoriza la cookie del carrito.
   const accessToken = typeof t === "string" ? t : null;
+  const returnedPaymentId = typeof payment_id === "string" ? payment_id : typeof collection_id === "string" ? collection_id : null;
   const details = await orderDetails(orderId, accessToken);
   if (!details) {
     console.warn("[Order confirmation] Pedido no disponible", {
@@ -105,6 +106,6 @@ export default async function ConfirmationPage({ params, searchParams }: { param
       </aside></div>
       {order.isDemo && demoEnabled ? <DemoPayment orderId={order.id} status={order.status}/> : null}
       {!order.isDemo && pending && order.paymentMethod === "mercadopago" && !payment?.providerId && ["debit_card", "credit_card"].includes(order.paymentChoice) ? <MercadoPagoPayment orderId={order.id} paymentChoice={order.paymentChoice as "debit_card" | "credit_card"} accessToken={accessToken}/> : null}
-      {!order.isDemo && pending && order.paymentMethod === "mercadopago" && !payment?.providerId && ["mercadopago", "mercado_credito"].includes(order.paymentChoice) ? <MercadoPagoRedirect orderId={order.id} accessToken={accessToken}/> : null}
+      {!order.isDemo && pending && order.paymentMethod === "mercadopago" && !payment?.providerId && ["mercadopago", "mercado_credito"].includes(order.paymentChoice) ? <MercadoPagoRedirect orderId={order.id} accessToken={accessToken} returnedPaymentId={returnedPaymentId}/> : null}
     </div></main></>;
 }

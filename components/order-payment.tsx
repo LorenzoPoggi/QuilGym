@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { simulatePayment } from "@/lib/checkout-actions";
-import { payOrder, preparePayment } from "@/lib/payment-actions";
+import { payOrder, preparePayment, verifyReturnedPayment } from "@/lib/payment-actions";
 import { canTransition } from "@/lib/order-state";
 import type { OrderStatus } from "@/lib/checkout-types";
 
@@ -83,9 +83,29 @@ export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, onPaid
   </section>;
 }
 
-export function MercadoPagoRedirect({ orderId, accessToken }: { orderId: string; accessToken?: string | null }) {
+export function MercadoPagoRedirect({ orderId, accessToken, returnedPaymentId }: { orderId: string; accessToken?: string | null; returnedPaymentId?: string | null }) {
+  const router = useRouter();
+  const attemptedReturn = useRef<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [verifying, setVerifying] = useState(Boolean(returnedPaymentId));
+  const checkPayment = useCallback(async () => {
+    if (!returnedPaymentId) return;
+    setVerifying(true);
+    setError("");
+    try {
+      const result = await verifyReturnedPayment(orderId, returnedPaymentId, accessToken);
+      if (!result.ok) setError(result.error);
+      router.refresh();
+    } catch {
+      setError("No pudimos verificar este pago todavía. No vuelvas a pagarlo; actualizá el estado más tarde.");
+    } finally { setVerifying(false); }
+  }, [orderId, returnedPaymentId, accessToken, router]);
+  useEffect(() => {
+    if (!returnedPaymentId || attemptedReturn.current === returnedPaymentId) return;
+    attemptedReturn.current = returnedPaymentId;
+    void checkPayment();
+  }, [returnedPaymentId, checkPayment]);
   async function redirect() {
     if (busy) return;
     setBusy(true); setError("");
@@ -95,8 +115,9 @@ export function MercadoPagoRedirect({ orderId, accessToken }: { orderId: string;
       window.location.assign(result.data.initPoint);
     } catch { setBusy(false); setError("No pudimos abrir Mercado Pago. Intentá nuevamente."); }
   }
-  return <section className="checkout-card demo-payment"><h2>Continuá el pago</h2><p>Mercado Pago todavía no confirmó el pago. Podés volver al checkout seguro para completarlo.</p>
-    <button className="button button--dark" type="button" disabled={busy} onClick={() => { void redirect(); }}>{busy ? "Abriendo Mercado Pago…" : "Ir a pagar"}</button>
+  return <section className="checkout-card demo-payment"><h2>{returnedPaymentId ? "Verificamos tu pago" : "Continuá el pago"}</h2><p>{returnedPaymentId ? "Mercado Pago registró una operación. No vuelvas a pagar mientras comprobamos su estado." : "Mercado Pago todavía no confirmó el pago. Podés volver al checkout seguro para completarlo."}</p>
+    {returnedPaymentId ? <button className="button button--outline" type="button" disabled={verifying} onClick={() => { void checkPayment(); }}>{verifying ? "Verificando pago…" : "Verificar pago otra vez"}</button>
+      : <button className="button button--dark" type="button" disabled={busy} onClick={() => { void redirect(); }}>{busy ? "Abriendo Mercado Pago…" : "Ir a pagar"}</button>}
     {error ? <p role="alert" className="form-error">{error}</p> : null}
   </section>;
 }
