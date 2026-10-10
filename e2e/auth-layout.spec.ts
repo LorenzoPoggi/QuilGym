@@ -4,7 +4,8 @@ for (const route of ["/cuenta/ingresar", "/cuenta/registro"]) {
   test(`${route}: layout responsive y footer`, async ({ page }, info) => {
     await page.goto(route);
     await expect(page.locator(".auth-layout")).toBeVisible();
-    await expect(page.locator(".auth-aside")).toBeVisible();
+    if (info.project.name === "mobile") await expect(page.locator(".auth-aside")).toBeHidden();
+    else await expect(page.locator(".auth-aside")).toBeVisible();
     await expect(page.locator(".auth-card")).toBeVisible();
     await expect(page.locator("#footer")).toBeVisible();
     await expect(page.locator(".advisor-floating")).toHaveCount(0);

@@ -32,7 +32,6 @@
 .auth-sent p { margin: 6px 0 4px; color: var(--ink); line-height: 1.55; }
 .auth-card > .button--full { margin-top: 20px; }
 @media (max-width: 768px) {
- .auth-aside > p.auth-aside__title { max-width: 18ch; margin: 10px 0 16px; font-size: 1.8rem; }
  .auth-layout--single { max-width: none; }
 }
 @media (prefers-reduced-motion: reduce) { .auth-spinner { animation: none; border-top-color: rgba(255,255,255,.35); } }
