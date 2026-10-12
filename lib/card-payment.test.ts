@@ -87,7 +87,7 @@ const brick = (token: string, overrides: Record<string, unknown> = {}) => ({ tok
 describe("pago con tarjeta de punta a punta (Mercado Pago simulado)", () => {
   it("prepara el Brick con el monto del servidor, el tipo excluido y el tope de cuotas", async () => {
     const { order } = await cardOrder("debit_card");
-    expect(await cardPaymentSetup(order)).toEqual({ publicKey: "TEST-public", amount: 2000, email: "ana@example.com", paymentType: "debit_card", excludedTypes: ["credit_card"], maxInstallments: 1 });
+    expect(await cardPaymentSetup(order)).toEqual({ publicKey: "TEST-public", amount: 2000, email: "test@testuser.com", testMode: true, paymentType: "debit_card", excludedTypes: ["credit_card"], maxInstallments: 1 });
   });
 
   it("APRO: cobra el monto del pedido (no el del navegador), concilia y deja la factura en cola", async () => {
@@ -97,7 +97,7 @@ describe("pago con tarjeta de punta a punta (Mercado Pago simulado)", () => {
     const sent = posts[0].body;
     expect(sent).toMatchObject({ transaction_amount: 2000, external_reference: order.id, installments: 3, issuer_id: "24", payment_method_id: "master",
       notification_url: "https://quilgym.test/api/payments/mercadopago/webhook", three_d_secure_mode: "optional",
-      payer: { email: "ana@example.com", first_name: "Ana", last_name: "Pérez", identification: { type: "DNI", number: "12345678" } } });
+      payer: { email: "test@testuser.com", first_name: "Ana", last_name: "Pérez", identification: { type: "DNI", number: "12345678" } } });
     expect((sent.additional_info as { items: unknown[] }).items).toHaveLength(1);
     expect(posts[0].key).toMatch(/^card-/);
     expect((await readOrder(order.id)).status).toBe("approved");

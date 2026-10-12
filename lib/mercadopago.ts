@@ -20,6 +20,11 @@ export const isFailedAttempt = (status: string | null | undefined) => status ===
 type ProviderMerchantOrder = { id: number; external_reference: string; preference_id: string;
   payments?: { id: number; status: string }[] };
 
+/** Mercado Pago exige un comprador de prueba para cobros con credenciales TEST. */
+function cardPayerEmail(customerEmail: string) {
+  return process.env.MP_ACCESS_TOKEN?.startsWith("TEST-") ? "test@testuser.com" : customerEmail;
+}
+
 async function request<T>(path: string, body?: object, key?: string): Promise<T> {
   let response: Response;
   try {
@@ -120,7 +125,8 @@ export async function cardPaymentSetup(order: typeof orders.$inferSelect) {
   if (order.isDemo || order.paymentMethod !== "mercadopago" || !isCardChoice(order.paymentChoice) || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
   const [payment] = await db.select().from(payments).where(eq(payments.orderId, order.id)).limit(1);
   if (!payment || (payment.providerId && !isFailedAttempt(payment.status))) throw new Error("Pago no disponible.");
-  return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, amount: order.totalArs, email: order.email,
+  const testMode = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-") === true;
+  return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, amount: order.totalArs, email: cardPayerEmail(order.email), testMode,
     paymentType: order.paymentChoice, excludedTypes: excludedCardTypes(order.paymentChoice), maxInstallments: maxInstallmentsFor(order.paymentChoice, commerce.maxCardInstallments) };
 }
 
@@ -155,7 +161,7 @@ export async function submitProviderPayment(order: typeof orders.$inferSelect, r
     notification_url: notificationUrl,
     payment_method_id: card.paymentMethodId, token: card.token, installments: card.installments,
     ...(card.issuerId ? { issuer_id: card.issuerId } : {}),
-    payer: { email: order.email, ...payer, ...(card.identification ? { identification: card.identification } : {}) },
+    payer: { email: cardPayerEmail(order.email), ...payer, ...(card.identification ? { identification: card.identification } : {}) },
     // Información que Mercado Pago recomienda para su análisis de riesgo. No incluye datos de tarjeta.
     additional_info: {
       items: lines.slice(0, 50).map((line) => ({ id: line.sku, title: line.name.slice(0, 120), quantity: line.quantity, unit_price: line.unitPriceArs })),

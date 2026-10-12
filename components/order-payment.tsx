@@ -51,6 +51,7 @@ export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, lastAt
   const [ready, setReady] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [preparedTestMode, setPreparedTestMode] = useState(false);
   const [message, setMessage] = useState<CardMessage | null>(null);
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [verifying, setVerifying] = useState(false);
@@ -74,6 +75,7 @@ export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, lastAt
         const prepared = await prepareCardPayment(orderId, accessToken);
         if (disposed) return;
         if (!prepared.ok) { setMessage({ kind: "error", text: prepared.error }); setLoading(false); return; }
+        setPreparedTestMode(prepared.data.testMode);
         publicKeyRef.current = prepared.data.publicKey;
         const MercadoPago = (window as unknown as { MercadoPago: MercadoPagoConstructor }).MercadoPago;
         const mp = new MercadoPago(prepared.data.publicKey, { locale: "es-AR" });
@@ -156,6 +158,7 @@ export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, lastAt
   return <section className="checkout-card card-payment" id="pago" aria-labelledby="card-payment-title">
     <h2 id="card-payment-title">{inReview && !challenge ? "Estamos verificando tu pago" : `Pagá con ${label}`}</h2>
     <p>{paymentChoice === "debit_card" ? "Se debita en un solo pago." : "Elegí las cuotas en el formulario: las cuotas con interés las define tu tarjeta y se muestran antes de confirmar."} Los datos de la tarjeta los procesa Mercado Pago; QuilGym no los ve ni los guarda.</p>
+    {preparedTestMode ? <p className="card-payment__test-help" role="note"><strong>Pago de prueba:</strong> para aprobarlo escribí <strong>APRO</strong> en mayúsculas como titular y usá DNI 12345678.</p> : null}
     {lastAttemptFailed && !message ? <p className="card-payment__notice" role="status">Tu último intento de pago fue rechazado y no se cobró nada. Podés reintentar con otra tarjeta.</p> : null}
     {message ? <p className={`card-payment__message is-${message.kind}`} role={message.kind === "error" ? "alert" : "status"}>{message.text}</p> : null}
     <Script src="https://sdk.mercadopago.com/js/v2" strategy="afterInteractive" onReady={() => setReady(true)} onError={() => { setLoading(false); setMessage({ kind: "error", text: "No pudimos cargar Mercado Pago. Revisá tu conexión y recargá la página." }); }}/>

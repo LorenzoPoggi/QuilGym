@@ -334,6 +334,8 @@
 .card-payment > p { margin: 0 0 14px; color: var(--muted); font-size: .88rem; line-height: 1.5; }
 .card-payment > .card-payment__notice, .card-payment > .card-payment__message { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; font-size: .88rem; line-height: 1.45; }
 .card-payment > .card-payment__notice, .card-payment > .card-payment__message.is-pending { color: #5c3d00; background: #fff8e8; border: 1px solid #e7c98a; }
+.card-payment > .card-payment__test-help { margin-bottom: 18px; padding: 12px 14px; color: #334155; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; }
+.card-payment__test-help strong { color: var(--ink); }
 .card-payment > .card-payment__message.is-error { color: #7d1f1a; background: #fff1f0; border: 1px solid #e0a6a3; }
 .card-payment > .card-payment__message.is-success { color: #0f5132; background: #edf7f1; border: 1px solid #a6d3b8; }
 .card-payment > .card-payment__loading { margin: 0; color: var(--muted); font-size: .85rem; }
