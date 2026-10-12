@@ -27,10 +27,12 @@ function cardPayerEmail(customerEmail: string) {
 
 async function request<T>(path: string, body?: object, key?: string): Promise<T> {
   let response: Response;
+  const accessToken = process.env.MP_ACCESS_TOKEN?.trim();
+  if (!accessToken) throw new MercadoPagoApiError(401);
   try {
     response = await fetch(`https://api.mercadopago.com${path}`, {
       method: body ? "POST" : "GET",
-      headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`, "Content-Type": "application/json", ...(key ? { "X-Idempotency-Key": key } : {}) },
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", ...(key ? { "X-Idempotency-Key": key } : {}) },
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store", signal: AbortSignal.timeout(12_000),
     });
