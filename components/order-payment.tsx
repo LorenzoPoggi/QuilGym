@@ -93,8 +93,8 @@ export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, lastAt
               if (!result.ok) { setMessage({ kind: "error", text: result.error }); throw new Error("Payment not accepted"); }
               if (result.outcome === "approved") {
                 setMessage({ kind: "success", text: result.message });
-                await onPaidRef.current?.();
-                router.refresh();
+                if (onPaidRef.current) await onPaidRef.current();
+                else router.refresh();
                 return;
               }
               if (result.outcome === "pending" && result.challenge) {

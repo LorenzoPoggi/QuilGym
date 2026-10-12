@@ -339,6 +339,16 @@
 .card-payment > .card-payment__loading { margin: 0; color: var(--muted); font-size: .85rem; }
 .card-payment__challenge { display: grid; gap: 14px; }
 .card-payment__challenge .button { justify-self: start; }
+.card-payment-page { min-height: calc(100dvh - 80px); padding: clamp(28px, 5vw, 64px) 0 80px; background: #f3f4f3; }
+.card-payment-page > .container { max-width: 980px; }
+.card-payment-page__heading { margin-bottom: 24px; }
+.card-payment-page__heading .eyebrow { margin: 0 0 8px; color: #586065; font-size: .72rem; font-weight: 800; letter-spacing: .08em; }
+.card-payment-page__heading h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -.035em; }
+.card-payment-page__heading > p:last-child { margin: 0; color: var(--muted); line-height: 1.5; }
+.card-payment-page .card-payment { margin-bottom: 16px; }
+.card-payment-page .card-payment[role="status"] { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.card-payment-page .card-payment[role="status"] h2, .card-payment-page .card-payment[role="status"] p { flex-basis: 100%; }
+.card-payment-page__back { display: inline-block; min-height: 44px; padding: 12px 0; color: var(--ink); font-size: .9rem; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .checkout-tax-id { margin: 18px 0 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
 .checkout-tax-id legend { padding: 0 6px; font-size: .9rem; font-weight: 700; }
 .checkout-tax-id > p { margin: 0 0 12px; color: var(--muted); font-size: .82rem; }

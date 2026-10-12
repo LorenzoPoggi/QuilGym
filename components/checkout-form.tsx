@@ -255,9 +255,9 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
         try { sessionStorage.removeItem(checkoutDraftKey); } catch { /* Storage opcional. */ }
         try { sessionStorage.removeItem("qg_checkout_key"); } catch { /* Storage opcional. */ }
         await refreshCart();
-        // Tarjeta: el formulario seguro vive en la página del pedido (sobrevive a recargas y permite reintentar).
+        // Tarjeta: el formulario seguro tiene su propia pantalla; el pedido queda para seguimiento.
         if (!config.demo && ["debit_card", "credit_card"].includes(parsed.value.paymentChoice)) {
-          router.push(`/checkout/confirmacion/${result.orderId}#pago`);
+          router.push(`/checkout/pago/${result.orderId}`);
           return;
         }
         if (!config.demo && ["mercadopago", "mercado_credito"].includes(parsed.value.paymentChoice)) {

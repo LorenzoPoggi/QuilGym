@@ -8,7 +8,7 @@ import { getCheckoutConfig, orderAccessSecret } from "@/lib/checkout-config";
 import { getAllProducts } from "@/lib/catalog";
 import { formatArs } from "@/lib/commerce";
 import { verifyOrderAccess } from "@/lib/order-access";
-import { DemoPayment, MercadoPagoPayment, MercadoPagoRedirect, RefreshOrder } from "@/components/order-payment";
+import { DemoPayment, MercadoPagoRedirect, RefreshOrder } from "@/components/order-payment";
 import { ProductImage } from "@/components/product-image";
 import { Logo } from "@/components/logo";
 
@@ -80,10 +80,9 @@ export default async function ConfirmationPage({ params, searchParams }: { param
     <main className="confirmation-page"><div className="container">
       {order.isDemo ? <div className="checkout-demo-banner"><strong>Pedido de prueba</strong><span>No representa una compra real. No se cobró dinero ni se envió ningún email.</span></div> : null}
       <section className={`confirmation-hero is-${order.status}`}><span aria-hidden="true"><StatusIcon strokeWidth={2}/></span><div><p className="eyebrow">{cashPickup && pending ? "En preparación" : orderStatusLabels[order.status]}</p><h1>{cashPickup && pending ? "Recibimos tu pedido" : titles[order.status]}</h1><p>{order.name}, podés consultar los detalles y el estado desde esta página.</p></div><div><small>{order.status === "approved" ? "NÚMERO DE COMPRA" : "NÚMERO DE PEDIDO"}</small><strong className="order-id">{code}</strong><small className="order-uuid" title="Identificador completo del pedido">{order.id}</small></div></section>
-      {/* Misma posición con pago en proceso: el refresco cada 15 s no desmonta un desafío 3DS abierto. */}
-      {cardChoice && (canPay || paymentInReview) ? <MercadoPagoPayment orderId={order.id} paymentChoice={cardChoice} accessToken={accessToken} lastAttemptFailed={lastAttemptFailed} inReview={paymentInReview}/> : null}
+      {cardChoice && canPay ? <section className="checkout-card demo-payment" id="pago"><h2>{lastAttemptFailed ? "Reintentá el pago con tarjeta" : "Completá el pago con tarjeta"}</h2><p>{lastAttemptFailed ? "Tu último intento fue rechazado y no se cobró nada. Podés probar con otra tarjeta." : "Tu pedido ya está registrado. Completá el pago en el formulario seguro de Mercado Pago."}</p><Link className="button button--dark" href={`/checkout/pago/${order.id}${accessToken ? `?t=${encodeURIComponent(accessToken)}` : ""}`}>{lastAttemptFailed ? "Reintentar pago" : "Ir a pagar"}</Link></section> : null}
       {canPay && !cardChoice && ["mercadopago", "mercado_credito"].includes(order.paymentChoice) ? <MercadoPagoRedirect orderId={order.id} accessToken={accessToken} returnedPaymentId={returnedPaymentId && returnedPaymentId !== payment?.providerId ? returnedPaymentId : null} lastAttemptFailed={lastAttemptFailed}/> : null}
-      {paymentInReview && !cardChoice ? <section className="checkout-card card-payment" role="status"><h2>Estamos verificando tu pago</h2><p>Mercado Pago está procesando la operación. Te avisamos por email cuando se acredite. No vuelvas a pagar este pedido.</p></section> : null}
+      {paymentInReview ? <section className="checkout-card card-payment" role="status"><h2>Estamos verificando tu pago</h2><p>Mercado Pago está procesando la operación. Te avisamos por email cuando se acredite. No vuelvas a pagar este pedido.</p></section> : null}
       <div className="confirmation-actions"><RefreshOrder pending={pending}/><Link className="button button--outline" href="/productos">Seguir comprando</Link><span>{pending ? "Pedido realizado" : "Compra realizada"} el {createdAt}</span></div>
       <section className="confirmation-cards">
         <article><header><span aria-hidden="true">{pickup ? <Store size={18}/> : <Truck size={18}/>}</span><h2>{pickup ? "Retiro" : "Entrega"}</h2></header>
