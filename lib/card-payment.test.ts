@@ -21,7 +21,7 @@ vi.mock("./auth", () => ({ currentUser: vi.fn() }));
 vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null, orderAccessSecret: () => null, orderPageUrl: () => null,
   siteUrl: () => "https://quilgym.test", paymentNotificationUrl: () => "https://quilgym.test/api/payments/mercadopago/webhook", cardThreeDsMode: () => "optional" }));
 import { createOrder } from "./order-service";
-import { cardPaymentSetup, CardPaymentError, submitProviderPayment } from "./mercadopago";
+import { cardPaymentSetup, CardPaymentError, checkoutUrl, submitProviderPayment } from "./mercadopago";
 
 const pg = new PGlite();
 const database = drizzle(pg, { schema });
@@ -88,7 +88,7 @@ const brick = (token: string, overrides: Record<string, unknown> = {}) => ({ tok
 describe("pago con tarjeta de punta a punta (Mercado Pago simulado)", () => {
   it("prepara el Brick con el monto del servidor, el tipo excluido y el tope de cuotas", async () => {
     const { order } = await cardOrder("debit_card");
-    expect(await cardPaymentSetup(order)).toEqual({ publicKey: "TEST-public", amount: 2000, email: "test@testuser.com", testMode: true, paymentType: "debit_card", excludedTypes: ["credit_card"], maxInstallments: 1 });
+    expect(await cardPaymentSetup(order)).toEqual({ publicKey: "TEST-public", amount: 2000, email: "ana@example.com", testMode: true, paymentType: "debit_card", excludedTypes: ["credit_card"], maxInstallments: 1 });
   });
 
   it("permite probar tarjetas con credenciales APP_USR cuando Preview declara modo de prueba", async () => {
@@ -97,9 +97,9 @@ describe("pago con tarjeta de punta a punta (Mercado Pago simulado)", () => {
     process.env.MP_TEST_MODE = "true";
     try {
       const { order } = await cardOrder();
-      expect(await cardPaymentSetup(order)).toMatchObject({ publicKey: "APP_USR-test-public", email: "test@testuser.com", testMode: true });
+      expect(await cardPaymentSetup(order)).toMatchObject({ publicKey: "APP_USR-test-public", email: "ana@example.com", testMode: true });
       await submitProviderPayment(order, brick("token-apro-appusr"));
-      expect(posts[0].body).toMatchObject({ payer: { email: "test@testuser.com" } });
+      expect(posts[0].body).toMatchObject({ payer: { email: "ana@example.com" } });
     } finally {
       process.env.MP_ACCESS_TOKEN = "TEST-token";
       process.env.NEXT_PUBLIC_MP_PUBLIC_KEY = "TEST-public";
@@ -114,7 +114,7 @@ describe("pago con tarjeta de punta a punta (Mercado Pago simulado)", () => {
     const sent = posts[0].body;
     expect(sent).toMatchObject({ transaction_amount: 2000, external_reference: order.id, installments: 3, issuer_id: "24", payment_method_id: "master",
       notification_url: "https://quilgym.test/api/payments/mercadopago/webhook", three_d_secure_mode: "optional",
-      payer: { email: "test@testuser.com", first_name: "Ana", last_name: "Pérez", identification: { type: "DNI", number: "12345678" } } });
+      payer: { email: "ana@example.com", first_name: "Ana", last_name: "Pérez", identification: { type: "DNI", number: "12345678" } } });
     expect((sent.additional_info as { items: unknown[] }).items).toHaveLength(1);
     expect(posts[0].key).toMatch(/^card-/);
     expect((await readOrder(order.id)).status).toBe("approved");
@@ -182,5 +182,14 @@ describe("pago con tarjeta de punta a punta (Mercado Pago simulado)", () => {
     nextResult = { status: "approved", status_detail: "accredited", amount: 1 };
     await expect(submitProviderPayment(order, brick("token-monto-001"))).rejects.toThrow("no coincide");
     expect((await readOrder(order.id)).status).toBe("pending");
+  });
+});
+
+describe("checkoutUrl", () => {
+  const preference = { init_point: "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1", sandbox_init_point: "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=1" };
+  it("usa el sandbox con credenciales TEST- y el checkout normal con APP_USR-", () => {
+    expect(checkoutUrl(preference, "TEST-123")).toBe(preference.sandbox_init_point);
+    expect(checkoutUrl(preference, "APP_USR-123")).toBe(preference.init_point);
+    expect(checkoutUrl({ init_point: preference.init_point }, "TEST-123")).toBe(preference.init_point);
   });
 });

@@ -21,10 +21,6 @@ export const isFailedAttempt = (status: string | null | undefined) => status ===
 type ProviderMerchantOrder = { id: number; external_reference: string; preference_id: string;
   payments?: { id: number; status: string }[] };
 
-/** El comprador de prueba debe diferir del vendedor; no inferimos el modo solo por APP_USR/TEST. */
-function cardPayerEmail(customerEmail: string) {
-  return readMercadoPagoTestMode(process.env) ? "test@testuser.com" : customerEmail;
-}
 
 async function request<T>(path: string, body?: object, key?: string): Promise<T> {
   let response: Response;
@@ -60,6 +56,11 @@ async function request<T>(path: string, body?: object, key?: string): Promise<T>
   return response.json() as Promise<T>;
 }
 
+/** Con credenciales de prueba (`TEST-`) Checkout Pro se abre en el sandbox de Mercado Pago. */
+export function checkoutUrl(preference: { init_point: string; sandbox_init_point?: string }, accessToken = process.env.MP_ACCESS_TOKEN) {
+  return accessToken?.trim().startsWith("TEST-") && preference.sandbox_init_point ? preference.sandbox_init_point : preference.init_point;
+}
+
 export function safePaymentUrl(raw: string | undefined) {
   if (!raw) return null;
   try {
@@ -86,7 +87,7 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
         stage = "preference_create";
         // Incluye el link firmado: la vuelta desde la app de Mercado Pago puede abrir otro navegador sin la cookie.
         const returnUrl = orderPageUrl(order.id) ?? `${siteUrl()}/checkout/confirmacion/${order.id}`;
-        const preference = await request<{ id: string; init_point: string }>("/checkout/preferences", {
+        const preference = await request<{ id: string; init_point: string; sandbox_init_point?: string }>("/checkout/preferences", {
           items: [{ id: order.id, title: "Pedido QuilGym", quantity: 1, unit_price: order.totalArs, currency_id: "ARS" }],
           payer: { email: order.email }, external_reference: order.id,
           ...(order.paymentChoice === "mercado_credito" ? { purpose: "onboarding_credits" } : {}),
@@ -96,13 +97,13 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
           auto_return: "approved",
         }, payment.id);
         preferenceId = preference.id;
-        initPoint = preference.init_point;
+        initPoint = checkoutUrl(preference);
         stage = "preference_save";
         await tx.update(payments).set({ preferenceId }).where(eq(payments.id, payment.id));
       } else {
         stage = "preference_load";
-        const preference = await request<{ init_point: string }>(`/checkout/preferences/${encodeURIComponent(preferenceId)}`);
-        initPoint = preference.init_point;
+        const preference = await request<{ init_point: string; sandbox_init_point?: string }>(`/checkout/preferences/${encodeURIComponent(preferenceId)}`);
+        initPoint = checkoutUrl(preference);
       }
       stage = "payment_url";
       const safeInitPoint = safePaymentUrl(initPoint);
@@ -130,7 +131,7 @@ export async function cardPaymentSetup(order: typeof orders.$inferSelect) {
   const [payment] = await db.select().from(payments).where(eq(payments.orderId, order.id)).limit(1);
   if (!payment || (payment.providerId && !isFailedAttempt(payment.status))) throw new Error("Pago no disponible.");
   const testMode = readMercadoPagoTestMode(process.env);
-  return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, amount: order.totalArs, email: cardPayerEmail(order.email), testMode,
+  return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, amount: order.totalArs, email: order.email, testMode,
     paymentType: order.paymentChoice, excludedTypes: excludedCardTypes(order.paymentChoice), maxInstallments: maxInstallmentsFor(order.paymentChoice, commerce.maxCardInstallments) };
 }
 
@@ -165,7 +166,7 @@ export async function submitProviderPayment(order: typeof orders.$inferSelect, r
     notification_url: notificationUrl,
     payment_method_id: card.paymentMethodId, token: card.token, installments: card.installments,
     ...(card.issuerId ? { issuer_id: card.issuerId } : {}),
-    payer: { email: cardPayerEmail(order.email), ...payer, ...(card.identification ? { identification: card.identification } : {}) },
+    payer: { email: order.email, ...payer, ...(card.identification ? { identification: card.identification } : {}) },
     // Información que Mercado Pago recomienda para su análisis de riesgo. No incluye datos de tarjeta.
     additional_info: {
       items: lines.slice(0, 50).map((line) => ({ id: line.sku, title: line.name.slice(0, 120), quantity: line.quantity, unit_price: line.unitPriceArs })),
