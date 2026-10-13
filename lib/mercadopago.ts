@@ -20,11 +20,18 @@ type ProviderPayment = { id: number; external_reference: string; transaction_amo
 export const isFailedAttempt = (status: string | null | undefined) => status === "rejected" || status === "cancelled";
 type ProviderMerchantOrder = { id: number; external_reference: string; preference_id: string;
   payments?: { id: number; status: string }[] };
+type PaymentChannel = "card" | "checkout_pro";
 
+function accessTokenFor(channel: PaymentChannel) {
+  // En Production ambos medios usan la aplicación del propietario aunque se haya copiado
+  // por error una variable adicional desde Preview.
+  return (channel === "checkout_pro" && process.env.VERCEL_ENV !== "production" ? process.env.MP_CHECKOUT_PRO_ACCESS_TOKEN : undefined)?.trim()
+    || process.env.MP_ACCESS_TOKEN?.trim();
+}
 
-async function request<T>(path: string, body?: object, key?: string): Promise<T> {
+async function request<T>(path: string, body?: object, key?: string, channel: PaymentChannel = "card", quietAuthMiss = false): Promise<T> {
   let response: Response;
-  const accessToken = process.env.MP_ACCESS_TOKEN?.trim();
+  const accessToken = accessTokenFor(channel);
   if (!accessToken) throw new MercadoPagoApiError(401);
   try {
     response = await fetch(`https://api.mercadopago.com${path}`, {
@@ -47,16 +54,30 @@ async function request<T>(path: string, body?: object, key?: string): Promise<T>
       })
       : undefined;
     const message = typeof payload.message === "string" ? payload.message.slice(0, 160) : undefined;
-    console.error("[Mercado Pago] La API rechazó la solicitud", {
-      method: body ? "POST" : "GET", path, status: response.status,
-      error: payload.error, message, causes,
-    });
+    if (!quietAuthMiss || ![401, 403, 404].includes(response.status)) {
+      console.error("[Mercado Pago] La API rechazó la solicitud", {
+        method: body ? "POST" : "GET", path, status: response.status,
+        error: payload.error, message, causes,
+      });
+    }
     throw new MercadoPagoApiError(response.status, (causes ?? []).map((cause) => cause.code as string | number).filter((code) => code !== undefined), message);
   }
   return response.json() as Promise<T>;
 }
 
-/** Con credenciales de prueba (`TEST-`) Checkout Pro se abre en el sandbox de Mercado Pago. */
+/** Los pedidos anteriores pueden pertenecer al otro juego de credenciales de prueba. */
+async function requestWithFallback<T>(path: string, preferred: PaymentChannel) {
+  const other: PaymentChannel = preferred === "card" ? "checkout_pro" : "card";
+  if (accessTokenFor(preferred) === accessTokenFor(other)) return request<T>(path, undefined, undefined, preferred);
+  try {
+    return await request<T>(path, undefined, undefined, preferred, true);
+  } catch (error) {
+    if (!(error instanceof MercadoPagoApiError) || ![401, 403, 404].includes(error.status)) throw error;
+    return request<T>(path, undefined, undefined, other);
+  }
+}
+
+/** El vendedor de prueba de Checkout Pro usa init_point; TEST- mantiene el sandbox solo para compatibilidad. */
 export function checkoutUrl(preference: { init_point: string; sandbox_init_point?: string }, accessToken = process.env.MP_ACCESS_TOKEN) {
   return accessToken?.trim().startsWith("TEST-") && preference.sandbox_init_point ? preference.sandbox_init_point : preference.init_point;
 }
@@ -74,6 +95,29 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
   let stage = "eligibility";
   try {
     if (order.isDemo || order.paymentMethod !== "mercadopago" || isCardChoice(order.paymentChoice) || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
+    // Las credenciales TEST- de Card Brick identifican a la cuenta real como vendedora.
+    // El Checkout Pro de prueba necesita la credencial de su vendedor de prueba.
+    if (accessTokenFor("card")?.startsWith("TEST-") && !process.env.MP_CHECKOUT_PRO_ACCESS_TOKEN?.trim()) {
+      throw new Error("Falta MP_CHECKOUT_PRO_ACCESS_TOKEN para probar Checkout Pro con tarjetas TEST-.");
+    }
+    if (accessTokenFor("card")?.startsWith("TEST-") && accessTokenFor("checkout_pro")?.startsWith("TEST-")) {
+      throw new Error("Checkout Pro necesita la credencial del vendedor de prueba, no la TEST- de tarjetas.");
+    }
+    const testingCheckoutPro = accessTokenFor("card")?.startsWith("TEST-") === true;
+    if (testingCheckoutPro) {
+      const expectedSellerId = process.env.MP_CHECKOUT_PRO_TEST_SELLER_ID?.trim();
+      if (!expectedSellerId || !/^\d{1,30}$/.test(expectedSellerId)) {
+        throw new Error("Falta el ID del vendedor de prueba de Checkout Pro.");
+      }
+      const seller = await request<{ id: number }>("/users/me", undefined, undefined, "checkout_pro");
+      if (String(seller.id) !== expectedSellerId) {
+        throw new Error("La credencial de Checkout Pro no pertenece al vendedor de prueba configurado.");
+      }
+      const cardCredentialOwner = await request<{ id: number }>("/users/me", undefined, undefined, "card");
+      if (seller.id === cardCredentialOwner.id) {
+        throw new Error("Checkout Pro no puede usar la misma cuenta vendedora real que las tarjetas de prueba.");
+      }
+    }
     const notificationUrl = paymentNotificationUrl();
     if (!notificationUrl) throw new Error("El webhook de Mercado Pago no está disponible en este entorno.");
     stage = "payment_record";
@@ -89,21 +133,23 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
         const returnUrl = orderPageUrl(order.id) ?? `${siteUrl()}/checkout/confirmacion/${order.id}`;
         const preference = await request<{ id: string; init_point: string; sandbox_init_point?: string }>("/checkout/preferences", {
           items: [{ id: order.id, title: "Pedido QuilGym", quantity: 1, unit_price: order.totalArs, currency_id: "ARS" }],
-          payer: { email: order.email }, external_reference: order.id,
+          // En la prueba el comprador inicia sesión con su cuenta de prueba de MP,
+          // que puede ser distinta del email de su pedido en QuilGym.
+          ...(testingCheckoutPro ? {} : { payer: { email: order.email } }), external_reference: order.id,
           ...(order.paymentChoice === "mercado_credito" ? { purpose: "onboarding_credits" } : {}),
           ...(order.paymentChoice === "mercadopago" ? { payment_methods: { excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }, { id: "prepaid_card" }, { id: "ticket" }] } } : {}),
           notification_url: notificationUrl,
           back_urls: { success: returnUrl, pending: returnUrl, failure: returnUrl },
           auto_return: "approved",
-        }, payment.id);
+        }, payment.id, "checkout_pro");
         preferenceId = preference.id;
-        initPoint = checkoutUrl(preference);
+        initPoint = checkoutUrl(preference, accessTokenFor("checkout_pro"));
         stage = "preference_save";
         await tx.update(payments).set({ preferenceId }).where(eq(payments.id, payment.id));
       } else {
         stage = "preference_load";
-        const preference = await request<{ init_point: string; sandbox_init_point?: string }>(`/checkout/preferences/${encodeURIComponent(preferenceId)}`);
-        initPoint = checkoutUrl(preference);
+        const preference = await request<{ init_point: string; sandbox_init_point?: string }>(`/checkout/preferences/${encodeURIComponent(preferenceId)}`, undefined, undefined, "checkout_pro");
+        initPoint = checkoutUrl(preference, accessTokenFor("checkout_pro"));
       }
       stage = "payment_url";
       const safeInitPoint = safePaymentUrl(initPoint);
@@ -112,7 +158,12 @@ export async function paymentSetup(order: typeof orders.$inferSelect) {
     });
   } catch (error) {
     const value = error && typeof error === "object" ? error as { name?: unknown; code?: unknown; status?: unknown } : {};
-    const knownReason = error instanceof Error && ["Pago no disponible.", "Mercado Pago no devolvió un enlace de pago seguro.", "El webhook de Mercado Pago no está disponible en este entorno."].includes(error.message)
+    const knownReason = error instanceof Error && ["Pago no disponible.", "Mercado Pago no devolvió un enlace de pago seguro.", "El webhook de Mercado Pago no está disponible en este entorno.",
+      "Falta MP_CHECKOUT_PRO_ACCESS_TOKEN para probar Checkout Pro con tarjetas TEST-.",
+      "Checkout Pro necesita la credencial del vendedor de prueba, no la TEST- de tarjetas.",
+      "Falta el ID del vendedor de prueba de Checkout Pro.",
+      "La credencial de Checkout Pro no pertenece al vendedor de prueba configurado.",
+      "Checkout Pro no puede usar la misma cuenta vendedora real que las tarjetas de prueba."].includes(error.message)
       ? error.message : undefined;
     console.error("[Mercado Pago] No se pudo configurar la preferencia", {
       stage,
@@ -153,7 +204,7 @@ export async function submitProviderPayment(order: typeof orders.$inferSelect, r
   if (!payment) throw new CardPaymentError("Pedido no disponible.");
   if (payment.providerId && !isFailedAttempt(payment.status)) {
     // Ya hay un pago en proceso o aprobado: no se cobra otra vez; se informa el estado real.
-    await reconcileProviderPayment(payment.providerId);
+    await reconcileProviderPayment(payment.providerId, "card");
     const [current] = await db.select().from(payments).where(eq(payments.orderId, order.id));
     return { ...cardStatusMessage(current?.status === "approved" ? "approved" : "in_process", null), paymentId: payment.providerId, challenge: null };
   }
@@ -176,16 +227,23 @@ export async function submitProviderPayment(order: typeof orders.$inferSelect, r
   }, cardIdempotencyKey(payment.id, card.token));
   if (!result || !/^\d{1,30}$/.test(String(result.id))) throw new Error("Respuesta de pago inválida.");
   // La conciliación bloquea la orden y verifica ID/importe antes de guardar el vínculo.
-  await reconcileProviderPayment(String(result.id));
+  await reconcileProviderPayment(String(result.id), "card");
   const info = result.three_ds_info;
   const challenge = result.status_detail === "pending_challenge" && info?.creq && info.external_resource_url && /^https:\/\//.test(info.external_resource_url)
     ? { externalResourceUrl: info.external_resource_url, creq: info.creq } : null;
   return { ...cardStatusMessage(result.status, result.status_detail), paymentId: String(result.id), challenge };
 }
 
-export async function reconcileProviderPayment(id: string) {
+export async function reconcileProviderPayment(id: string, channel?: PaymentChannel) {
   if (!/^\d{1,30}$/.test(id) || !process.env.MP_ACCESS_TOKEN) throw new Error("Pago inválido.");
-  const payment = await request<ProviderPayment>(`/v1/payments/${id}`);
+  // Los webhooks solo incluyen el ID: un pago ya conocido conserva el canal del pedido.
+  // Para uno nuevo se prueba primero Checkout Pro y luego tarjetas si la API no reconoce ese ID.
+  const [known] = channel ? [] : await db.select({ paymentChoice: orders.paymentChoice }).from(payments)
+    .innerJoin(orders, eq(orders.id, payments.orderId)).where(eq(payments.providerId, id)).limit(1);
+  const preferred = channel ?? (known && isCardChoice(known.paymentChoice) ? "card" : "checkout_pro");
+  const payment = preferred === "card"
+    ? await request<ProviderPayment>(`/v1/payments/${id}`)
+    : await requestWithFallback<ProviderPayment>(`/v1/payments/${id}`, "checkout_pro");
   const updated = new Date(payment.date_last_updated);
   if (String(payment.id) !== id || !Number.isFinite(updated.getTime())) throw new Error("Respuesta de pago inválida.");
   return withOrderTransaction(async (tx) => {
@@ -226,7 +284,7 @@ export async function reconcileProviderPayment(id: string) {
 /** IPN no trae firma verificable: solo se usa su ID para consultar la API autenticada. */
 export async function reconcileProviderMerchantOrder(id: string) {
   if (!/^\d{1,30}$/.test(id) || !process.env.MP_ACCESS_TOKEN) throw new Error("Orden comercial inválida.");
-  const merchantOrder = await request<ProviderMerchantOrder>(`/merchant_orders/${id}`);
+  const merchantOrder = await requestWithFallback<ProviderMerchantOrder>(`/merchant_orders/${id}`, "checkout_pro");
   if (String(merchantOrder.id) !== id || !merchantOrder.external_reference || !merchantOrder.preference_id) throw new Error("Respuesta de orden comercial inválida.");
   const [order] = await db.select().from(orders).where(eq(orders.id, merchantOrder.external_reference));
   if (!order || order.isDemo || order.paymentMethod !== "mercadopago") return null;
@@ -240,5 +298,5 @@ export async function reconcileProviderMerchantOrder(id: string) {
     ?? candidates.find((item) => String(item.id) === stored.providerId)
     ?? candidates.at(-1);
   if (!selected || !/^\d{1,30}$/.test(String(selected.id))) return null;
-  return reconcileProviderPayment(String(selected.id));
+  return reconcileProviderPayment(String(selected.id), "checkout_pro");
 }

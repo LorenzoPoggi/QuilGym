@@ -11,6 +11,7 @@ import { POST } from "./route";
 
 beforeEach(() => {
   vi.stubEnv("MP_WEBHOOK_SECRET", "test-secret");
+  vi.stubEnv("MP_CHECKOUT_PRO_WEBHOOK_SECRET", "");
   vi.stubEnv("MP_ACCESS_TOKEN", "TEST-token");
   mocks.verify.mockReset().mockReturnValue(false);
   mocks.limit.mockReset().mockResolvedValue(true);
@@ -40,5 +41,15 @@ describe("receptor Mercado Pago", () => {
     expect(response.status).toBe(200);
     expect(mocks.payment).toHaveBeenCalledWith("901");
     expect(mocks.limit).not.toHaveBeenCalled();
+  });
+  it("acepta la firma de Checkout Pro cuando pertenece a otra aplicación", async () => {
+    vi.stubEnv("MP_CHECKOUT_PRO_WEBHOOK_SECRET", "pro-secret");
+    mocks.verify.mockImplementation((_signature, _requestId, _id, secret) => secret === "pro-secret");
+    mocks.payment.mockResolvedValue("order-id");
+    const response = await POST(new Request("https://example.test/webhook?data.id=902&type=payment", { method: "POST" }));
+    expect(response.status).toBe(200);
+    expect(mocks.payment).toHaveBeenCalledWith("902");
+    expect(mocks.verify).toHaveBeenCalledWith(null, null, "902", "test-secret");
+    expect(mocks.verify).toHaveBeenCalledWith(null, null, "902", "pro-secret");
   });
 });

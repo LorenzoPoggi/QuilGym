@@ -12,7 +12,11 @@ export async function POST(request: Request) {
   const params = new URL(request.url).searchParams;
   const signedId = params.get("data.id") ?? "";
   const topic = params.get("topic") ?? params.get("type");
-  const signed = verifyMercadoPagoSignature(request.headers.get("x-signature"), request.headers.get("x-request-id"), signedId, secret);
+  const signature = request.headers.get("x-signature");
+  const requestId = request.headers.get("x-request-id");
+  const extraSecret = process.env.VERCEL_ENV === "production" ? undefined : process.env.MP_CHECKOUT_PRO_WEBHOOK_SECRET;
+  const signed = [secret, extraSecret].filter((value): value is string => Boolean(value))
+    .some((value) => verifyMercadoPagoSignature(signature, requestId, signedId, value));
   const legacyMerchantOrder = !signed && topic === "merchant_order" && /^\d{1,30}$/.test(params.get("id") ?? "");
   if (!signed) {
     try {

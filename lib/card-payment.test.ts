@@ -21,7 +21,7 @@ vi.mock("./auth", () => ({ currentUser: vi.fn() }));
 vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null, orderAccessSecret: () => null, orderPageUrl: () => null,
   siteUrl: () => "https://quilgym.test", paymentNotificationUrl: () => "https://quilgym.test/api/payments/mercadopago/webhook", cardThreeDsMode: () => "optional" }));
 import { createOrder } from "./order-service";
-import { cardPaymentSetup, CardPaymentError, checkoutUrl, submitProviderPayment } from "./mercadopago";
+import { cardPaymentSetup, CardPaymentError, checkoutUrl, paymentSetup, submitProviderPayment } from "./mercadopago";
 
 const pg = new PGlite();
 const database = drizzle(pg, { schema });
@@ -30,6 +30,7 @@ const config: CheckoutConfig = { demo: false, pickup: { address: "Local de test"
 type Provider = { id: number; status: string; status_detail: string; amount?: number; three_ds_info?: object };
 const provider = new Map<number, Provider>();
 const posts: { body: Record<string, unknown>; key: string | null }[] = [];
+const preferenceRequests: { authorization: string | null; url: string; body: Record<string, unknown> | null }[] = [];
 let nextResult: Omit<Provider, "id"> = { status: "approved", status_detail: "accredited" };
 let orderRef = "";
 
@@ -40,6 +41,13 @@ beforeAll(async () => {
   process.env.MP_ACCESS_TOKEN = "TEST-token";
   process.env.NEXT_PUBLIC_MP_PUBLIC_KEY = "TEST-public";
   vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+    if (url.endsWith("/users/me")) return { ok: true, json: async () => ({ id: new Headers(init.headers).get("Authorization") === "Bearer TEST-token" ? 127 : 12345 }) };
+    if (url.includes("/checkout/preferences")) {
+      preferenceRequests.push({ authorization: new Headers(init.headers).get("Authorization"), url,
+        body: init.body ? JSON.parse(String(init.body)) as Record<string, unknown> : null });
+      return { ok: true, json: async () => ({ id: "pref-pro-test", init_point: "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1",
+        sandbox_init_point: "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=1" }) };
+    }
     const asPayment = (p: Provider) => ({ id: p.id, external_reference: orderRef, transaction_amount: p.amount ?? 2000, currency_id: "ARS", status: p.status,
       status_detail: p.status_detail, date_last_updated: new Date(Date.now() + p.id).toISOString(), three_ds_info: p.three_ds_info });
     if (init.method === "POST" && url.endsWith("/v1/payments")) {
@@ -59,12 +67,14 @@ beforeAll(async () => {
 afterAll(async () => { await pg.close(); vi.unstubAllGlobals(); });
 beforeEach(async () => {
   delete process.env.MP_TEST_MODE;
+  delete process.env.MP_CHECKOUT_PRO_ACCESS_TOKEN;
+  delete process.env.MP_CHECKOUT_PRO_TEST_SELLER_ID;
   mocks.config.mockReturnValue({ ...config });
-  provider.clear(); posts.length = 0; nextResult = { status: "approved", status_detail: "accredited" };
+  provider.clear(); posts.length = 0; preferenceRequests.length = 0; nextResult = { status: "approved", status_detail: "accredited" };
   await database.execute(sql`truncate brands, categories, products, product_variants, carts, coupons, orders restart identity cascade`);
 });
 
-async function cardOrder(choice: "debit_card" | "credit_card" = "credit_card") {
+async function cardOrder(choice: "debit_card" | "credit_card" | "mercadopago" | "mercado_credito" = "credit_card") {
   const key = randomUUID().slice(0, 8);
   const [category] = await database.insert(schema.categories).values({ slug: key, name: "Test" }).returning();
   const [product] = await database.insert(schema.products).values({ slug: key, name: "Creatina test", status: "active", categoryId: category.id }).returning();
@@ -191,5 +201,50 @@ describe("checkoutUrl", () => {
     expect(checkoutUrl(preference, "TEST-123")).toBe(preference.sandbox_init_point);
     expect(checkoutUrl(preference, "APP_USR-123")).toBe(preference.init_point);
     expect(checkoutUrl({ init_point: preference.init_point }, "TEST-123")).toBe(preference.init_point);
+  });
+});
+
+describe("credenciales separadas para tarjetas y Checkout Pro", () => {
+  it("mantiene TEST- en el Brick y crea Checkout Pro con el vendedor de prueba e init_point blanco", async () => {
+    process.env.MP_CHECKOUT_PRO_ACCESS_TOKEN = "APP_USR-test-seller";
+    process.env.MP_CHECKOUT_PRO_TEST_SELLER_ID = "12345";
+    const { order } = await cardOrder("mercadopago");
+    const setup = await paymentSetup(order);
+    expect(setup.initPoint).toContain("www.mercadopago.com.ar");
+    expect(preferenceRequests).toMatchObject([{ authorization: "Bearer APP_USR-test-seller", url: "https://api.mercadopago.com/checkout/preferences" }]);
+    expect(preferenceRequests[0].body).not.toHaveProperty("payer");
+    const { order: card } = await cardOrder("credit_card");
+    await submitProviderPayment(card, brick("token-apro-separate"));
+    expect(new Headers((fetch as ReturnType<typeof vi.fn>).mock.calls.find(([url]) => String(url).endsWith("/v1/payments"))?.[1]?.headers).get("Authorization"))
+      .toBe("Bearer TEST-token");
+  });
+
+  it("no envía a sandbox si falta el vendedor de prueba de Checkout Pro", async () => {
+    const { order } = await cardOrder("mercadopago");
+    await expect(paymentSetup(order)).rejects.toThrow("Falta MP_CHECKOUT_PRO_ACCESS_TOKEN");
+    expect(preferenceRequests).toHaveLength(0);
+  });
+
+  it("rechaza una credencial de la cuenta equivocada antes de crear una preferencia", async () => {
+    process.env.MP_CHECKOUT_PRO_ACCESS_TOKEN = "APP_USR-real-seller";
+    process.env.MP_CHECKOUT_PRO_TEST_SELLER_ID = "99999";
+    const { order } = await cardOrder("mercadopago");
+    await expect(paymentSetup(order)).rejects.toThrow("no pertenece al vendedor de prueba");
+    expect(preferenceRequests).toHaveLength(0);
+  });
+
+  it("en Production ignora la credencial adicional de Preview y reutiliza el token productivo", async () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.MP_ACCESS_TOKEN = "APP_USR-owner";
+    process.env.MP_CHECKOUT_PRO_ACCESS_TOKEN = "APP_USR-test-seller";
+    try {
+      const { order } = await cardOrder("mercadopago");
+      await paymentSetup(order);
+      expect(preferenceRequests[0].authorization).toBe("Bearer APP_USR-owner");
+      expect(preferenceRequests[0].body).toMatchObject({ payer: { email: "ana@example.com" } });
+    } finally {
+      delete process.env.VERCEL_ENV;
+      process.env.MP_ACCESS_TOKEN = "TEST-token";
+    }
   });
 });

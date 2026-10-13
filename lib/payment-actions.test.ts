@@ -16,7 +16,7 @@ import { payOrder, preparePayment, verifyReturnedPayment } from "./payment-actio
 import { CardPaymentError, MercadoPagoApiError } from "./mercadopago-card";
 
 const orderId = "00000000-0000-4000-8000-000000000001";
-const order = { id: orderId, isDemo: false, paymentMethod: "mercadopago" };
+const order = { id: orderId, isDemo: false, paymentMethod: "mercadopago", paymentChoice: "mercadopago" };
 
 describe("límites del flujo de pago", () => {
   beforeEach(() => {
@@ -56,7 +56,7 @@ describe("límites del flujo de pago", () => {
   it("verifica un retorno consultando Mercado Pago, no confiando en la URL", async () => {
     expect(await verifyReturnedPayment(orderId, "123", "link-firmado")).toEqual({ ok: true });
     expect(mocks.findOwnedOrder).toHaveBeenCalledWith(orderId, "link-firmado");
-    expect(mocks.reconcileProviderPayment).toHaveBeenCalledWith("123");
+    expect(mocks.reconcileProviderPayment).toHaveBeenCalledWith("123", "checkout_pro");
     expect(mocks.revalidatePath).toHaveBeenCalledWith(`/checkout/confirmacion/${orderId}`);
   });
 

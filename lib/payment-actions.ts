@@ -26,6 +26,13 @@ export async function preparePayment(id: string, accessToken?: string | null) {
       code: typeof value.code === "string" || typeof value.code === "number" ? value.code : undefined,
       status: typeof value.status === "number" ? value.status : undefined,
     });
+    if (error instanceof Error && (
+      error.message.startsWith("Falta MP_CHECKOUT_PRO_ACCESS_TOKEN")
+      || error.message.startsWith("Checkout Pro necesita la credencial")
+      || error.message.startsWith("Falta el ID del vendedor de prueba")
+      || error.message.startsWith("La credencial de Checkout Pro no pertenece")
+      || error.message.startsWith("Checkout Pro no puede usar la misma cuenta")
+    )) return { ok: false as const, error: "Mercado Pago todavía no está configurado para esta prueba. Podés pagar con tarjeta o avisarnos para revisarlo." };
     return { ok: false as const, error: "No pudimos abrir el pago. Reintentá en unos instantes." };
   }
 }
@@ -84,7 +91,7 @@ export async function verifyReturnedPayment(id: string, paymentId: string, acces
     if (!await consumeRateLimit(`payment:return:${order.id}`, 8, 10 * 60_000)) {
       return { ok: false as const, error: "Estamos verificando el pago. Esperá unos minutos y actualizá el estado." };
     }
-    const verifiedOrderId = await reconcileProviderPayment(paymentId);
+    const verifiedOrderId = await reconcileProviderPayment(paymentId, isCardChoice(order.paymentChoice) ? "card" : "checkout_pro");
     if (verifiedOrderId !== order.id) return { ok: false as const, error: "El pago no corresponde a este pedido." };
     revalidatePath(`/checkout/confirmacion/${order.id}`);
     after(() => deliverOrderEmails(order.id));
