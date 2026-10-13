@@ -4,6 +4,7 @@ import { db } from "./db";
 import { orderEmails, orderItems, orders, payments } from "./db/schema";
 import { withOrderTransaction } from "./db/transaction";
 import { cardThreeDsMode, getCheckoutConfig, orderPageUrl, paymentNotificationUrl, siteUrl } from "./checkout-config";
+import { readMercadoPagoTestMode } from "./checkout-env";
 import { providerStatus } from "./order-state";
 import { transitionOrder } from "./order-service";
 import { commerce } from "./commerce";
@@ -20,9 +21,9 @@ export const isFailedAttempt = (status: string | null | undefined) => status ===
 type ProviderMerchantOrder = { id: number; external_reference: string; preference_id: string;
   payments?: { id: number; status: string }[] };
 
-/** Mercado Pago exige un comprador de prueba para cobros con credenciales TEST. */
+/** El comprador de prueba debe diferir del vendedor; no inferimos el modo solo por APP_USR/TEST. */
 function cardPayerEmail(customerEmail: string) {
-  return process.env.MP_ACCESS_TOKEN?.startsWith("TEST-") ? "test@testuser.com" : customerEmail;
+  return readMercadoPagoTestMode(process.env) ? "test@testuser.com" : customerEmail;
 }
 
 async function request<T>(path: string, body?: object, key?: string): Promise<T> {
@@ -127,7 +128,7 @@ export async function cardPaymentSetup(order: typeof orders.$inferSelect) {
   if (order.isDemo || order.paymentMethod !== "mercadopago" || !isCardChoice(order.paymentChoice) || order.status !== "pending" || !getCheckoutConfig().payments.mercadopago) throw new Error("Pago no disponible.");
   const [payment] = await db.select().from(payments).where(eq(payments.orderId, order.id)).limit(1);
   if (!payment || (payment.providerId && !isFailedAttempt(payment.status))) throw new Error("Pago no disponible.");
-  const testMode = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-") === true;
+  const testMode = readMercadoPagoTestMode(process.env);
   return { publicKey: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, amount: order.totalArs, email: cardPayerEmail(order.email), testMode,
     paymentType: order.paymentChoice, excludedTypes: excludedCardTypes(order.paymentChoice), maxInstallments: maxInstallmentsFor(order.paymentChoice, commerce.maxCardInstallments) };
 }

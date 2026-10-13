@@ -3,7 +3,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { validateCheckout, quoteDelivery } from "./checkout-validation";
 import { readQuote, signQuote, checkoutFingerprint, verifyMercadoPagoSignature } from "./checkout-security";
 import { canTransition } from "./order-state";
-import { parseCheckoutEnv, readOrderAccessSecret, readSiteUrl } from "./checkout-env";
+import { parseCheckoutEnv, readMercadoPagoTestMode, readOrderAccessSecret, readSiteUrl } from "./checkout-env";
 import { orderAccessToken, verifyOrderAccess } from "./order-access";
 import type { CheckoutConfig, CheckoutInput } from "./checkout-types";
 vi.mock("server-only", () => ({}));
@@ -136,6 +136,17 @@ describe("diagnóstico de configuración", () => {
     expect(mixed.config.payments.mercadopago).toBe(false);
     expect(mixed.issues.join(" ")).toMatch(/mezclan/);
     expect(parseCheckoutEnv({ ...base, MP_ACCESS_TOKEN: "TEST-token" }).issues.join(" ")).toMatch(/incompleto/);
+  });
+  it("declara explícitamente el modo de prueba para claves APP_USR y no lo habilita en Production", () => {
+    const mp = { MP_ACCESS_TOKEN: "APP_USR-test-token", NEXT_PUBLIC_MP_PUBLIC_KEY: "APP_USR-test-key", MP_WEBHOOK_SECRET: "secret" };
+    const preview = { ...base, ...mp, VERCEL_ENV: "preview", VERCEL_URL: "quilgym-preview.vercel.app", VERCEL_AUTOMATION_BYPASS_SECRET: "bypass", MP_TEST_MODE: "true" };
+    expect(readMercadoPagoTestMode(preview)).toBe(true);
+    expect(parseCheckoutEnv(preview).config.payments.mercadopago).toBe(true);
+    const production = { ...base, ...mp, VERCEL_ENV: "production", NEXT_PUBLIC_SITE_URL: "https://quilgym.vercel.app", MP_TEST_MODE: "true" };
+    expect(parseCheckoutEnv(production).config.payments.mercadopago).toBe(false);
+    expect(parseCheckoutEnv(production).issues.join(" ")).toMatch(/MP_TEST_MODE=true/);
+    expect(readMercadoPagoTestMode({ MP_ACCESS_TOKEN: "APP_USR-token" })).toBe(false);
+    expect(readMercadoPagoTestMode({ MP_ACCESS_TOKEN: "TEST-token" })).toBe(true);
   });
   it("efectivo requiere retiro y el TTL se valida", () => {
     expect(parseCheckoutEnv({ ...base, CASH_PICKUP_ENABLED: "true" }).issues.join(" ")).toMatch(/requiere PICKUP_ADDRESS/);

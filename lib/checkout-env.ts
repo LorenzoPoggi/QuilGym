@@ -65,6 +65,12 @@ export function readCardThreeDsMode(env: Env) {
   return value(env, "MP_CARD_3DS") === "optional" ? "optional" as const : null;
 }
 
+/** El prefijo APP_USR también puede corresponder a credenciales de prueba. */
+export function readMercadoPagoTestMode(env: Env) {
+  const explicit = value(env, "MP_TEST_MODE");
+  return explicit === "true" || (!explicit && value(env, "MP_ACCESS_TOKEN")?.startsWith("TEST-") === true);
+}
+
 export function readBankDetails(env: Env) {
   const account = value(env, "TRANSFER_ACCOUNT");
   const holder = value(env, "TRANSFER_HOLDER");
@@ -177,6 +183,9 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   if (!mpPresent.length) warnings.push("Mercado Pago no configurado (MP_ACCESS_TOKEN, NEXT_PUBLIC_MP_PUBLIC_KEY, MP_WEBHOOK_SECRET).");
   const accessToken = value(env, "MP_ACCESS_TOKEN");
   const publicKey = value(env, "NEXT_PUBLIC_MP_PUBLIC_KEY");
+  const mpTestMode = value(env, "MP_TEST_MODE");
+  if (mpTestMode && mpTestMode !== "true" && mpTestMode !== "false") issues.push('MP_TEST_MODE solo acepta "true" o "false".');
+  if (mpTestMode === "true" && value(env, "VERCEL_ENV") === "production") issues.push("MP_TEST_MODE=true no se permite en Production.");
   if (accessToken && publicKey && accessToken.startsWith("TEST-") !== publicKey.startsWith("TEST-")) {
     issues.push("Las credenciales de Mercado Pago mezclan sandbox (TEST-) y producción (APP_USR-).");
   }
@@ -197,7 +206,9 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
     demo: false, pickup, shippingRates, taxIdThresholdArs: invoicing.identificationThresholdArs,
     payments: {
       mercadopago: Boolean(accessToken && publicKey && value(env, "MP_WEBHOOK_SECRET") && notificationUrl
-        && accessToken.startsWith("TEST-") === publicKey.startsWith("TEST-")),
+        && accessToken.startsWith("TEST-") === publicKey.startsWith("TEST-")
+        && (!mpTestMode || mpTestMode === "true" || mpTestMode === "false")
+        && !(mpTestMode === "true" && value(env, "VERCEL_ENV") === "production")),
       transfer: Boolean(bank),
       // Cash is available by default whenever pickup is configured; set the flag
       // to false to explicitly disable it for a deployment.

@@ -58,6 +58,7 @@ beforeAll(async () => {
 }, 30000);
 afterAll(async () => { await pg.close(); vi.unstubAllGlobals(); });
 beforeEach(async () => {
+  delete process.env.MP_TEST_MODE;
   mocks.config.mockReturnValue({ ...config });
   provider.clear(); posts.length = 0; nextResult = { status: "approved", status_detail: "accredited" };
   await database.execute(sql`truncate brands, categories, products, product_variants, carts, coupons, orders restart identity cascade`);
@@ -88,6 +89,22 @@ describe("pago con tarjeta de punta a punta (Mercado Pago simulado)", () => {
   it("prepara el Brick con el monto del servidor, el tipo excluido y el tope de cuotas", async () => {
     const { order } = await cardOrder("debit_card");
     expect(await cardPaymentSetup(order)).toEqual({ publicKey: "TEST-public", amount: 2000, email: "test@testuser.com", testMode: true, paymentType: "debit_card", excludedTypes: ["credit_card"], maxInstallments: 1 });
+  });
+
+  it("permite probar tarjetas con credenciales APP_USR cuando Preview declara modo de prueba", async () => {
+    process.env.MP_ACCESS_TOKEN = "APP_USR-test-token";
+    process.env.NEXT_PUBLIC_MP_PUBLIC_KEY = "APP_USR-test-public";
+    process.env.MP_TEST_MODE = "true";
+    try {
+      const { order } = await cardOrder();
+      expect(await cardPaymentSetup(order)).toMatchObject({ publicKey: "APP_USR-test-public", email: "test@testuser.com", testMode: true });
+      await submitProviderPayment(order, brick("token-apro-appusr"));
+      expect(posts[0].body).toMatchObject({ payer: { email: "test@testuser.com" } });
+    } finally {
+      process.env.MP_ACCESS_TOKEN = "TEST-token";
+      process.env.NEXT_PUBLIC_MP_PUBLIC_KEY = "TEST-public";
+      delete process.env.MP_TEST_MODE;
+    }
   });
 
   it("APRO: cobra el monto del pedido (no el del navegador), concilia y deja la factura en cola", async () => {
