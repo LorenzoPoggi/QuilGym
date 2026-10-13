@@ -7,7 +7,9 @@ import { createHash } from "node:crypto";
 
 /** Error de la API de Mercado Pago con el status HTTP (0 = sin conexión). El mensaje nunca incluye datos del pago. */
 export class MercadoPagoApiError extends Error {
-  constructor(public readonly status: number) { super("No pudimos comunicarnos con Mercado Pago. Reintentá con el mismo pedido."); this.name = "MercadoPagoApiError"; }
+  constructor(public readonly status: number, public readonly causeCodes: readonly (string | number)[] = [], public readonly providerMessage?: string) { super("No pudimos comunicarnos con Mercado Pago. Reintentá con el mismo pedido."); this.name = "MercadoPagoApiError"; }
+  /** Credenciales de producción de la aplicación sin activar (código 7): Checkout Pro funciona, el cobro directo con tarjeta no. */
+  get liveCredentialsNotActivated() { return this.causeCodes.some((code) => String(code) === "7") || /unauthorized use of live credentials/i.test(this.providerMessage ?? ""); }
 }
 /** Error con mensaje apto para mostrar al comprador (validación previa al cobro: no se llamó a Mercado Pago). */
 export class CardPaymentError extends Error { name = "CardPaymentError"; }

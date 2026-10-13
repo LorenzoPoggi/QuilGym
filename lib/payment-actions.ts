@@ -61,6 +61,9 @@ export async function payOrder(id: string, submission: { formData: unknown; addi
     return { ok: true, ...result };
   } catch (error) {
     if (error instanceof CardPaymentError) return { ok: false, error: error.message };
+    if (error instanceof MercadoPagoApiError && error.liveCredentialsNotActivated) {
+      return { ok: false, error: "Mercado Pago todavía no habilitó los cobros con tarjeta para la cuenta de este entorno (credenciales de producción sin activar). El pedido no se cobró; podés pagar con Mercado Pago o reintentar más tarde." };
+    }
     if (error instanceof MercadoPagoApiError && error.status === 401) {
       return { ok: false, error: "Mercado Pago rechazó la credencial privada de este entorno. El pedido no se cobró; revisá el Access Token de Mercado Pago configurado en Preview." };
     }

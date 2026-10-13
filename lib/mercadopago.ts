@@ -50,11 +50,12 @@ async function request<T>(path: string, body?: object, key?: string): Promise<T>
         return { code: item.code };
       })
       : undefined;
+    const message = typeof payload.message === "string" ? payload.message.slice(0, 160) : undefined;
     console.error("[Mercado Pago] La API rechazó la solicitud", {
       method: body ? "POST" : "GET", path, status: response.status,
-      error: payload.error, causes,
+      error: payload.error, message, causes,
     });
-    throw new MercadoPagoApiError(response.status);
+    throw new MercadoPagoApiError(response.status, (causes ?? []).map((cause) => cause.code as string | number).filter((code) => code !== undefined), message);
   }
   return response.json() as Promise<T>;
 }

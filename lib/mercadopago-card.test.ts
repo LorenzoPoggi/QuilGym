@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardIdempotencyKey, cardStatusMessage, cardTypeMatches, excludedCardTypes, maxInstallmentsFor, parseCardSubmission, splitPayerName } from "./mercadopago-card";
+import { MercadoPagoApiError, cardIdempotencyKey, cardStatusMessage, cardTypeMatches, excludedCardTypes, maxInstallmentsFor, parseCardSubmission, splitPayerName } from "./mercadopago-card";
 
 const form = (overrides: Record<string, unknown> = {}) => ({
   token: "abcdef0123456789", payment_method_id: "visa", installments: 1, issuer_id: "310",
@@ -62,5 +62,13 @@ describe("reglas del pago con tarjeta (Card Payment Brick)", () => {
   it("separa nombre y apellido para el análisis de riesgo", () => {
     expect(splitPayerName("  Ana María  Pérez ")).toEqual({ first_name: "Ana", last_name: "María Pérez" });
     expect(splitPayerName("Cher")).toEqual({ first_name: "Cher", last_name: "Cher" });
+  });
+});
+
+describe("MercadoPagoApiError", () => {
+  it("reconoce credenciales de producción sin activar por código o mensaje", () => {
+    expect(new MercadoPagoApiError(401, [7]).liveCredentialsNotActivated).toBe(true);
+    expect(new MercadoPagoApiError(401, [], "Unauthorized use of live credentials").liveCredentialsNotActivated).toBe(true);
+    expect(new MercadoPagoApiError(401, [2001], "invalid access token").liveCredentialsNotActivated).toBe(false);
   });
 });
