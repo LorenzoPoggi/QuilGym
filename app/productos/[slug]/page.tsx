@@ -10,6 +10,7 @@ import { ProductGallery } from "@/components/product-gallery";
 import { ComboGallery } from "@/components/combo-showcase";
 import { RichText } from "@/components/rich-text";
 import { TrustStrip } from "@/components/trust-strip";
+import { InstallmentsBlock } from "@/components/product-installments";
 import { ProductPurchase } from "@/components/cart-buttons";
 import { FavoriteButton } from "@/components/account-controls";
 import { getAllProducts, getProduct, getProductsByCategory } from "@/lib/catalog";
@@ -58,7 +59,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="buybox-brand">{product.brand?.name ?? product.category.name}</div>
         <div className="product-title-row"><h1>{product.name}</h1><FavoriteButton productId={product.id} name={product.name}/></div>
         <p className="buybox-price">{formatArs(product.priceArs)} {product.compareAtPriceArs ? <del>{formatArs(product.compareAtPriceArs)}</del> : null}</p>
-        {commerce.interestFreeInstallments > 1 ? <strong className="payment-copy">{commerce.interestFreeInstallments} cuotas sin interés de {formatArs(product.priceArs / commerce.interestFreeInstallments)}</strong> : null}
+        <InstallmentsBlock price={product.priceArs}/>
         {commerce.transferDiscountPercent > 0 ? <p className="transfer-price">{formatArs(transferPrice(product.priceArs))} con transferencia bancaria</p> : null}
         <p className={`stock ${product.inStock ? "" : "stock--out"}`}><span/> {product.inStock ? "En stock" : "Sin stock por el momento"}</p>
         <ProductPurchase product={product}/>

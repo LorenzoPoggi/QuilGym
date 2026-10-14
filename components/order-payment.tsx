@@ -7,6 +7,9 @@ import { simulatePayment } from "@/lib/checkout-actions";
 import { payOrder, prepareCardPayment, preparePayment, verifyReturnedPayment } from "@/lib/payment-actions";
 import { canTransition } from "@/lib/order-state";
 import type { OrderStatus } from "@/lib/checkout-types";
+import { brickCustomization } from "@/lib/brick-customization";
+import { AcceptedCards } from "./accepted-cards";
+import { InstallmentsBlock } from "./product-installments";
 
 type Controller = { unmount: () => Promise<void> };
 type MercadoPagoConstructor = new (key: string, options: { locale: string }) => {
@@ -52,6 +55,7 @@ export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, lastAt
   const [attempt, setAttempt] = useState(0);
   const [loading, setLoading] = useState(true);
   const [preparedTestMode, setPreparedTestMode] = useState(false);
+  const [preparedAmount, setPreparedAmount] = useState<number | null>(null);
   const [message, setMessage] = useState<CardMessage | null>(null);
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [verifying, setVerifying] = useState(false);
@@ -76,16 +80,13 @@ export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, lastAt
         if (disposed) return;
         if (!prepared.ok) { setMessage({ kind: "error", text: prepared.error }); setLoading(false); return; }
         setPreparedTestMode(prepared.data.testMode);
+        setPreparedAmount(prepared.data.amount);
         publicKeyRef.current = prepared.data.publicKey;
         const MercadoPago = (window as unknown as { MercadoPago: MercadoPagoConstructor }).MercadoPago;
         const mp = new MercadoPago(prepared.data.publicKey, { locale: "es-AR" });
         const brick = await mp.bricks().create("cardPayment", id, {
           initialization: { amount: prepared.data.amount, payer: { email: prepared.data.email } },
-          customization: {
-            // El Brick configura los tipos por exclusión (doc. «Personalización de comportamiento del Card Payment»).
-            paymentMethods: { types: { excluded: prepared.data.excludedTypes }, minInstallments: 1, maxInstallments: prepared.data.maxInstallments },
-            visual: { style: { theme: "default" }, hidePaymentButton: false },
-          },
+          customization: brickCustomization({ amount: prepared.data.amount, excludedTypes: prepared.data.excludedTypes, maxInstallments: prepared.data.maxInstallments }),
           callbacks: {
             onReady: () => { if (!disposed) setLoading(false); },
             onError: () => { if (!disposed) { setLoading(false); setMessage({ kind: "error", text: "No pudimos cargar el formulario de pago. Recargá la página para reintentar con este pedido." }); } },
@@ -158,6 +159,7 @@ export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, lastAt
   return <section className="checkout-card card-payment" id="pago" aria-labelledby="card-payment-title">
     <h2 id="card-payment-title">{inReview && !challenge ? "Estamos verificando tu pago" : `Pagá con ${label}`}</h2>
     <p>{paymentChoice === "debit_card" ? "Se debita en un solo pago." : "Elegí las cuotas en el formulario: las cuotas con interés las define tu tarjeta y se muestran antes de confirmar."} Los datos de la tarjeta los procesa Mercado Pago; QuilGym no los ve ni los guarda.</p>
+    {paymentChoice === "credit_card" ? preparedAmount ? <InstallmentsBlock price={preparedAmount}/> : null : <AcceptedCards type="debit" label="Tarjetas de débito aceptadas"/>}
     {preparedTestMode ? <p className="card-payment__test-help" role="note"><strong>Pago de prueba:</strong> para aprobarlo escribí <strong>APRO</strong> en mayúsculas como titular y usá DNI 12345678.</p> : null}
     {lastAttemptFailed && !message ? <p className="card-payment__notice" role="status">Tu último intento de pago fue rechazado y no se cobró nada. Podés reintentar con otra tarjeta.</p> : null}
     {message ? <p className={`card-payment__message is-${message.kind}`} role={message.kind === "error" ? "alert" : "status"}>{message.text}</p> : null}
@@ -167,7 +169,7 @@ export function MercadoPagoPayment({ orderId, paymentChoice, accessToken, lastAt
       <button type="button" className="button button--outline" disabled={verifying} onClick={() => { void verifyChallenge(); }}>{verifying ? "Verificando…" : "Ya completé la verificación"}</button>
     </div> : inReview ? message ? null : <p className="card-payment__message is-pending" role="status">Mercado Pago está procesando el pago. Te avisamos por email cuando se acredite. No vuelvas a pagar este pedido.</p> : <>
       {loading ? <p className="card-payment__loading" aria-live="polite">Cargando el formulario seguro…</p> : null}
-      <div ref={container} key={attempt}/>
+      <div ref={container} key={attempt} className="card-payment-brick"/>
     </>}
   </section>;
 }

@@ -1,7 +1,8 @@
 import "server-only";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "./db";
-import { cartItems, carts, coupons, orderEmails, orderItems, orders, payments, products, productVariants, shipments } from "./db/schema";
+import { cartItems, carts, coupons, orderEmails, orderItemCosts, orderItems, orders, payments, productCosts, products, productVariants, shipments } from "./db/schema";
+import { tableExists } from "./db/table-exists";
 import { withOrderTransaction, type OrderTransaction } from "./db/transaction";
 import { readCartId } from "./cart";
 import { evaluateCoupon } from "./pricing";
@@ -48,6 +49,24 @@ export async function orderDetails(id: string, accessToken?: string | null) {
 }
 
 /** Toda la operación se confirma o revierte junta; no hay llamadas a proveedores dentro de ella. */
+/**
+ * Congela el costo unitario de cada ítem para las métricas de rentabilidad. Savepoint: si falta la migración 0009
+ * o algo falla, el pedido se crea igual y las métricas usan el costo actual como estimado.
+ */
+async function snapshotItemCosts(tx: OrderTransaction, items: { id: number; variantId: number }[]) {
+  if (!items.length || !await tableExists(tx, "order_item_costs") || !await tableExists(tx, "product_costs")) return;
+  try {
+    await tx.transaction(async (savepoint) => {
+      const costs = await savepoint.select().from(productCosts).where(inArray(productCosts.variantId, [...new Set(items.map((item) => item.variantId))]));
+      const byVariant = new Map(costs.map((row) => [row.variantId, row.costArs]));
+      const rows = items.flatMap((item) => byVariant.has(item.variantId) ? [{ orderItemId: item.id, unitCostArs: byVariant.get(item.variantId)! }] : []);
+      if (rows.length) await savepoint.insert(orderItemCosts).values(rows).onConflictDoNothing();
+    });
+  } catch (error) {
+    console.warn("[métricas] No se pudo guardar el costo de los ítems:", error instanceof Error ? error.name : "error");
+  }
+}
+
 export async function createOrder(input: CheckoutInput, cartId: string, userId?: string) {
   const config = getCheckoutConfig();
   return withOrderTransaction(async (tx) => {
@@ -102,7 +121,8 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
       subtotalArs, discountArs, shippingArs: delivery.shippingArs, totalArs,
       couponCode: cart.couponCode, consentAt: new Date(),
     }).returning();
-    await tx.insert(orderItems).values(snapshots.map((line) => ({ ...line, orderId: order.id })));
+    const insertedItems = await tx.insert(orderItems).values(snapshots.map((line) => ({ ...line, orderId: order.id }))).returning({ id: orderItems.id, variantId: orderItems.variantId });
+    if (!config.demo) await snapshotItemCosts(tx, insertedItems);
     for (const line of snapshots) if (line.stockReserved) {
       await tx.update(productVariants).set({ stock: sql`${productVariants.stock} - ${line.quantity}` }).where(eq(productVariants.id, line.variantId));
     }

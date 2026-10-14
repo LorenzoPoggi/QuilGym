@@ -80,7 +80,8 @@ test("cinta de marcas: 6 links accesibles y pausa al recibir foco", async ({ pag
   expect(await trackState(page)).toBe("running");
 
   await links.first().focus();
-  expect(await trackState(page)).toBe("paused");
+  // Con foco de teclado la cinta se detiene: pausada o, con :focus-visible, sin animación (vuelve al inicio).
+  expect(await page.locator(".brand-track").evaluate((track) => { const style = getComputedStyle(track); return style.animationName === "none" || style.animationPlayState === "paused"; })).toBe(true);
   await page.keyboard.press("Tab");
   await expect(links.nth(1)).toBeFocused();
   await links.nth(1).blur();

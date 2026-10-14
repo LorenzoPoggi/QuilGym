@@ -64,6 +64,13 @@
       "when": 1791655580373,
       "tag": "0008_invoices",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791945889363,
+      "tag": "0009_metrics_costs_fees",
+      "breakpoints": true
     }
   ]
 }

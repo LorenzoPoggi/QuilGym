@@ -1,7 +1,8 @@
 import "server-only";
 import { asc, eq } from "drizzle-orm";
 import { db } from "./db";
-import { orderEmails, orderItems, orders, payments } from "./db/schema";
+import { orderEmails, orderItems, orders, paymentFees, payments } from "./db/schema";
+import { tableExists } from "./db/table-exists";
 import { withOrderTransaction } from "./db/transaction";
 import { cardThreeDsMode, getCheckoutConfig, orderPageUrl, paymentNotificationUrl, siteUrl } from "./checkout-config";
 import { readMercadoPagoTestMode } from "./checkout-env";
@@ -14,7 +15,8 @@ export { CardPaymentError, MercadoPagoApiError } from "./mercadopago-card";
 
 type ProviderPayment = { id: number; external_reference: string; transaction_amount: number; currency_id: string;
   status: string; status_detail?: string; payment_type_id?: string; date_last_updated: string;
-  transaction_details?: { external_resource_url?: string };
+  transaction_details?: { external_resource_url?: string; net_received_amount?: number };
+  fee_details?: { type?: string; amount?: number; fee_payer?: string }[];
   three_ds_info?: { external_resource_url?: string; creq?: string } };
 /** Un intento fallido (rechazado o cancelado) no cierra el pedido: el comprador puede reintentar. */
 export const isFailedAttempt = (status: string | null | undefined) => status === "rejected" || status === "cancelled";
@@ -246,6 +248,34 @@ export async function reconcileProviderPayment(id: string, channel?: PaymentChan
     : await requestWithFallback<ProviderPayment>(`/v1/payments/${id}`, "checkout_pro");
   const updated = new Date(payment.date_last_updated);
   if (String(payment.id) !== id || !Number.isFinite(updated.getTime())) throw new Error("Respuesta de pago inválida.");
+  const orderId = await reconcileInTransaction(id, payment, updated);
+  if (orderId && payment.status === "approved") await recordPaymentFee(orderId, payment);
+  return orderId;
+}
+
+/** Comisión real informada por Mercado Pago (solo la que paga el vendedor). Nunca afecta la conciliación. */
+export function providerFee(payment: Pick<ProviderPayment, "fee_details" | "transaction_details" | "transaction_amount">) {
+  const details = Array.isArray(payment.fee_details) ? payment.fee_details : [];
+  const sellerFees = details.filter((fee) => fee.fee_payer !== "payer" && typeof fee.amount === "number" && Number.isFinite(fee.amount) && fee.amount >= 0);
+  const net = payment.transaction_details?.net_received_amount;
+  if (sellerFees.length) return { feeArs: Math.round(sellerFees.reduce((sum, fee) => sum + fee.amount!, 0)), netReceivedArs: typeof net === "number" && Number.isFinite(net) ? Math.round(net) : null };
+  if (typeof net === "number" && Number.isFinite(net) && net >= 0 && net <= payment.transaction_amount) return { feeArs: Math.round(payment.transaction_amount - net), netReceivedArs: Math.round(net) };
+  return null;
+}
+
+async function recordPaymentFee(orderId: string, payment: ProviderPayment) {
+  const fee = providerFee(payment);
+  if (!fee) return;
+  try {
+    if (!await tableExists(db, "payment_fees")) return;
+    await db.insert(paymentFees).values({ orderId, providerId: String(payment.id), ...fee })
+      .onConflictDoUpdate({ target: paymentFees.orderId, set: { providerId: String(payment.id), feeArs: fee.feeArs, netReceivedArs: fee.netReceivedArs, updatedAt: new Date() } });
+  } catch (error) {
+    console.warn("[métricas] No se pudo guardar la comisión de Mercado Pago:", error instanceof Error ? error.name : "error");
+  }
+}
+
+async function reconcileInTransaction(id: string, payment: ProviderPayment, updated: Date) {
   return withOrderTransaction(async (tx) => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, payment.external_reference)).for("update");
     if (!order) return null;

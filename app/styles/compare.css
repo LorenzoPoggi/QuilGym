@@ -72,5 +72,9 @@
 @media (min-width: 1101px) {
   /* El fondo y el borde terminan junto a la última tarjeta si hay menos de tres. */
   .compare-products, .compare-table { width: min(100%, calc(218px + var(--compare-count, 3) * 354px)); }
-  .compare-products, .compare-row { grid-template-columns: 190px repeat(var(--compare-count, 3), minmax(0, 340px)); }
+  /* Las columnas llenan el ancho de la caja (antes quedaba una franja vacía a la derecha de la tabla con 3 productos).
+     La primera columna de la tabla mide lo mismo que la de atributos más el padding de la fila de tarjetas,
+     así cada celda arranca alineada con el borde izquierdo de su tarjeta. */
+  .compare-products { grid-template-columns: 190px repeat(var(--compare-count, 3), minmax(0, 1fr)); }
+  .compare-row { grid-template-columns: 218px repeat(var(--compare-count, 3), minmax(0, 1fr)); }
 }

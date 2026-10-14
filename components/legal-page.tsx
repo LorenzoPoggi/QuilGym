@@ -31,7 +31,7 @@ function MissingDataNotice() {
 export function LegalPage({ eyebrow = "INFORMACIÓN LEGAL", title, intro, current, children }: { eyebrow?: string; title: string; intro: React.ReactNode; current: string; children: React.ReactNode }) {
   return <><Header/>
     <main className="legal-page"><div className="container legal-layout">
-      <nav className="legal-nav" aria-label="Información legal">
+      <nav className="legal-nav" aria-label="Páginas legales">
         <p className="eyebrow">LEGALES</p>
         <ul>{legalLinks.map(([label, href]) => <li key={href}><Link href={href} aria-current={href === current ? "page" : undefined}>{label}</Link></li>)}
           <li><a href={consumerClaimsUrl} target="_blank" rel="noopener noreferrer">Reclamos de consumo (Ventanilla Federal)</a></li></ul>

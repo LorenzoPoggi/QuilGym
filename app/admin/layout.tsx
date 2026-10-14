@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <aside className="admin-sidebar">
       <Link className="admin-wordmark" href="/admin/productos">QUILGYM <span>ADMIN</span></Link>
       <AdminNav/>
-      <div className="admin-sidebar-bottom"><Link href="/"><ExternalLink size={17}/> Ver tienda</Link><p>Catálogo, stock y pedidos. Las métricas de ventas llegarán en una próxima etapa.</p></div>
+      <div className="admin-sidebar-bottom"><Link href="/"><ExternalLink size={17}/> Ver tienda</Link><p>Catálogo, stock, pedidos, cupones y métricas de ventas.</p></div>
     </aside>
     <main className="admin-main">{children}</main>
   </div>;

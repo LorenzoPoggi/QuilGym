@@ -81,7 +81,7 @@
 .filters-panel input[type="checkbox"]:checked::after { content: ""; width: 9px; height: 5px; margin-top: -2px; border: 2px solid #fff; border-top: 0; border-right: 0; transform: rotate(-45deg); }
 .filters-panel input[type="radio"]:checked::after { content: ""; width: 6px; height: 6px; background: #fff; border-radius: 50%; }
 .filters-panel input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.filters-more { margin: -4px 0 14px; padding: 0; color: var(--ink); background: none; border: 0; font-size: .78rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.filters-more { margin: -10px 0 8px; padding: 6px 0; color: var(--ink); background: none; border: 0; font-size: .78rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* Paginación */
 .pagination a, .pagination .is-disabled { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; font-weight: 600; }
@@ -133,6 +133,10 @@
 
 @media (max-width: 1100px) {
   .catalog-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* Con el panel de filtros al costado todavía entran tres columnas legibles (~220 px por tarjeta). */
+@media (max-width: 1100px) and (min-width: 961px) {
+  .catalog-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* Mobile: filtros plegables y toolbar en una fila */
@@ -200,6 +204,7 @@
 .search-product em { font-size: 1rem; font-weight: 800; }
 .search-all { gap: 8px; font-size: .85rem; }
 .search-all svg { width: 16px; height: 16px; }
+.search-side-results a + h3 { margin-top: 18px; }
 .search-side-results a { min-height: 36px; font-size: .86rem; font-weight: 600; }
 .search-side-results a svg { width: 16px; height: 16px; color: var(--muted); }
 .search-side-results a svg:last-child { margin-left: auto; }

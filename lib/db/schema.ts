@@ -299,3 +299,31 @@ export const invoices = pgTable("invoices", {
   check("invoices_amount_check", sql`${t.amountArs} > 0`),
 ]);
 export type Invoice = typeof invoices.$inferSelect;
+
+/**
+ * Métricas de rentabilidad (migración 0009). Tablas aparte a propósito: agregar columnas a variantes, ítems o
+ * pagos rompería cualquier `select()` de esas tablas mientras la migración no esté aplicada. El código consulta
+ * `to_regclass` antes de usarlas (ver lib/db/table-exists.ts).
+ */
+export const productCosts = pgTable("product_costs", {
+  variantId: integer("variant_id").primaryKey().references(() => productVariants.id, { onDelete: "cascade" }),
+  /** Costo unitario de compra en ARS, sin IVA recuperable si corresponde. */
+  costArs: integer("cost_ars").notNull(),
+  ...timestamps,
+}, (t) => [check("product_costs_cost_check", sql`${t.costArs} >= 0`)]);
+
+/** Costo unitario congelado al momento de la venta: cambiar el costo después no altera la ganancia histórica. */
+export const orderItemCosts = pgTable("order_item_costs", {
+  orderItemId: integer("order_item_id").primaryKey().references(() => orderItems.id, { onDelete: "cascade" }),
+  unitCostArs: integer("unit_cost_ars").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [check("order_item_costs_cost_check", sql`${t.unitCostArs} >= 0`)]);
+
+/** Comisiones reales que informa Mercado Pago en cada pago aprobado (fee_details y neto recibido). */
+export const paymentFees = pgTable("payment_fees", {
+  orderId: uuid("order_id").primaryKey().references(() => orders.id, { onDelete: "cascade" }),
+  providerId: text("provider_id").notNull(),
+  feeArs: integer("fee_ars").notNull(),
+  netReceivedArs: integer("net_received_ars"),
+  ...timestamps,
+}, (t) => [check("payment_fees_fee_check", sql`${t.feeArs} >= 0`)]);

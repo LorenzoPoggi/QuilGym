@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { ProductSummary } from "@/lib/catalog-types";
-import { formatArs, paymentHighlights } from "@/lib/commerce";
+import { commerce, formatArs, paymentHighlights } from "@/lib/commerce";
+import { InstallmentsLine } from "./product-installments";
 import { AddToCartButton } from "./cart-buttons";
 import { ProductImage } from "./product-image";
 import { ProductCardMedia } from "./product-card-media";
@@ -38,7 +39,8 @@ export function ProductCard({ product, compact = false, priority = false, classN
           <p className="price">{formatArs(product.priceArs)} {product.compareAtPriceArs ? <del>{formatArs(product.compareAtPriceArs)}</del> : null}</p>
           <p className={`stock ${product.inStock ? "" : "stock--out"}`}><span/> {product.inStock ? "En stock" : "Sin stock"}</p>
         </div>
-        {highlights ? <p className="installments">{highlights}</p> : null}
+        <InstallmentsLine price={product.priceArs} onlyInterestFree/>
+        {commerce.transferDiscountPercent > 0 ? <p className="installments">{highlights}</p> : null}
         <div className="product-card__actions">
           <AddToCartButton variantId={product.variantId} name={product.name} inStock={product.inStock} className="button button--dark product-card__add"/>
           <Link className="button button--outline product-card__link" href={href} aria-label={`Ver ${product.name}`}><ArrowUpRight aria-hidden="true"/></Link>

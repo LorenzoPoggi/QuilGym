@@ -21,7 +21,7 @@ vi.mock("./auth", () => ({ currentUser: vi.fn() }));
 vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null, orderAccessSecret: () => null, orderPageUrl: () => null,
   siteUrl: () => "https://quilgym.test", paymentNotificationUrl: () => "https://quilgym.test/api/payments/mercadopago/webhook", cardThreeDsMode: () => "optional" }));
 import { createOrder } from "./order-service";
-import { cardPaymentSetup, CardPaymentError, checkoutUrl, paymentSetup, submitProviderPayment } from "./mercadopago";
+import { cardPaymentSetup, CardPaymentError, checkoutUrl, paymentSetup, providerFee, submitProviderPayment } from "./mercadopago";
 
 const pg = new PGlite();
 const database = drizzle(pg, { schema });
@@ -246,5 +246,14 @@ describe("credenciales separadas para tarjetas y Checkout Pro", () => {
       delete process.env.VERCEL_ENV;
       process.env.MP_ACCESS_TOKEN = "TEST-token";
     }
+  });
+});
+
+describe("providerFee", () => {
+  it("suma solo las comisiones que paga el vendedor y usa el neto como respaldo", () => {
+    expect(providerFee({ transaction_amount: 10_000, fee_details: [{ type: "mercadopago_fee", amount: 629.5, fee_payer: "collector" }, { type: "financing_fee", amount: 900, fee_payer: "payer" }], transaction_details: { net_received_amount: 9_370.5 } }))
+      .toEqual({ feeArs: 630, netReceivedArs: 9_371 });
+    expect(providerFee({ transaction_amount: 10_000, transaction_details: { net_received_amount: 9_400 } })).toEqual({ feeArs: 600, netReceivedArs: 9_400 });
+    expect(providerFee({ transaction_amount: 10_000 })).toBeNull();
   });
 });

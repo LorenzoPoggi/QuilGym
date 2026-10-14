@@ -103,6 +103,10 @@ a.combo-gallery__part:hover > svg { color: var(--ink); }
   .combo-gallery__stage { aspect-ratio: 1 / .76; max-height: 46svh; border-radius: 20px; }
   .combo-gallery__count { top: 12px; left: 12px; }
 }
+/* Tablet chica (521–768): dos tarjetas y la tercera asomando; al 78% cada combo medía más de 550px de ancho. */
+@media (min-width: 521px) and (max-width: 768px) {
+  .combo-track > li { flex-basis: 46%; }
+}
 @media (max-width: 520px) {
   .combo-track > li { flex-basis: 82%; }
   .combo-gallery__includes ul { grid-template-columns: 1fr; gap: 8px; }

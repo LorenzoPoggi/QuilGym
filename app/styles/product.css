@@ -166,7 +166,9 @@ html:has(.lightbox[open]) { overflow: hidden; }
   .compare-page .compare-scroll { display: grid; grid-template-columns: minmax(0, 1fr); overflow: visible; scroll-snap-type: none; }
   .compare-page .compare-scroll > * { min-width: 0; }
   .compare-page :is(.compare-products, .compare-table, .compare-row) { display: contents; }
-  .compare-page .compare-products > aside, .compare-page .compare-row > [role="rowheader"] { display: none; }
+  .compare-page .compare-row > [role="rowheader"] { display: none; }
+  /* El título «Atributos» queda para lectores de pantalla: mantiene el orden h1 → h2 → h3 de las tarjetas. */
+  .compare-page .compare-products > aside { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .compare-page .compare-products > .product-card:nth-child(2) { order: 10; }
   .compare-page .compare-row > [role="cell"]:nth-child(2) { order: 11; }
   .compare-page .compare-products > .product-card:nth-child(3) { order: 20; }
@@ -200,3 +202,11 @@ html:has(.lightbox[open]) { overflow: hidden; }
   .sticky-buy { transition: none; }
 }
 .product-compare-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px}.product-compare-link svg{width:18px;height:18px}.product-compare-link svg:last-child{width:16px;height:16px}
+/* Mobile: «Comprar ahora» y «Agregar al carrito» en una fila a todo el ancho, con la compra directa primero. */
+@media (max-width: 768px) {
+  .buy-actions > div:last-child { display: flex; flex-direction: row-reverse; gap: 8px; width: 100%; justify-self: stretch; }
+  .buy-actions > div:last-child .button { flex: 1 1 0; min-width: 0; padding-inline: 10px; white-space: nowrap; }
+}
+@media (max-width: 380px) {
+  .buy-actions > div:last-child .button { font-size: .82rem; gap: 6px; }
+}

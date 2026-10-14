@@ -69,6 +69,8 @@ export function AdvisorChat({ configured }: { configured: boolean }) {
       <p>Contame dónde estás y adónde querés llegar. Vamos a pensar juntos qué hábitos y opciones del catálogo pueden acompañarte, y por qué.</p>
       <small><ShieldCheck aria-hidden="true"/>Soy un asesor virtual con IA, no un profesional de salud. Las sugerencias son informativas y no reemplazan una evaluación personal.</small>
     </aside>
+    {/* En mobile el panel lateral (con el h1) se oculta: este título solo existe para lectores de pantalla. */}
+    <h1 className="advisor-mobile-title">Asesor QuilGym: tu objetivo, tu rutina, tu conversación</h1>
     <section className="advisor-chat advisor-chat--conversation" aria-label="Chat con el asesor QuilGym">
       <header><div><span><Bot aria-hidden="true"/></span><strong>Asesor QuilGym</strong><small>{pending ? "Pensando en tu situación…" : "Conversemos sobre vos"}</small></div><button type="button" onClick={reset}><RefreshCw aria-hidden="true"/>Reiniciar</button></header>
       <div ref={history} className="advisor-conversation" role="log" aria-label="Conversación" aria-live="polite" aria-relevant="additions" aria-busy={pending} tabIndex={0}>

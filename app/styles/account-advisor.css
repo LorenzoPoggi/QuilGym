@@ -58,8 +58,10 @@
  .advisor-layout--conversation .advisor-sidebar { padding: 28px; }
  .advisor-chat--conversation { padding: 22px; }
 }
+.advisor-mobile-title { display: none; }
 @media (max-width: 768px) {
  .advisor-layout--conversation .advisor-sidebar { display: none; }
+ .advisor-mobile-title { display: block; position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
  .advisor-layout--conversation { gap: 16px; }
  .advisor-chat--conversation { min-height: 0; border-radius: var(--radius-lg); padding: 18px; }.advisor-conversation { height: 460px; }
  .advisor-chat--conversation > header strong { font-size: .9rem; }.advisor-chat--conversation > header small { font-size: .72rem; }
@@ -232,7 +234,10 @@
 .favorite-button::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 .product-image > .favorite-button { position: absolute; right: 10px; top: 10px; z-index: 2; }
 .favorite-button svg { width: 20px; height: 20px; }
-.favorite-button.is-saved { color: #9a7300; background: #fff9df; border-color: #dbc66c; }
+.favorite-button.is-saved { color: #9a6a00; background: #fff4c4; border-color: #e9b100; box-shadow: 0 4px 12px rgba(233,177,0,.3); }
+/* Guardado: estrella dorada rellena con contorno oscuro, se distingue sobre fondos claros y grises. */
+.favorite-button.is-saved svg { fill: #f6b800; stroke: #9a6a00; }
+.favorite-button.is-saved:hover { color: #8a5f00; border-color: #d9a300; }
 .favorite-button.is-pulsing svg { animation: favorite-heartbeat .56s ease-in-out both; }
 @keyframes favorite-heartbeat { 24% { transform: scale(1.3); } 48% { transform: scale(1); } 72% { transform: scale(1.2); } }
 .favorite-button:disabled { opacity: .6; cursor: wait; }
@@ -322,14 +327,24 @@
 .visit-quilmes-copy p { margin: 0; max-width: 440px; color: var(--muted); line-height: 1.6; }
 .visit-quilmes-copy .button { margin-top: 8px; }
 .visit-quilmes-map { position: relative; min-height: 340px; }
-.visit-quilmes-map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
+/* Mapa interactivo: arrastre y zoom propios del embed (en táctil Google pide dos dedos, así el scroll de la página no queda atrapado). */
+.visit-quilmes-map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 .location-card { position: relative; display: flex; flex-direction: column; min-height: 360px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; overflow: hidden; }
-.location-card iframe { width: 100%; height: 250px; border: 0; pointer-events: none; }
-.location-link { position: absolute; inset: 0; z-index: 2; border-radius: var(--radius-lg); }
+.location-card iframe { display: block; width: 100%; height: 250px; border: 0; }
 .location-caption { padding: 24px; }
 .location-caption h3 { margin: 0 0 10px; }
 .location-caption p { color: var(--muted); font-size: .85rem; }
-.location-caption span { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.location-caption__link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+/* Hasta 1100px el gutter es angosto y los dos botones apilados tapaban el borde derecho de las tarjetas:
+   un solo botón despliega WhatsApp y el asesor (mismo patrón que en mobile). */
+@media (max-width: 1100px) {
+ .advisor-floating { right: 16px; bottom: max(calc(var(--sticky-buy-h, 0px) + 16px), calc(16px + env(safe-area-inset-bottom, 0px))); gap: 10px; }
+ .advisor-floating-button, .whatsapp-floating-button, .advisor-popover { display: none; }
+ .floating-dial-toggle { display: grid; }.floating-dial { display: flex; }
+ /* Aire al final para que el botón flotante (52px + 16px) no tape el último contenido. */
+ #footer .footer-main { padding-bottom: calc(25px + 68px + max(var(--sticky-buy-h, 0px), env(safe-area-inset-bottom, 0px))); }
+ body:has(.advisor-floating):not(:has(#footer)) { padding-bottom: calc(68px + max(var(--sticky-buy-h, 0px), env(safe-area-inset-bottom, 0px))); }
+}
 @media (max-width: 768px) {
  .account-page { padding-block: 32px; }.auth-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }.auth-aside { display: none; }.auth-card { max-width: none; padding: 24px; }
  .account-toolbar--purchases { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 22px 0 26px; padding-inline: 0; }
@@ -337,12 +352,6 @@
  .account-toolbar--purchases select { width: 100%; min-width: 0; padding-inline: 11px; }
  .account-toolbar--purchases > span { grid-column: 1 / -1; padding: 0 4px; }
  .purchase-empty { gap: 20px; padding: 30px 18px; }
- .advisor-floating { right: 16px; bottom: max(calc(var(--sticky-buy-h, 0px) + 16px), calc(16px + env(safe-area-inset-bottom, 0px))); gap: 10px; }
- .advisor-floating-button, .whatsapp-floating-button, .advisor-popover { display: none; }
- .floating-dial-toggle { display: grid; }.floating-dial { display: flex; }
- /* Aire al final para que el botón flotante (52px + 16px) no tape el último contenido. */
- #footer .footer-main { padding-bottom: calc(25px + 68px + max(var(--sticky-buy-h, 0px), env(safe-area-inset-bottom, 0px))); }
- body:has(.advisor-floating):not(:has(#footer)) { padding-bottom: calc(68px + max(var(--sticky-buy-h, 0px), env(safe-area-inset-bottom, 0px))); }
  .google-reviews-layout { grid-template-columns: 1fr; }.review-card { flex-basis: 85%; }.location-card { min-height: auto; }
  .reviews-source { align-items: flex-start; }
  .visit-quilmes { grid-template-columns: 1fr; }.visit-quilmes-copy { padding: 26px 22px; }.visit-quilmes-map { min-height: 240px; }

@@ -104,7 +104,10 @@
 .checkout-pickup-map__details { position: absolute; z-index: 2; top: 18px; left: 18px; display: grid; gap: 5px; max-width: min(340px, calc(100% - 36px)); padding: 16px 18px; color: var(--ink); background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 5px 20px rgba(0,0,0,.14); pointer-events: none; }
 .checkout-pickup-map__details strong { font-weight: 800; }
 .checkout-pickup-map__details span { color: #3d4447; font-size: .88rem; line-height: 1.4; }
-.checkout-pickup-map__frame a { position: absolute; z-index: 1; inset: 0; }
+/* El mapa es interactivo (arrastrar y zoom): ninguna capa lo cubre; la tarjeta de dirección no captura clics y solo el enlace tiene eventos. */
+.checkout-pickup-map__link { position: absolute; z-index: 2; right: 12px; bottom: 12px; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; color: var(--ink); font-size: .86rem; font-weight: 600; text-decoration: none; background: #fff; border: 1px solid var(--line); border-radius: 999px; box-shadow: 0 3px 12px rgba(0,0,0,.16); }
+.checkout-pickup-map__link:hover { background: var(--soft); }
+.checkout-pickup-map__link:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .checkout-whatsapp-banner { grid-template-columns: 1fr auto; gap: 8px 20px; align-items: center; }
 .checkout-whatsapp-banner strong, .checkout-whatsapp-banner span, .checkout-whatsapp-banner small { grid-column: 1; }
 .checkout-whatsapp-banner strong { font-size: 1rem; }

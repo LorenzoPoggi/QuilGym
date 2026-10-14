@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Boxes, ReceiptText } from "lucide-react";
+import { BarChart3, Boxes, ReceiptText, TicketPercent } from "lucide-react";
 
-const links = [{ href: "/admin/productos", label: "Productos", Icon: Boxes }, { href: "/admin/pedidos", label: "Pedidos", Icon: ReceiptText }];
+const links = [{ href: "/admin/productos", label: "Productos", Icon: Boxes }, { href: "/admin/pedidos", label: "Pedidos", Icon: ReceiptText }, { href: "/admin/cupones", label: "Cupones", Icon: TicketPercent }, { href: "/admin/metricas", label: "Métricas", Icon: BarChart3 }];
 
 export function AdminNav() {
   const pathname = usePathname() ?? "";

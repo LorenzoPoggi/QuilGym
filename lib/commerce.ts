@@ -19,7 +19,7 @@ export const commerce = {
    * Tope de cuotas que ofrece el formulario de tarjeta de crédito. null = las que habilite Mercado Pago
    * para la tarjeta (hasta 48). Las cuotas con interés las paga el comprador; ver `interestFreeInstallments`.
    */
-  maxCardInstallments: null as number | null,
+  maxCardInstallments: 12 as number | null,
   /**
    * Identidad legal y fiscal del vendedor. La usan las páginas legales, los emails y la facturación.
    * Todo en null hasta que el negocio y su contador lo confirmen: nunca completar con valores de ejemplo.
