@@ -39,7 +39,6 @@ export default async function CardPaymentPage({ params, searchParams }: {
       {inReview
         ? <section className="checkout-card card-payment" role="status"><h2>Pago en proceso</h2><p>Te avisaremos por email cuando se acredite. Podés actualizar el estado sin volver a ingresar tu tarjeta.</p><RefreshOrder pending/><Link className="button button--outline" href={confirmationHref}>Ver mi pedido</Link></section>
         : <CardPaymentFlow orderId={order.id} paymentChoice={cardChoice} accessToken={accessToken} confirmationHref={confirmationHref} lastAttemptFailed={lastAttemptFailed}/>}
-      {!inReview ? <Link className="card-payment-page__back" href={confirmationHref}>Ver el estado de mi pedido</Link> : null}
     </div></main>
   </>;
 }

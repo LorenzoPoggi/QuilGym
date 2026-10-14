@@ -66,7 +66,7 @@ function GoogleConnection({ linked, available }: { linked: boolean; available: b
 }
 
 function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
-  const [confirmation, setConfirmation] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -74,7 +74,7 @@ function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
 
   async function removeAccount(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (confirmation !== "ELIMINAR" || (hasPassword && !password)) return;
+    if (!confirmed || (hasPassword && !password)) return;
     setPending(true);
     setError("");
     try {
@@ -95,8 +95,8 @@ function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
   return <section id="eliminar-cuenta" className="settings-card account-settings-danger"><h3>Eliminar cuenta</h3><p>Esta acción es definitiva: se borrarán tu perfil, acceso, favoritos e historial. Los pedidos ya registrados quedarán desvinculados de tu cuenta, pero conservarán sus datos para la gestión de la compra.</p>
     <form onSubmit={removeAccount}>
       {hasPassword ? <label>Contraseña actual<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required/></label> : <p>Si ingresaste con Google hace más de un día, tendrás que cerrar sesión y volver a ingresar antes de confirmar.</p>}
-      <label>Escribí ELIMINAR para confirmar<input type="text" autoComplete="off" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required/></label>
-      <button className="button button--outline account-delete-button" type="submit" disabled={pending || confirmation !== "ELIMINAR" || (hasPassword && !password)}>{pending ? "Eliminando…" : "Eliminar mi cuenta definitivamente"}</button>
+      <label className="account-delete-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} required/><span>Entiendo que esta acción es permanente y quiero eliminar mi cuenta.</span></label>
+      <button className="button button--outline account-delete-button" type="submit" disabled={pending || !confirmed || (hasPassword && !password)}>{pending ? "Eliminando…" : "Eliminar mi cuenta definitivamente"}</button>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
     </form>
   </section>;

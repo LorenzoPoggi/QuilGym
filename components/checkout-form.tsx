@@ -74,9 +74,10 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
     : usablePayments(config, delivery).filter((method) => method !== "transfer");
   const allowed = deliveryEnabled[delivery] && payments.includes(payment);
   const cartReady = cart.lines.length > 0 && !cart.hasBlockingIssues && !cart.hasPriceChanges;
+  // Dejá enviar el intento sin marcar el consentimiento para poder explicar el error junto al checkbox.
   const canSubmit = whatsappOnly
-    ? accepted && cartReady && allowed && !busy && !quoting
-    : accepted && quote && cartReady && allowed && !busy && !quoting;
+    ? cartReady && allowed && !busy && !quoting
+    : quote && cartReady && allowed && !busy && !quoting;
 
   useEffect(() => {
     let active = true;
@@ -137,6 +138,25 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
     setDirection(next > step ? "forward" : "backward");
     setStep(next);
     setError("");
+  }
+
+  function showValidationErrors(nextFields: Record<string, string>, message = "Revisá los campos marcados antes de continuar.") {
+    setFields(nextFields);
+    const keys = Object.keys(nextFields);
+    const customerFields = ["name", "email", "phone"];
+    const deliveryFields = ["street", "streetNumber", "postalCode", "city", "province", "notes", "apartment", "delivery"];
+    const nextStep: 1 | 2 | 3 = keys.some((key) => customerFields.includes(key))
+      ? 1
+      : keys.some((key) => deliveryFields.includes(key))
+        ? 2
+        : 3;
+    goTo(nextStep);
+    setError(message);
+    const firstField = keys[0];
+    if (firstField) requestAnimationFrame(() => {
+      const control = formRef.current?.elements.namedItem(firstField);
+      if (control instanceof HTMLElement && !control.matches(":disabled")) control.focus();
+    });
   }
 
   function invalidateQuote() { quoteVersion.current += 1; setQuote(null); }
@@ -230,12 +250,8 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
     const parsed = validateCheckout(input);
     const invalid = parsed.ok ? needsTaxId && !parsed.value.taxId ? { taxIdNumber: "Ingresá tu DNI o CUIT/CUIL para la factura." } : null : parsed.fields;
     if (invalid) {
-      setFields(invalid);
-      setError("Revisá los campos marcados antes de continuar.");
       submitting.current = false; setBusy(false);
-      const keys = Object.keys(invalid);
-      if (keys.some((key) => ["name", "email", "phone"].includes(key))) goTo(1);
-      else if (keys.some((key) => ["street", "streetNumber", "postalCode", "city", "province", "notes", "apartment", "delivery"].includes(key))) goTo(2);
+      showValidationErrors(invalid);
       return;
     }
     if (!parsed.ok) return;
@@ -268,7 +284,11 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
         }
         router.push(`/checkout/confirmacion/${result.orderId}`);
         router.refresh();
-      } else { setError(result.error); setFields(result.fields ?? {}); invalidateQuote(); }
+      } else {
+        if (result.fields && Object.keys(result.fields).length) showValidationErrors(result.fields, result.error);
+        else { setFields({}); setError(result.error); }
+        invalidateQuote();
+      }
     } catch { setError("No pudimos recibir la respuesta. Reintentá: conservamos la clave para evitar duplicar el pedido."); }
     finally { setBusy(false); submitting.current = false; }
   }
@@ -358,7 +378,8 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
           {needsTaxId ? <fieldset className="checkout-tax-id"><legend>Datos para la factura</legend><p>Por el importe de la compra, ARCA exige identificar al comprador en la factura.</p>
             <div className="form-grid"><label>Tipo<select name="taxIdType" value={values.taxIdType ?? "DNI"} onChange={(event) => setValues((current) => ({ ...current, taxIdType: event.target.value }))}><option value="DNI">DNI</option><option value="CUIT">CUIT/CUIL</option></select></label>
               {field("taxIdNumber", "Número", { required: true, maxLength: 13, className: "span-2", inputMode: "numeric" })}</div></fieldset> : null}
-          <label className="terms"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)}/>{whatsappOnly ? "Revisé mis datos y quiero enviar esta solicitud por WhatsApp." : "Confirmo que los datos, productos y forma de entrega son correctos."}</label>
+          <label className={`terms${fields.accepted ? " is-invalid" : ""}`}><input type="checkbox" name="accepted" checked={accepted} aria-invalid={fields.accepted ? true : undefined} aria-describedby={fields.accepted ? "error-accepted" : undefined} onChange={(event) => { setAccepted(event.target.checked); if (fields.accepted) setFields((current) => { const next = { ...current }; delete next.accepted; return next; }); }}/>{whatsappOnly ? "Revisé mis datos y quiero enviar esta solicitud por WhatsApp." : "Confirmo que los datos, productos y forma de entrega son correctos."}</label>
+          {fields.accepted ? <small className="form-error checkout-checkbox-error" id="error-accepted">{fields.accepted}</small> : null}
           <div className="checkout-step-actions"><button type="button" className="button button--outline" onClick={() => goTo(2)}><ArrowLeft aria-hidden="true" size={18}/>Volver</button><button className={`button ${whatsappOnly ? "button--whatsapp" : "button--dark"}`} type="submit" disabled={!canSubmit}>{whatsappOnly ? <><WhatsAppGlyph/>Continuar por WhatsApp</> : <><Lock aria-hidden="true" size={17}/><span>{checkoutActionLabel}</span><ArrowRight aria-hidden="true" size={18}/></>}</button></div>
         </section>
         {error ? <p className="form-error checkout-flow-error" role="alert">{error}</p> : null}

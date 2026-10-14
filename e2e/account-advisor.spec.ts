@@ -64,6 +64,16 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   await expect(page.getByRole("navigation", { name: "Secciones de tu cuenta" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver compra" })).toHaveCount(1);
   await page.goto("/cuenta/configuracion");
+  const deleteSection = page.locator("#eliminar-cuenta");
+  await expect(deleteSection.getByLabel("Escribí ELIMINAR para confirmar")).toHaveCount(0);
+  const deleteConfirmation = deleteSection.getByRole("checkbox", { name: /acción es permanente/ });
+  const deleteButton = deleteSection.getByRole("button", { name: "Eliminar mi cuenta definitivamente" });
+  await expect(deleteButton).toBeDisabled();
+  await deleteConfirmation.check();
+  await expect(deleteButton).toBeDisabled(); // Sigue bloqueado hasta revalidar la contraseña.
+  await deleteSection.getByLabel("Contraseña actual").fill(password);
+  await expect(deleteButton).toBeEnabled();
+  // No confirmar el borrado en E2E: conservamos la cuenta QA para el resto del recorrido.
   await page.getByRole("button", { name: "Cerrar sesión", exact: true }).click();
   await expect(page).toHaveURL("/");
   await page.goto("/cuenta/ingresar");
@@ -153,6 +163,19 @@ test("asesor: conexión pendiente conserva el mensaje y los enlaces anteriores l
   await expect(page.locator(".advisor-entry--user")).toContainText("mejorar mis hábitos");
   await expect(page.locator(".advisor-entry--assistant")).toHaveCount(1);
   await expect(page.locator(".product-card")).toHaveCount(0);
+});
+
+test("asesor vacío: la rueda del mouse sigue desplazando la página", async ({ page }, info) => {
+  test.skip(info.project.name === "mobile", "El chat mobile usa el historial como su área de scroll única.");
+  await page.goto("/asesor");
+  const conversation = page.locator(".advisor-conversation");
+  await expect(conversation).toBeVisible();
+  await expect(page.locator(".advisor-entry")).toHaveCount(1);
+  const box = await conversation.boundingBox();
+  if (!box) throw new Error("No se encontró el área de conversación.");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
 
 test("acceso flotante, mapa real y carrito offcanvas accesible", async ({ page }, info) => {

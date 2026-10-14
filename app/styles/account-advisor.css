@@ -18,7 +18,7 @@
 .advisor-chat--conversation > header > div > small { align-self: start; color: var(--muted); }
 .advisor-chat--conversation > header button { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .advisor-chat--conversation > header button svg { width: 18px; }
-.advisor-conversation { height: 510px; overflow-y: auto; overscroll-behavior: contain; padding: 28px 6px 18px; scrollbar-width: thin; }
+.advisor-conversation { height: 510px; overflow-y: auto; overscroll-behavior-y: auto; padding: 28px 6px 18px; scrollbar-width: thin; }
 .advisor-entry { margin-bottom: 26px; }
 .advisor-starters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 20px 36px; }
 .advisor-starters p { flex: 0 0 100%; margin: 0; color: var(--muted); font-size: .78rem; }
@@ -149,7 +149,7 @@
 .account-side-nav svg { width: 18px; height: 18px; }
 .account-area-content { min-width: 0; }
 .account-page-title { display: flex; align-items: center; gap: 16px; margin: 0 0 10px; font-size: clamp(1.7rem, 3vw, 2.3rem); }
-.account-page-intro { margin: 0 0 26px; color: var(--muted); }
+.account-page-intro { max-width: 68ch; margin: 0 0 26px; color: var(--muted); line-height: 1.6; }
 .account-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .account-summary-grid a { display: grid; gap: 8px; min-height: 135px; padding: 23px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
 .account-summary-grid a:hover { box-shadow: var(--shadow); }
@@ -168,31 +168,48 @@
 .purchase-card, .history-row { border: 1px solid var(--line); border-radius: 16px; background: #fff; }
 .purchase-card > header { display: flex; justify-content: space-between; gap: 12px; padding: 15px 20px; border-bottom: 1px solid var(--line); }
 .purchase-card > header small { color: var(--muted); }
-.purchase-card-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center; padding: 20px; }
+.purchase-card-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, auto) minmax(145px, 180px); gap: 20px; align-items: center; padding: 20px; }
 .purchase-card-items { display: grid; gap: 12px; }
 .purchase-line { display: flex; align-items: center; gap: 13px; min-width: 0; }
 .purchase-line .product-thumb { width: 70px; flex: 0 0 70px; border-radius: 8px; }
 .purchase-line strong, .purchase-line small { display: block; }
-.purchase-line small { color: var(--muted); }
-.purchase-status { color: #245f39; font-weight: 700; }
-.purchase-status--pending { color: #8b6315; }
-.purchase-status--cancelled, .purchase-status--rejected { color: #a33c3c; }
+.purchase-line strong { line-height: 1.35; }
+.purchase-line small { margin-top: 4px; color: var(--muted); }
+.purchase-status { justify-self: center; max-width: 100%; margin: 0; padding: 9px 13px; border: 1px solid #c8dfcf; border-radius: 999px; color: #245f39; background: #f0f7f2; font-size: .88rem; line-height: 1.3; font-weight: 700; text-align: center; }
+.purchase-status--pending { color: #76530d; border-color: #ead9aa; background: #fbf6e8; }
+.purchase-status--cancelled, .purchase-status--rejected { color: #953737; border-color: #ebcaca; background: #fff3f3; }
 .purchase-card-actions { display: grid; justify-items: stretch; gap: 8px; min-width: 145px; }
 .purchase-card-actions .button { white-space: nowrap; }
 .favorite-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 25px; }
 .favorite-filters button { padding: 9px 14px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: pointer; }
 .favorite-filters button[aria-pressed="true"] { color: #fff; border-color: var(--ink); background: var(--ink); }
-.history-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; }
+.history-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; }
 .history-row > a { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
-.history-row > a span { overflow: hidden; text-overflow: ellipsis; }
+.history-row > a svg { width: 19px; height: 19px; flex: 0 0 auto; color: #626a6e; }
+.history-row > a span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .history-row small { color: var(--muted); }
-.history-row button { padding: 7px; border: 0; background: transparent; cursor: pointer; }
-.settings-card { display: grid; gap: 18px; max-width: 650px; padding: 26px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+.history-row button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 10px; color: #5f676b; background: transparent; cursor: pointer; }
+.history-row button:hover { color: #953737; background: #fff3f3; }
+.history-row button svg { width: 18px; height: 18px; }
+.account-empty { display: grid; justify-items: start; gap: 12px; padding: 28px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+.account-empty > svg { box-sizing: content-box; width: 22px; height: 22px; padding: 12px; color: #4d575c; background: var(--soft); border-radius: 13px; }
+.account-empty h3, .account-empty p { margin: 0; }
+.account-empty h3 { font-size: 1.1rem; line-height: 1.3; }
+.account-empty p { max-width: 58ch; color: var(--muted); line-height: 1.55; }
+.account-empty .button { margin-top: 4px; }
+.settings-card { display: grid; gap: 16px; width: 100%; max-width: 760px; padding: clamp(20px, 3vw, 28px); border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+.settings-card h3 { margin: 0; font-size: 1.2rem; line-height: 1.3; }
 .settings-card label { display: grid; gap: 7px; font-weight: 600; }
 .settings-card input[type="text"] { min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; }
+.settings-card input[type="text"], .settings-card input[type="password"] { width: 100%; min-width: 0; }
 .settings-card fieldset { margin: 0; padding: 0; border: 0; }
 .settings-card legend { margin-bottom: 10px; font-weight: 600; }
 .settings-card > p { margin: 0; color: var(--muted); }
+.account-settings-preferences > div { display: grid; gap: 10px; }
+.account-checkbox { display: flex !important; align-items: flex-start; gap: 12px !important; width: fit-content; max-width: 100%; font-weight: 600; line-height: 1.5; cursor: pointer; }
+.account-checkbox input { width: 20px; height: 20px; flex: 0 0 20px; margin: 2px 0 0; accent-color: #34393c; }
+.account-settings-preferences small { color: var(--muted); line-height: 1.5; }
+.account-settings-preferences p[role="status"] { min-height: 0; margin: 0; color: #245f39; }
 .avatar-options { display: flex; flex-wrap: wrap; gap: 12px; }
 .avatar-options label { padding: 7px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
 .avatar-options label:has(input:checked) { border-color: #34383b; }
@@ -203,13 +220,24 @@
 .account-settings-danger { margin-top: 20px; border-color: #ddc2c2; scroll-margin-top: 100px; }
 .account-settings-danger h3 { color: #a33c3c; }
 .account-settings-danger form { display: grid; gap: 15px; }
-.account-settings-danger form label { display: grid; gap: 7px; font-weight: 600; }
+.account-settings-danger form label:not(.account-delete-confirm) { display: grid; gap: 7px; font-weight: 600; }
 .account-settings-danger form input { min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; }
+.account-settings-danger form input[type="checkbox"] { width: 20px; height: 20px; min-height: 20px; margin: 2px 0 0; padding: 0; flex: 0 0 20px; accent-color: #34393c; }
+.account-delete-confirm { display: flex !important; grid-template-columns: none; align-items: flex-start; gap: 12px !important; max-width: 620px; line-height: 1.5; cursor: pointer; }
+.account-delete-confirm span { font-weight: 500; }
 .account-settings-danger form p { margin: 0; color: var(--muted); }
 .account-settings-danger .account-delete-button { justify-self: start; color: #a33c3c; border-color: #bb7777; }
 .account-settings-danger .account-delete-button:hover { background: #fff0f0; }
 .account-settings-danger .account-delete-button:disabled { opacity: .5; cursor: not-allowed; }
 .account-settings-danger .form-error { color: #a33c3c; }
+@media (max-width: 950px) {
+  .purchase-card-body { grid-template-columns: minmax(0, 1fr) auto; gap: 16px 12px; }
+  .purchase-card-items { grid-column: 1; }
+  .purchase-card-body > .purchase-status { grid-column: 2; }
+  .purchase-card-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; min-width: 0; padding-top: 14px; border-top: 1px solid var(--line); }
+  .purchase-card-actions > strong { margin-right: auto; }
+  .purchase-card-actions .button { white-space: normal; }
+}
 @media (max-width: 768px) {
   .account-link--loading { min-width: 35px; margin-left: auto; }
   .account-link--loading .account-link-skeleton-icon { display: block; }
@@ -224,9 +252,19 @@
   .account-area-layout { grid-template-columns: 1fr; gap: 20px; }
   .account-side-nav { position: static; display: flex; flex-wrap: wrap; }
   .account-summary-grid { grid-template-columns: 1fr 1fr; }
-  .purchase-card-body { grid-template-columns: 1fr; }
+  .purchase-card-body { align-items: center; padding: 16px; }
 }
-@media (max-width: 520px) { .account-summary-grid { grid-template-columns: 1fr; }.account-side-nav a { font-size: .8rem; }.account-area-heading { align-items: flex-start; } }
+@media (max-width: 520px) {
+ .account-summary-grid { grid-template-columns: 1fr; }
+ .account-side-nav a { font-size: .8rem; }
+ .account-area-heading { align-items: flex-start; }
+ .history-row { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 10px 10px 10px 13px; }
+ .history-row > a { grid-column: 1 / -1; min-height: 40px; }
+ .history-row small { grid-column: 1; padding-left: 31px; }
+ .history-row button { grid-column: 2; grid-row: 2; }
+ .account-empty { padding: 22px; }
+ .account-settings-danger .account-delete-button { width: 100%; }
+}
 .product-image { position: relative; }
 .favorite-button { position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: #555e63; cursor: pointer; flex-shrink: 0; transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
 .favorite-button:hover { color: #9a7300; border-color: #dbc66c; box-shadow: 0 5px 14px rgba(154,115,0,.14); transform: translateY(-1px); }
