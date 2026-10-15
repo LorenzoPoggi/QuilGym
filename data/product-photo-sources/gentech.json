@@ -1,0 +1,12 @@
+{
+  "brand": "Gentech",
+  "officialSites": ["https://www.gentech.com.ar"],
+  "products": {
+    "shaker-gentech": {
+      "sources": [
+        { "url": "https://www.gentech.com.ar/web/image/product.template/104/image_1920?unique=2d43c15", "kind": "product", "sourcePage": "https://www.gentech.com.ar/es/shop/shaker-gentech-104", "append": true }
+      ],
+      "dropBaseline": ["t1"]
+    }
+  }
+}

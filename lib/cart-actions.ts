@@ -6,6 +6,7 @@ import type { CartActionResult } from "./cart-types";
 import { db } from "./db";
 import { cartItems, carts, coupons, productVariants } from "./db/schema";
 import { evaluateCoupon, normalizeCouponCode } from "./pricing";
+import { consumeRateLimit } from "./rate-limit";
 
 const isId = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) > 0;
 const isQuantity = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) <= 1000;
@@ -72,6 +73,7 @@ export async function applyCoupon(rawCode: string): Promise<CartActionResult> {
   const code = typeof rawCode === "string" ? normalizeCouponCode(rawCode) : "";
   if (!code || code.length > 40 || !/^[A-Z0-9_-]+$/.test(code)) return failure("Ingresá un código válido.", cartId);
   if (!cartId) return failure("Agregá productos antes de aplicar un cupón.", cartId);
+  if (!await consumeRateLimit(`coupon:apply:${cartId}`, 12, 60_000)) return failure("Probaste muchos cupones en poco tiempo. Esperá un minuto y volvé a intentar.", cartId);
 
   const cart = await getCart(cartId);
   if (cart.subtotalArs === 0) return failure("Agregá productos antes de aplicar un cupón.", cartId);

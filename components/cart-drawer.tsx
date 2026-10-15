@@ -49,59 +49,63 @@ export function CartPanel({ onClose, closeHref = "/productos", headingId = "cart
         <div className="empty-cart"><h3>Tu carrito está vacío</h3><p>Sumá productos desde el catálogo y aparecen acá.</p><Link className="button button--dark" href="/productos" onClick={onClose}>Explorar productos</Link></div>
       ) : (
         <>
-          <div className="cart-items" aria-busy={pending}>
-            {cart.lines.map((line) => (
-              <article key={line.variantId} className={line.available ? "" : "is-unavailable"}>
-                <Link href={`/productos/${line.slug}`} onClick={onClose}><ProductImage product={line} sizes="86px" decorative/></Link>
-                <div>
-                  <p className="eyebrow">{line.brand?.name ?? line.category.name}</p>
-                  <h3><Link href={`/productos/${line.slug}`} onClick={onClose}>{line.name}</Link></h3>
-                  <span>{line.variantLabel ?? line.category.name} · {formatArs(line.unitPriceArs)} c/u</span>
-                  {line.available ? (
-                    <div className="quantity" role="group" aria-label={`Cantidad de ${line.name}`}>
-                      <button type="button" onClick={() => { if (!pending) void setQuantity(line.variantId, line.quantity - 1); }} disabled={line.quantity <= 1} aria-disabled={pending || undefined} aria-label="Restar una unidad"><Minus aria-hidden="true" size={15} strokeWidth={2.5}/></button>
-                      <span aria-live="polite">{line.quantity}</span>
-                      <button type="button" onClick={() => { if (!pending) void setQuantity(line.variantId, line.quantity + 1); }} disabled={line.quantity >= line.maxQuantity} aria-disabled={pending || undefined} aria-label="Sumar una unidad"><Plus aria-hidden="true" size={15} strokeWidth={2.5}/></button>
-                    </div>
-                  ) : <strong className="cart-unavailable">Sin stock</strong>}
-                </div>
-                <div>
-                  <button type="button" className="remove-item" onClick={() => remove(line.variantId)} disabled={pending} aria-label={`Quitar ${line.name}`}><Trash2 aria-hidden="true" size={18}/></button>
-                  <strong>{line.available ? formatArs(line.lineTotalArs) : "—"}</strong>
-                </div>
-              </article>
-            ))}
+          <div className="cart-panel-scroll">
+            <div className="cart-items" aria-busy={pending}>
+              {cart.lines.map((line) => (
+                <article key={line.variantId} className={line.available ? "" : "is-unavailable"}>
+                  <Link href={`/productos/${line.slug}`} onClick={onClose}><ProductImage product={line} sizes="86px" decorative/></Link>
+                  <div>
+                    <p className="eyebrow">{line.brand?.name ?? line.category.name}</p>
+                    <h3><Link href={`/productos/${line.slug}`} onClick={onClose}>{line.name}</Link></h3>
+                    <span>{line.variantLabel ?? line.category.name} · {formatArs(line.unitPriceArs)} c/u</span>
+                    {line.available ? (
+                      <div className="quantity" role="group" aria-label={`Cantidad de ${line.name}`}>
+                        <button type="button" onClick={() => { if (!pending) void setQuantity(line.variantId, line.quantity - 1); }} disabled={line.quantity <= 1} aria-disabled={pending || undefined} aria-label="Restar una unidad"><Minus aria-hidden="true" size={15} strokeWidth={2.5}/></button>
+                        <span aria-live="polite">{line.quantity}</span>
+                        <button type="button" onClick={() => { if (!pending) void setQuantity(line.variantId, line.quantity + 1); }} disabled={line.quantity >= line.maxQuantity} aria-disabled={pending || undefined} aria-label="Sumar una unidad"><Plus aria-hidden="true" size={15} strokeWidth={2.5}/></button>
+                      </div>
+                    ) : <strong className="cart-unavailable">Sin stock</strong>}
+                  </div>
+                  <div>
+                    <button type="button" className="remove-item" onClick={() => remove(line.variantId)} disabled={pending} aria-label={`Quitar ${line.name}`}><Trash2 aria-hidden="true" size={18}/></button>
+                    <strong>{line.available ? formatArs(line.lineTotalArs) : "—"}</strong>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {cart.freeShippingRemainingArs !== null && commerce.freeShippingFromArs ? (
+              <section className="free-shipping">
+                <div><strong>{cart.freeShippingRemainingArs === 0 ? "¡Tenés envío gratis!" : `Te faltan ${formatArs(cart.freeShippingRemainingArs)} para el envío gratis`}</strong><span>Desde {formatArs(commerce.freeShippingFromArs)}</span></div>
+                <progress value={Math.min(cart.totalArs, commerce.freeShippingFromArs)} max={commerce.freeShippingFromArs}/>
+              </section>
+            ) : null}
+
+            <section className="coupon">
+              <strong>Cupón de descuento</strong>
+              {cart.coupon ? (
+                <div className="coupon-active"><span>{cart.coupon.code}{cart.coupon.description ? ` · ${cart.coupon.description}` : ""}</span><button type="button" onClick={() => removeCoupon()} disabled={pending}>Quitar</button></div>
+              ) : (
+                <form onSubmit={submitCoupon}><input aria-label="Código de cupón" value={couponCode} onChange={(event) => setCouponCode(event.target.value)} maxLength={40} autoComplete="off" placeholder="Ingresá tu código"/><button type="submit" disabled={pending || couponCode.trim().length === 0}>Aplicar</button></form>
+              )}
+            </section>
           </div>
 
-          {cart.freeShippingRemainingArs !== null && commerce.freeShippingFromArs ? (
-            <section className="free-shipping">
-              <div><strong>{cart.freeShippingRemainingArs === 0 ? "¡Tenés envío gratis!" : `Te faltan ${formatArs(cart.freeShippingRemainingArs)} para el envío gratis`}</strong><span>Desde {formatArs(commerce.freeShippingFromArs)}</span></div>
-              <progress value={Math.min(cart.totalArs, commerce.freeShippingFromArs)} max={commerce.freeShippingFromArs}/>
+          <footer className="cart-panel-footer">
+            <section className="cart-totals" aria-label="Totales">
+              <p><span>Subtotal</span><strong>{formatArs(cart.subtotalArs)}</strong></p>
+              {cart.coupon ? <p><span>Cupón {cart.coupon.code}</span><strong>− {formatArs(cart.discountArs)}</strong></p> : null}
+              <p><span>Envío</span><strong className="is-muted">Se calcula en el checkout</strong></p>
+              <div><span>Total</span><strong>{formatArs(cart.totalArs)}</strong></div>
+              {commerce.interestFreeInstallments > 1 ? <small>{commerce.interestFreeInstallments} cuotas sin interés de {formatArs(cart.totalArs / commerce.interestFreeInstallments)}</small> : null}
             </section>
-          ) : null}
 
-          <section className="coupon">
-            <strong>Cupón de descuento</strong>
-            {cart.coupon ? (
-              <div className="coupon-active"><span>{cart.coupon.code}{cart.coupon.description ? ` · ${cart.coupon.description}` : ""}</span><button type="button" onClick={() => removeCoupon()} disabled={pending}>Quitar</button></div>
-            ) : (
-              <form onSubmit={submitCoupon}><input aria-label="Código de cupón" value={couponCode} onChange={(event) => setCouponCode(event.target.value)} maxLength={40} autoComplete="off" placeholder="Ingresá tu código"/><button type="submit" disabled={pending || couponCode.trim().length === 0}>Aplicar</button></form>
-            )}
-          </section>
-
-          <section className="cart-totals" aria-label="Totales">
-            <p><span>Subtotal</span><strong>{formatArs(cart.subtotalArs)}</strong></p>
-            {cart.coupon ? <p><span>Cupón {cart.coupon.code}</span><strong>− {formatArs(cart.discountArs)}</strong></p> : null}
-            <p><span>Envío</span><strong className="is-muted">Se calcula en el checkout</strong></p>
-            <div><span>Total</span><strong>{formatArs(cart.totalArs)}</strong></div>
-            {commerce.interestFreeInstallments > 1 ? <small>{commerce.interestFreeInstallments} cuotas sin interés de {formatArs(cart.totalArs / commerce.interestFreeInstallments)}</small> : null}
-          </section>
-
-          {cart.hasBlockingIssues
-            ? <p className="cart-feedback cart-feedback--error">Quitá los productos sin stock para continuar.</p>
-            : <Link className="button button--dark button--full" href="/checkout" onClick={onClose}><ArrowRight aria-hidden="true" size={18}/>Iniciar compra</Link>}
-          {continueShopping}
-          <p className="cart-safe">Precios y stock verificados al momento · compra protegida</p>
+            {cart.hasBlockingIssues
+              ? <p className="cart-feedback cart-feedback--error">Quitá los productos sin stock para continuar.</p>
+              : <Link className="button button--dark button--full" href="/checkout" onClick={onClose}><ArrowRight aria-hidden="true" size={18}/>Iniciar compra</Link>}
+            {continueShopping}
+            <p className="cart-safe">Precios y stock verificados al momento · compra protegida</p>
+          </footer>
         </>
       )}
     </>

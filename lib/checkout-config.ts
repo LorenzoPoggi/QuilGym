@@ -1,10 +1,18 @@
 import "server-only";
 import type { CheckoutConfig } from "./checkout-types";
-import { parseCheckoutEnv, readBankDetails, readOrderAccessSecret, readPendingOrderTtlHours, readSiteUrl } from "./checkout-env";
+import { parseCheckoutEnv, readBankDetails, readCardThreeDsMode, readOrderAccessSecret, readPaymentNotificationUrl, readPendingOrderTtlHours, readSiteUrl } from "./checkout-env";
 import { orderAccessToken } from "./order-access";
 
 export function siteUrl() {
   return readSiteUrl(process.env);
+}
+
+export function paymentNotificationUrl() {
+  return readPaymentNotificationUrl(process.env);
+}
+
+export function cardThreeDsMode() {
+  return readCardThreeDsMode(process.env);
 }
 
 export function bankDetails() {
@@ -15,7 +23,7 @@ export function orderAccessSecret() {
   return readOrderAccessSecret(process.env);
 }
 
-/** URL absoluta del pedido, con el link firmado cuando hay secreto. Null sin NEXT_PUBLIC_SITE_URL. */
+/** URL firmada del pedido, fijada al despliegue creador en Preview. Null sin origen válido. */
 export function orderPageUrl(orderId: string) {
   const site = siteUrl();
   if (!site) return null;

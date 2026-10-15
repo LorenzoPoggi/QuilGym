@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAccount } from "./account-provider";
 import { authClient } from "@/lib/auth-client";
 import { setMarketingConsent } from "@/lib/account-actions";
+import { ADMIN_EMAIL } from "@/lib/admin-config";
 import { AccountAvatar } from "./account-avatar";
 
 /** Hover solo con mouse en desktop: en touch el tap emula mouseenter y el clic lo volvía a cerrar. */
@@ -40,7 +41,7 @@ export function AccountLink() {
         <Link href="/cuenta/historial" onClick={() => setOpen(false)}><History aria-hidden="true"/>Historial</Link>
         <Link href="/cuenta/favoritos" onClick={() => setOpen(false)}><Star aria-hidden="true"/>Favoritos</Link>
         <Link href="/cuenta/configuracion" onClick={() => setOpen(false)}><Settings aria-hidden="true"/>Configuración</Link>
-        {user.emailVerified && user.email.trim().toLowerCase() === "quilgymnuevo@gmail.com" && <Link href="/admin/productos" onClick={() => setOpen(false)}><Boxes aria-hidden="true"/>Administración</Link>}
+        {user.emailVerified && user.email.trim().toLowerCase() === ADMIN_EMAIL && <Link href="/admin/productos" onClick={() => setOpen(false)}><Boxes aria-hidden="true"/>Administración</Link>}
       </nav>
       <button type="button" className="account-menu-signout" onClick={async () => { await authClient.signOut(); setOpen(false); router.push("/"); router.refresh(); }}><LogOut aria-hidden="true"/>Salir</button>
       <Link className="account-menu-danger" href="/cuenta/configuracion#eliminar-cuenta" onClick={() => setOpen(false)}><Trash2 aria-hidden="true"/>Eliminar cuenta</Link>
@@ -51,8 +52,11 @@ export function FavoriteButton({ productId, name }: { productId: number; name: s
   const { ids, toggle, loading, error } = useAccount();
   const [pending, setPending] = useState(false);
   const [clicked, setClicked] = useState(false);
+  const [pulsing, setPulsing] = useState(false);
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saved = ids.includes(productId);
-  return <><button className={`favorite-button ${saved ? "is-saved" : ""}`} type="button" aria-label={`${saved ? "Quitar de" : "Guardar en"} favoritos: ${name}`} aria-pressed={saved} disabled={loading || pending} onClick={async () => { setPending(true); setClicked(true); try { await toggle(productId); } finally { setPending(false); } }}><Star aria-hidden="true" fill={saved ? "currentColor" : "none"}/></button>{clicked && error ? <span className="favorite-error" role="status">{error}</span> : null}</>;
+  useEffect(() => () => { if (pulseTimer.current) clearTimeout(pulseTimer.current); }, []);
+  return <><button className={`favorite-button ${saved ? "is-saved" : ""} ${pulsing ? "is-pulsing" : ""}`} type="button" aria-label={`${saved ? "Quitar de" : "Guardar en"} favoritos: ${name}`} aria-pressed={saved} disabled={loading || pending} onClick={async () => { setPending(true); setClicked(true); try { const updated = await toggle(productId); if (updated && !saved) { setPulsing(true); if (pulseTimer.current) clearTimeout(pulseTimer.current); pulseTimer.current = setTimeout(() => setPulsing(false), 560); } } finally { setPending(false); } }}><Star aria-hidden="true" fill={saved ? "currentColor" : "none"}/></button>{clicked && error ? <span className="favorite-error" role="status">{error}</span> : null}</>;
 }
 export function SignOutButton() {
   const router = useRouter();

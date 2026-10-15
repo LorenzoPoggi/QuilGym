@@ -1,0 +1,10 @@
+{
+  "_doc": [
+    "Fuentes oficiales de fotos por marca (pipeline v2). Un archivo <marca>.json por marca; lo leen scripts/fetch-official-photos.mjs (npm run images:official:fetch) y scripts/build-product-images.mjs (npm run images:official:build).",
+    "Formato: { brand, officialSites: [https://...], products: { <siteSlug>: { sources: [...], dropBaseline?, maxProduct?, maxNutrition? } } }.",
+    "Cada source: { url (https de la imagen), kind ('product' | 'nutrition'), sourcePage (ficha del producto en uno de los officialSites), crop? {left, top, width, height} en píxeles del original, allowSmaller? (aceptar una oficial más chica que la foto de la base que desplaza), distinct? (otra variante oficial casi idéntica, p. ej. otro sabor del mismo envase: no se trata como «la misma foto» de la base), append? (va después de las fotos de la base del mismo tipo, p. ej. segunda vista detrás del frente) }.",
+    "dropBaseline: true descarta toda la galería base de data/product-gallery-curation.json; o una lista de refs ('t0', 'o2'...) a descartar.",
+    "Orden final: fotos de producto (frente, después dorso o segunda vista oficial) y el rótulo nutricional siempre al final. Solo sitios oficiales de la marca; nunca retipear rótulos. Verificar cada imagen (producto, tamaño, sabor y envase) antes de agregarla.",
+    "Los combos no llevan fotos propias (ComboVisual)."
+  ]
+}

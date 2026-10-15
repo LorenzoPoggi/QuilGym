@@ -5,8 +5,7 @@ import { notFound } from "next/navigation";
 import { currentUser } from "./auth";
 import { db } from "./db";
 import { authAccounts } from "./db/schema";
-
-export const ADMIN_EMAIL = "quilgymnuevo@gmail.com";
+import { ADMIN_EMAIL } from "./admin-config";
 
 /** El email por sí solo no alcanza: el registro con contraseña no verifica correos. */
 export async function getAdminUser(sessionUser?: Awaited<ReturnType<typeof currentUser>>) {

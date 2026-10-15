@@ -10,12 +10,12 @@ import { BagIcon } from "./icons";
 import { ProductStickyBuy } from "./product-sticky-buy";
 
 export function CartPill() {
-  const { cart, loaded, openCart } = useCart();
+  const { cart, loaded, openCart, countBouncing } = useCart();
   const label = loaded ? `Carrito: ${cart.itemCount} ${cart.itemCount === 1 ? "producto" : "productos"}, ${formatArs(cart.totalArs)}` : "Carrito";
   return (
     <Link className={`cart-pill ${cart.itemCount > 0 ? "cart-pill--filled" : ""}`} href="/carrito" aria-label={label} onClick={(event) => { event.preventDefault(); openCart(); }}>
       <BagIcon/><strong>{formatArs(loaded ? cart.totalArs : 0)}</strong>
-      {cart.itemCount > 0 ? <span className="cart-pill__count" aria-hidden="true">{cart.itemCount}</span> : null}
+      {cart.itemCount > 0 ? <span className={`cart-pill__count ${countBouncing ? "cart-pill__count--bounce" : ""}`} aria-hidden="true">{cart.itemCount}</span> : null}
     </Link>
   );
 }
@@ -24,18 +24,18 @@ export function AddToCartButton({ variantId, name, inStock, className = "button 
   const { add } = useCart();
   const [busy, setBusy] = useState(false);
 
-  async function handleClick() {
+  async function handleClick(source: HTMLElement) {
     if (busy) return;
     setBusy(true);
     try {
-      await add(variantId, 1);
+      await add(variantId, 1, { animateFrom: source });
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <button type="button" className={className} disabled={!inStock} aria-disabled={busy || undefined} onClick={handleClick} aria-label={inStock ? `Agregar ${name} al carrito` : `${name} sin stock`}>
+    <button type="button" className={className} disabled={!inStock} aria-disabled={busy || undefined} onClick={(event) => void handleClick(event.currentTarget)} aria-label={inStock ? `Agregar ${name} al carrito` : `${name} sin stock`}>
       <BagIcon/> {!inStock ? "Sin stock" : busy ? "Agregando…" : label}
     </button>
   );
@@ -53,11 +53,11 @@ export function ProductPurchase({ product }: { product: Pick<ProductDetail, "nam
   const max = variant.maxQuantity;
 
   // Sin `disabled` durante la espera: el botón conserva el foco y el diálogo lo restaura al cerrar.
-  async function submit(mode: "add" | "buy") {
+  async function submit(mode: "add" | "buy", source: HTMLElement | null = null) {
     if (busy) return;
     setBusy(mode);
     try {
-      const result = await add(variant.id, quantity, { openDrawer: mode === "add" });
+      const result = await add(variant.id, quantity, { openDrawer: mode === "add", animateFrom: mode === "add" ? source : null });
       if (result.ok && mode === "buy") router.push("/checkout");
     } finally {
       setBusy(null);
@@ -79,8 +79,8 @@ export function ProductPurchase({ product }: { product: Pick<ProductDetail, "nam
           <button type="button" onClick={() => setQuantity((value) => Math.min(max, value + 1))} disabled={quantity >= max} aria-label="Sumar una unidad">+</button>
         </div>
         <div>
-          <button type="button" className="button button--outline" disabled={max === 0} aria-disabled={busy !== null || undefined} onClick={() => submit("add")}><BagIcon/> {max === 0 ? "Sin stock" : busy === "add" ? "Agregando…" : "Agregar al carrito"}</button>
-          <button type="button" className="button button--dark" disabled={max === 0} aria-disabled={busy !== null || undefined} onClick={() => submit("buy")}>{busy === "buy" ? "Procesando…" : "Comprar ahora"}</button>
+          <button type="button" className="button button--outline" disabled={max === 0} aria-disabled={busy !== null || undefined} onClick={(event) => void submit("add", event.currentTarget)}><BagIcon/> {max === 0 ? "Sin stock" : busy === "add" ? "Agregando…" : "Agregar al carrito"}</button>
+          <button type="button" className="button button--dark" disabled={max === 0} aria-disabled={busy !== null || undefined} onClick={(event) => void submit("buy", event.currentTarget)}>{busy === "buy" ? "Procesando…" : "Comprar ahora"}</button>
         </div>
       </div>
       <ProductStickyBuy target={actionsRef} name={product.name} priceArs={variant.priceArs} quantity={max === 0 ? 0 : quantity} soldOut={max === 0} busy={busy} onSubmit={submit}/>

@@ -1,0 +1,156 @@
+{
+  "brand": "Star Nutrition",
+  "officialSites": [
+    "https://starnutrition.com.ar"
+  ],
+  "products": {
+    "multivitaminico-star": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/STANUT004030.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/allinonemultivitamin",
+          "crop": {
+            "left": 0,
+            "top": 0,
+            "width": 3700,
+            "height": 5568
+          }
+        }
+      ],
+      "dropBaseline": [
+        "o0"
+      ]
+    },
+    "pre-entreno-star-nutricion": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PumpV8-WMEL_256a8bca-27cd-4ba8-8dc8-edffe507986d.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PumpV8-GRAPE_4ea8875d-bfe5-400d-b041-c17199de0a27.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr",
+          "append": true,
+          "distinct": true
+        }
+      ],
+      "dropBaseline": [
+        "t0"
+      ],
+      "_doc": "Segunda foto: el mismo envase en otro sabor oficial (el sitio no publica dorso)."
+    },
+    "creatina-star-1-kg": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/CreatineM-1Kg_3095f1e3-5758-4f7e-8b63-d49c583050e0.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/creatina-monohidrato-1kg"
+        }
+      ],
+      "dropBaseline": [
+        "t0"
+      ]
+    },
+    "citrato-de-magnesio-star": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/CitratoMagnesio_36ac50e8-5662-4aa0-8b90-10edd71b1236.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/citrato-de-magnesio-60capsulas"
+        }
+      ],
+      "dropBaseline": [
+        "t0"
+      ]
+    },
+    "resveratrol-star-nutrition": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/Resceratrol500.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/resveratrol-500-x-60-caps"
+        }
+      ],
+      "dropBaseline": [
+        "t0"
+      ]
+    },
+    "creatina-star-150-gr": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/CreatineM-150g.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/creatina-star-nutrition-150gs"
+        }
+      ],
+      "dropBaseline": [
+        "t0"
+      ]
+    },
+    "creatina-star-300gr-doypack": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/Creatine_300.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/creatina-monohidrato-300g-sinsabor-doypack"
+        }
+      ],
+      "dropBaseline": [
+        "t0"
+      ]
+    },
+    "bcaa-star-nutrition": {
+      "_doc": "Segunda foto: el mismo envase en otro sabor oficial (el sitio no publica dorso). El rótulo de la base (t1) es la misma imagen en más resolución útil que la oficial.",
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MtorBCAA-270g-_2.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/mtor-bcaa-270g"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/STANUT2022BCO_1.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/mtor-bcaa-270g",
+          "append": true,
+          "distinct": true
+        }
+      ],
+      "dropBaseline": [
+        "t0"
+      ]
+    },
+    "eaa-s-star-nutrition": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/EEAS-Aminos.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/essential-amino-limon-360"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/products/EAAS-Info-n.png",
+          "kind": "nutrition",
+          "sourcePage": "https://starnutrition.com.ar/products/essential-amino-limon-360"
+        }
+      ],
+      "dropBaseline": [
+        "t0",
+        "t1"
+      ]
+    },
+    "proteina-star-2lb": {
+      "_doc": "El sitio oficial no publica dorso del Whey Protein 2 lb: la segunda foto es el mismo doypack en otro sabor oficial (chocolate). La foto de dorso anterior era de Platinum Whey (otro producto) y se retiró.",
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/WP-2Lb-Chocolate.png",
+          "kind": "product",
+          "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack",
+          "append": true,
+          "distinct": true
+        }
+      ]
+    }
+  }
+}

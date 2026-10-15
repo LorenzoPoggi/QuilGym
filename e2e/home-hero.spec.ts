@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 
+// Las reseñas consumen un contador compartido en Postgres: se simulan para que el E2E no escriba en la base.
+test.beforeEach(async ({ page }) => { await page.route("**/api/reviews", (request) => request.fulfill({ json: { reviews: [] } })); });
+
 const fitsViewport = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const brandLinks = (page: Page) => page.locator("#marcas").getByRole("link", { name: /^Ver \d+ productos? de / });
 const trackState = (page: Page) => page.locator(".brand-track").evaluate((track) => getComputedStyle(track).animationPlayState);
@@ -9,6 +12,16 @@ test("hero: video según el ancho, pausa accesible por teclado y texto en el pri
   await page.goto("/");
   const hero = page.locator("section.hero");
   await expect(hero.getByRole("heading", { level: 1, name: "Entrená en serio. Suplementate bien." })).toBeVisible();
+  await expect(hero.locator(".chip")).toHaveCount(0);
+  const reassurance = hero.locator(".hero-meta");
+  if (mobile) await expect(reassurance).toBeHidden();
+  else await expect(reassurance).toBeVisible();
+  const benefits = page.locator("main > .benefits-section");
+  await expect(benefits).toHaveCount(1);
+  if (mobile) await expect(benefits).toBeHidden();
+  else await expect(benefits).toBeVisible();
+  expect(await benefits.evaluate((section) => section.previousElementSibling?.classList.contains("hero"))).toBe(true);
+  await expect(benefits.locator(".benefit")).toHaveCount(5);
   // El poster está en el HTML inicial con prioridad alta: es el candidato a LCP.
   await expect(hero.locator("img.hero-poster")).toHaveAttribute("fetchpriority", "high");
   const viewport = page.viewportSize()!;
@@ -50,12 +63,12 @@ test("hero y marcas con movimiento reducido: sin video, sin botón y fila estát
   await page.locator("#marcas").scrollIntoViewIfNeeded();
   await expect(brandLinks(page)).toHaveCount(6);
   await expect(page.locator(".brand-copy").first()).toBeHidden();
-  await expect(page.locator(".brand-pause")).toBeHidden();
+  await expect(page.locator(".brand-pause")).toHaveCount(0);
   expect(await page.locator(".brand-track").evaluate((track) => getComputedStyle(track).animationName)).toBe("none");
   expect(await fitsViewport(page)).toBe(true);
 });
 
-test("cinta de marcas: 6 links accesibles, pausa con foco y con el control", async ({ page }) => {
+test("cinta de marcas: 6 links accesibles y pausa al recibir foco", async ({ page }) => {
   await page.goto("/");
   const marquee = page.locator(".brand-marquee");
   await marquee.scrollIntoViewIfNeeded();
@@ -67,21 +80,37 @@ test("cinta de marcas: 6 links accesibles, pausa con foco y con el control", asy
   expect(await trackState(page)).toBe("running");
 
   await links.first().focus();
-  expect(await trackState(page)).toBe("paused");
+  // Con foco de teclado la cinta se detiene: pausada o, con :focus-visible, sin animación (vuelve al inicio).
+  expect(await page.locator(".brand-track").evaluate((track) => { const style = getComputedStyle(track); return style.animationName === "none" || style.animationPlayState === "paused"; })).toBe(true);
   await page.keyboard.press("Tab");
   await expect(links.nth(1)).toBeFocused();
   await links.nth(1).blur();
-  // Control explícito WCAG 2.2.2: se revela al enfocarlo y puede pausar la cinta.
-  const toggle = page.getByRole("checkbox", { name: "Pausar la cinta de marcas" });
-  await toggle.focus();
-  await page.keyboard.press("Space");
-  await expect(toggle).toBeChecked();
-  expect(await trackState(page)).toBe("paused");
-  const box = (await page.locator(".brand-pause").boundingBox())!;
-  expect(box.height).toBeGreaterThanOrEqual(44);
-  await page.keyboard.press("Space");
-  await expect(toggle).not.toBeChecked();
+  await expect(page.locator(".brand-pause")).toHaveCount(0);
   await page.locator("body").evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   expect(await trackState(page)).toBe("running");
+  expect(await fitsViewport(page)).toBe(true);
+});
+
+test("home: objetivos con contraste AA y banner del asesor con el texto aprobado", async ({ page }) => {
+  await page.goto("/");
+  const ratios = await page.locator(".objective").evaluateAll((cards) => cards.map((card) => {
+    const background = getComputedStyle(card).backgroundColor.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+    const channel = (value: number) => { const normalized = value / 255; return normalized <= .04045 ? normalized / 12.92 : ((normalized + .055) / 1.055) ** 2.4; };
+    const luminance = .2126 * channel(background[0]) + .7152 * channel(background[1]) + .0722 * channel(background[2]);
+    const after = getComputedStyle(card, "::after");
+    return { contrast: 1.05 / (luminance + .05), circleLayer: Number(after.zIndex), textOpacity: getComputedStyle(card.querySelector("p")!).opacity };
+  }));
+  expect(ratios).toHaveLength(6);
+  for (const ratio of ratios) {
+    expect(ratio.contrast).toBeGreaterThanOrEqual(4.5);
+    expect(ratio.circleLayer).toBeLessThan(1);
+    expect(ratio.textOpacity).toBe("1");
+  }
+  const banner = page.locator(".advisor-banner");
+  await expect(banner.getByText("TE ORIENTAMOS EN 3 MINUTOS")).toBeVisible();
+  await expect(banner.getByRole("heading", { name: "¿No sabés qué suplemento elegir?" })).toBeVisible();
+  await expect(banner.locator(".advisor-preview")).toHaveText("Nuestro asesor fitness virtual puede responder tus consultas para que logres alcanzar tu objetivo");
+  await expect(banner.locator(".advisor-preview")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(banner.getByRole("link", { name: "Conversar con el asesor" })).toHaveAttribute("href", "/asesor");
   expect(await fitsViewport(page)).toBe(true);
 });

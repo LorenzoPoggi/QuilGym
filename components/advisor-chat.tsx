@@ -23,7 +23,8 @@ export function AdvisorChat({ configured }: { configured: boolean }) {
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
     const region = history.current;
-    if (region) region.scrollTop = region.scrollHeight;
+    // Con solo la bienvenida se muestra desde arriba (saludo y sugerencias); después, siempre el último mensaje.
+    if (region) region.scrollTop = messages.length === 1 && !pending ? 0 : region.scrollHeight;
   }, [messages, pending, error]);
 
   async function ask(next: ChatEntry[]) {
@@ -68,6 +69,8 @@ export function AdvisorChat({ configured }: { configured: boolean }) {
       <p>Contame dónde estás y adónde querés llegar. Vamos a pensar juntos qué hábitos y opciones del catálogo pueden acompañarte, y por qué.</p>
       <small><ShieldCheck aria-hidden="true"/>Soy un asesor virtual con IA, no un profesional de salud. Las sugerencias son informativas y no reemplazan una evaluación personal.</small>
     </aside>
+    {/* En mobile el panel lateral (con el h1) se oculta: este título solo existe para lectores de pantalla. */}
+    <h1 className="advisor-mobile-title">Asesor QuilGym: tu objetivo, tu rutina, tu conversación</h1>
     <section className="advisor-chat advisor-chat--conversation" aria-label="Chat con el asesor QuilGym">
       <header><div><span><Bot aria-hidden="true"/></span><strong>Asesor QuilGym</strong><small>{pending ? "Pensando en tu situación…" : "Conversemos sobre vos"}</small></div><button type="button" onClick={reset}><RefreshCw aria-hidden="true"/>Reiniciar</button></header>
       <div ref={history} className="advisor-conversation" role="log" aria-label="Conversación" aria-live="polite" aria-relevant="additions" aria-busy={pending} tabIndex={0}>
@@ -76,6 +79,11 @@ export function AdvisorChat({ configured }: { configured: boolean }) {
           <p className="advisor-bubble">{message.content}</p>
           {message.recommendations?.length ? <div className="advisor-chat-products">{message.recommendations.map(({ product, reason, caution }) => <div key={product.id}><ProductCard product={product} compact/><div className="recommendation-reason"><h3>Por qué podría servirte</h3><p>{reason}</p>{caution ? <small><ShieldCheck aria-hidden="true"/>{caution}</small> : null}</div></div>)}</div> : null}
         </div>)}
+        {messages.length === 1 && !pending ? <div className="advisor-starters" aria-label="Ideas para iniciar la conversación"><p>Podés empezar por acá:</p>{[
+          "Quiero ganar masa muscular, ¿por dónde empiezo?",
+          "¿Qué diferencia hay entre creatina y proteína?",
+          "Quiero explorar opciones según mi rutina de entrenamiento.",
+        ].map((prompt) => <button type="button" key={prompt} onClick={() => { setInput(prompt); textarea.current?.focus(); }}>{prompt}</button>)}</div> : null}
         {pending ? <p className="advisor-thinking" role="status"><LoaderCircle aria-hidden="true"/>Estoy leyendo lo que me contaste…</p> : null}
       </div>
       {error ? <div className="advisor-chat-error" role="alert"><p>{error}</p>{failed ? <button className="button button--outline" type="button" onClick={() => void ask(messages)}>Reintentar mensaje</button> : null}</div> : null}
@@ -86,7 +94,7 @@ export function AdvisorChat({ configured }: { configured: boolean }) {
         <textarea ref={textarea} id="advisor-message" rows={2} value={input} maxLength={MAX_CHAT_TEXT} placeholder="Contame tu objetivo, tu rutina o tus dudas…" disabled={pending || failed || exhausted} aria-describedby="advisor-privacy" onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }}/>
         <button type="submit" className="button button--dark" aria-label="Enviar mensaje" disabled={!input.trim() || pending || failed || exhausted}><Send aria-hidden="true"/><span>Enviar</span></button>
       </form>
-      <p id="advisor-privacy" className="advisor-privacy">Al enviar, la conversación se procesa con un proveedor externo de IA. No compartas datos sensibles. QuilGym no guarda este chat en tu cuenta; se borra al salir o reiniciar. Enter envía · Shift + Enter agrega una línea.</p>
+      <div id="advisor-privacy" className="advisor-privacy"><p>IA informativa, no reemplaza a un profesional de salud. La procesa un proveedor externo: no compartas datos sensibles.</p><details><summary>Más info</summary><p>Soy un asesor virtual con IA, no un profesional de salud; mis sugerencias son informativas y no reemplazan una evaluación personal. Al enviar, la conversación se procesa con un proveedor externo de IA. QuilGym no guarda este chat en tu cuenta; se borra al salir o reiniciar. Enter envía · Shift + Enter agrega una línea.</p></details></div>
     </section>
   </div>;
 }

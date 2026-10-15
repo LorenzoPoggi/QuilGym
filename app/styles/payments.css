@@ -1,0 +1,61 @@
+/* Cuotas, tarjetas aceptadas y personalización del Card Payment Brick. Tokens: ver CLAUDE.md §9. */
+
+/* Línea compacta de las tarjetas de producto */
+.installments-line { margin: 4px 0 0; color: var(--muted); font-size: .69rem; line-height: 1.35; }
+.installments-line--free { color: #1b6b38; }
+.installments-line--free strong { font-weight: 700; }
+.cart-page-aside .product-card__footer > .installments-line { display: none; }
+
+/* Logos de tarjetas aceptadas */
+.accepted-cards { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 12px 0 0; }
+.accepted-cards__label { color: var(--muted); font-size: .76rem; font-weight: 600; }
+.accepted-cards ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.accepted-cards li { display: grid; place-items: center; width: 46px; height: 30px; padding: 3px 5px; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+.accepted-cards img { display: block; width: auto; max-width: 100%; height: auto; max-height: 20px; object-fit: contain; }
+
+/* Bloque de cuotas de la ficha */
+.installments-box { min-width: 0; margin: 12px 0 0; padding: 14px 16px; background: var(--soft); border-radius: var(--radius-md); }
+.installments-box__headline { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1rem; line-height: 1.35; }
+.installments-box__headline svg { flex: none; width: 20px; height: 20px; }
+.installments-box__cost { margin: 4px 0 0 30px; color: #3d4447; font-size: .82rem; line-height: 1.4; }
+.installments-box .accepted-cards { margin-top: 12px; }
+.installments-box .accepted-cards li { background: #fff; }
+.installments-box__details { margin-top: 10px; }
+.installments-box__details summary { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; color: var(--ink); font-size: .88rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.installments-box__details summary:focus-visible, .installments-box__tabs button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.installments-box__tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+.installments-box__tabs button { min-height: 44px; padding: 0 14px; color: var(--ink); font: inherit; font-size: .84rem; font-weight: 600; background: #fff; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+.installments-box__tabs button[aria-pressed="true"] { color: #fff; background: var(--ink); border-color: var(--ink); }
+.installments-box__scroll { contain: inline-size; width: 100%; overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.installments-box table { width: 100%; min-width: 360px; border-collapse: collapse; font-size: .84rem; font-variant-numeric: tabular-nums; }
+.installments-box th, .installments-box td { padding: 10px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+.installments-box th:first-child, .installments-box tbody th { text-align: left; }
+.installments-box thead th { color: var(--muted); font-size: .74rem; font-weight: 600; }
+.installments-box tbody th { font-weight: 600; }
+.installments-box tbody tr:last-child > * { border-bottom: 0; }
+.installments-box__legal { margin: 10px 0 0; color: var(--muted); font-size: .74rem; line-height: 1.5; }
+
+/* Checkout: tarjetas aceptadas e información de cuotas bajo las opciones de pago */
+.checkout-card-info { margin: 14px 0 0; padding: 12px 14px; background: var(--soft); border-radius: var(--radius-sm); }
+.checkout-card-info .installments-line { margin: 0; color: var(--ink); font-size: .84rem; font-weight: 600; }
+.checkout-card-info .accepted-cards { margin-top: 10px; }
+.checkout-card-info .installments-line + .accepted-cards { margin-top: 10px; }
+
+/* Página de pago con tarjeta */
+.card-payment > .installments-box { margin: 0 0 18px; }
+.card-payment > .accepted-cards { margin: 0 0 18px; }
+.card-payment-brick { font-family: inherit; }
+.card-payment-brick * { font-family: inherit; }
+.card-payment-brick:empty { display: none; }
+
+@media (max-width: 520px) {
+  .installments-box { padding: 12px 14px; }
+  .installments-box__cost { margin-left: 0; }
+  .accepted-cards li { width: 42px; }
+  .installments-box table { min-width: 0; font-size: .78rem; }
+  .installments-box th, .installments-box td { padding: 9px 6px; }
+  .installments-box thead th { white-space: normal; line-height: 1.2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .installments-box__details summary, .installments-box__tabs button { transition: none; }
+}

@@ -1,4 +1,6 @@
 import type { CheckoutConfig, ShippingRate } from "./checkout-types";
+import { readEmailConfig } from "./email-config";
+import { readInvoicingConfig } from "./invoicing-config";
 
 /**
  * Lectura pura de las variables de entorno del checkout. No importa `server-only`
@@ -26,12 +28,47 @@ function value(env: Env, key: string) {
 }
 
 export function readSiteUrl(env: Env) {
+  // A branch alias can still point at an older deployment with different secrets
+  // or a different database. Return to the exact Preview that created the order.
+  // Use Vercel's server-side metadata, never a client-supplied Host header.
+  if (value(env, "VERCEL_ENV") === "preview") {
+    const host = value(env, "VERCEL_URL");
+    if (!host || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.vercel\.app$/i.test(host)) return null;
+    return `https://${host.toLowerCase()}`;
+  }
   const raw = value(env, "NEXT_PUBLIC_SITE_URL");
   if (!raw) return null;
   try {
     const url = new URL(raw);
     return url.protocol === "https:" ? url.origin : null;
   } catch { return null; }
+}
+
+/** Un Preview protegido necesita el bypass de Vercel para recibir POST de Mercado Pago. */
+export function readPaymentNotificationUrl(env: Env) {
+  const site = readSiteUrl(env);
+  if (!site) return null;
+  const url = new URL("/api/payments/mercadopago/webhook", site);
+  if (value(env, "VERCEL_ENV") === "preview") {
+    const bypass = value(env, "VERCEL_AUTOMATION_BYPASS_SECRET");
+    if (!bypass) return null;
+    url.searchParams.set("x-vercel-protection-bypass", bypass);
+  }
+  return url.href;
+}
+
+/**
+ * 3-D Secure para tarjetas: con "optional" Mercado Pago decide si pide el desafío del banco
+ * (respuesta `pending_challenge`, que el sitio muestra con el Status Screen Brick). Vacío = no se solicita.
+ */
+export function readCardThreeDsMode(env: Env) {
+  return value(env, "MP_CARD_3DS") === "optional" ? "optional" as const : null;
+}
+
+/** El prefijo APP_USR también puede corresponder a credenciales de prueba. */
+export function readMercadoPagoTestMode(env: Env) {
+  const explicit = value(env, "MP_TEST_MODE");
+  return explicit === "true" || (!explicit && value(env, "MP_ACCESS_TOKEN")?.startsWith("TEST-") === true);
 }
 
 export function readBankDetails(env: Env) {
@@ -51,7 +88,9 @@ export function readPendingOrderTtlHours(env: Env) {
 }
 
 export function readOrderAccessSecret(env: Env) {
-  const secret = value(env, "ORDER_ACCESS_SECRET");
+  // Reuse the webhook secret as a secure fallback so Mercado Pago's return link
+  // remains usable in a separate browser when an explicit order secret is absent.
+  const secret = value(env, "ORDER_ACCESS_SECRET") ?? value(env, "MP_WEBHOOK_SECRET");
   return secret && secret.length >= MIN_ORDER_ACCESS_SECRET_LENGTH ? secret : null;
 }
 
@@ -96,12 +135,20 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   const ttl = readPendingOrderTtlHours(env);
   if (!ttl.valid) issues.push(`PENDING_ORDER_TTL_HOURS debe ser un entero entre 1 y 720. Se usa ${DEFAULT_PENDING_ORDER_TTL_HOURS}.`);
 
-  const accessSecret = value(env, "ORDER_ACCESS_SECRET");
-  if (!accessSecret) warnings.push("Falta ORDER_ACCESS_SECRET: el pedido solo se puede ver desde el navegador que lo creó y el email no incluye el link.");
-  else if (accessSecret.length < MIN_ORDER_ACCESS_SECRET_LENGTH) issues.push(`ORDER_ACCESS_SECRET debe tener al menos ${MIN_ORDER_ACCESS_SECRET_LENGTH} caracteres.`);
+  const explicitAccessSecret = value(env, "ORDER_ACCESS_SECRET");
+  const accessSecret = explicitAccessSecret ?? value(env, "MP_WEBHOOK_SECRET");
+  if (!accessSecret) warnings.push("Falta ORDER_ACCESS_SECRET (o MP_WEBHOOK_SECRET): el pedido solo se puede ver desde el navegador que lo creó y el email no incluye el link.");
+  else if (accessSecret.length < MIN_ORDER_ACCESS_SECRET_LENGTH) issues.push(`${explicitAccessSecret ? "ORDER_ACCESS_SECRET" : "ORDER_ACCESS_SECRET o MP_WEBHOOK_SECRET"} debe tener al menos ${MIN_ORDER_ACCESS_SECRET_LENGTH} caracteres.`);
 
-  const emailsEnabled = Boolean(value(env, "RESEND_API_KEY") && value(env, "EMAIL_FROM"));
-  if (!emailsEnabled) warnings.push("Faltan RESEND_API_KEY y/o EMAIL_FROM: los emails quedan guardados en la outbox sin enviarse.");
+  const email = readEmailConfig(env);
+  const emailsEnabled = email.enabled;
+  issues.push(...email.issues);
+  warnings.push(...email.warnings);
+  const invoicing = readInvoicingConfig(env);
+  issues.push(...invoicing.issues);
+  warnings.push(...invoicing.warnings);
+  const threeDs = value(env, "MP_CARD_3DS");
+  if (threeDs && threeDs !== "optional") issues.push('MP_CARD_3DS solo acepta "optional" (vacío = sin 3-D Secure).');
   const cronEnabled = Boolean(value(env, "CRON_SECRET"));
   if (!cronEnabled) warnings.push("Falta CRON_SECRET: los crons de reintento de emails y vencimiento de pedidos responden 401.");
 
@@ -127,7 +174,8 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
 
   const rawSite = value(env, "NEXT_PUBLIC_SITE_URL");
   const site = readSiteUrl(env);
-  if (rawSite && !site) issues.push("NEXT_PUBLIC_SITE_URL debe ser una URL https válida (por ejemplo https://quilgym.com.ar).");
+  if (value(env, "VERCEL_ENV") === "preview" && !site) issues.push("Preview necesita VERCEL_URL válido: habilitá las variables de sistema en Vercel para no enviar pedidos a otro despliegue.");
+  else if (rawSite && !site) issues.push("NEXT_PUBLIC_SITE_URL debe ser una URL https válida (por ejemplo https://quilgym.com.ar).");
 
   const mpKeys = ["MP_ACCESS_TOKEN", "NEXT_PUBLIC_MP_PUBLIC_KEY", "MP_WEBHOOK_SECRET"] as const;
   const mpPresent = mpKeys.filter((key) => value(env, key));
@@ -135,10 +183,15 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   if (!mpPresent.length) warnings.push("Mercado Pago no configurado (MP_ACCESS_TOKEN, NEXT_PUBLIC_MP_PUBLIC_KEY, MP_WEBHOOK_SECRET).");
   const accessToken = value(env, "MP_ACCESS_TOKEN");
   const publicKey = value(env, "NEXT_PUBLIC_MP_PUBLIC_KEY");
+  const mpTestMode = value(env, "MP_TEST_MODE");
+  if (mpTestMode && mpTestMode !== "true" && mpTestMode !== "false") issues.push('MP_TEST_MODE solo acepta "true" o "false".');
+  if (mpTestMode === "true" && value(env, "VERCEL_ENV") === "production") issues.push("MP_TEST_MODE=true no se permite en Production.");
   if (accessToken && publicKey && accessToken.startsWith("TEST-") !== publicKey.startsWith("TEST-")) {
     issues.push("Las credenciales de Mercado Pago mezclan sandbox (TEST-) y producción (APP_USR-).");
   }
-  if (mpPresent.length === mpKeys.length && !site) issues.push("Mercado Pago necesita NEXT_PUBLIC_SITE_URL con https para el webhook y la vuelta del pago.");
+  if (mpPresent.length === mpKeys.length && !site) issues.push("Mercado Pago necesita una URL https para el webhook y la vuelta del pago (VERCEL_URL en Preview; NEXT_PUBLIC_SITE_URL fuera de Preview).");
+  const notificationUrl = readPaymentNotificationUrl(env);
+  if (mpPresent.length === mpKeys.length && site && !notificationUrl) issues.push("Preview necesita VERCEL_AUTOMATION_BYPASS_SECRET para que Mercado Pago pueda notificar un pago sin iniciar sesión en Vercel.");
 
   const bank = readBankDetails(env);
   const bankPresent = ["TRANSFER_ACCOUNT", "TRANSFER_HOLDER", "TRANSFER_TAX_ID"].filter((key) => value(env, key));
@@ -150,12 +203,16 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   if (cashFlag === "true" && !pickup) issues.push("CASH_PICKUP_ENABLED=true requiere PICKUP_ADDRESS y PICKUP_HOURS.");
 
   return { ...report, config: {
-    demo: false, pickup, shippingRates,
+    demo: false, pickup, shippingRates, taxIdThresholdArs: invoicing.identificationThresholdArs,
     payments: {
-      mercadopago: Boolean(accessToken && publicKey && value(env, "MP_WEBHOOK_SECRET") && site
-        && accessToken.startsWith("TEST-") === publicKey.startsWith("TEST-")),
+      mercadopago: Boolean(accessToken && publicKey && value(env, "MP_WEBHOOK_SECRET") && notificationUrl
+        && accessToken.startsWith("TEST-") === publicKey.startsWith("TEST-")
+        && (!mpTestMode || mpTestMode === "true" || mpTestMode === "false")
+        && !(mpTestMode === "true" && value(env, "VERCEL_ENV") === "production")),
       transfer: Boolean(bank),
-      cash: Boolean(pickup && cashFlag === "true"),
+      // Cash is available by default whenever pickup is configured; set the flag
+      // to false to explicitly disable it for a deployment.
+      cash: Boolean(pickup && cashFlag !== "false"),
     },
   } };
 }

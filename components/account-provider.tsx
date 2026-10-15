@@ -6,7 +6,7 @@ import { setFavorite } from "@/lib/account-actions";
 
 const AccountContext = createContext<{
   user: { id: string; name: string; email: string; emailVerified?: boolean; image?: string | null } | null; loading: boolean; authLoading: boolean;
-  ids: number[]; toggle: (id: number) => Promise<void>; error: string;
+  ids: number[]; toggle: (id: number) => Promise<boolean>; error: string;
 } | null>(null);
 const noFavorites: number[] = [];
 export function AccountProvider({ children }: { children: React.ReactNode }) {
@@ -25,15 +25,16 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     return () => controller.abort();
   }, [userId]);
   const toggle = useCallback(async (id: number) => {
-    if (!user) { router.push("/cuenta/ingresar?next=" + encodeURIComponent(window.location.pathname + window.location.search)); return; }
+    if (!user) { router.push("/cuenta/ingresar?next=" + encodeURIComponent(window.location.pathname + window.location.search)); return false; }
     const save = !ids.includes(id);
     setError("");
     try {
       const result = await setFavorite(id, save);
-      if (!result.ok) { setError(result.error || "No pudimos actualizar tus favoritos."); return; }
+      if (!result.ok) { setError(result.error || "No pudimos actualizar tus favoritos."); return false; }
       setSaved((value) => ({ owner: user.id, ids: save ? [...new Set([...(value.owner === user.id ? value.ids : []), id])] : value.ids.filter((item) => item !== id) }));
       router.refresh();
-    } catch { setError("No pudimos actualizar tus favoritos. Intentá nuevamente."); }
+      return true;
+    } catch { setError("No pudimos actualizar tus favoritos. Intentá nuevamente."); return false; }
   }, [user, ids, router]);
   return <AccountContext.Provider value={{ user, authLoading: isPending, loading: isPending || Boolean(userId && saved.owner !== userId), ids: user ? ids : noFavorites, toggle, error }}>{children}</AccountContext.Provider>;
 }

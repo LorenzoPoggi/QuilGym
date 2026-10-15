@@ -12,7 +12,7 @@ type StickyBuyProps = {
   quantity: number;
   soldOut: boolean;
   busy: "add" | "buy" | null;
-  onSubmit: (mode: "add" | "buy") => void;
+  onSubmit: (mode: "add" | "buy", source: HTMLElement | null) => void;
 };
 
 /** Barra de compra fija de la ficha en mobile. Reusa el submit de ProductPurchase: nunca envía precios. */
@@ -53,8 +53,8 @@ export function ProductStickyBuy({ target, name, priceArs, quantity, soldOut, bu
     <div ref={bar} className={`sticky-buy ${soldOut ? "sticky-buy--out" : ""} ${visible ? "is-visible" : ""}`} role="region" aria-label="Compra rápida" inert={!visible}>
       <div className="sticky-buy__info"><span>{name}</span><strong>{quantity > 1 && !soldOut ? `${quantity} × ` : ""}{formatArs(priceArs)}</strong></div>
       {soldOut ? <button type="button" className="button button--outline" disabled>Sin stock por el momento</button> : <>
-        <button type="button" className="button button--outline" aria-disabled={busy !== null || undefined} aria-label={`Agregar ${name} al carrito`} onClick={() => onSubmit("add")}><BagIcon/> {busy === "add" ? "Agregando…" : "Agregar"}</button>
-        <button type="button" className="button button--dark" aria-disabled={busy !== null || undefined} onClick={() => onSubmit("buy")}>{busy === "buy" ? "Procesando…" : "Comprar ahora"}</button>
+        <button type="button" className="button button--outline" aria-disabled={busy !== null || undefined} aria-label={`Agregar ${name} al carrito`} onClick={(event) => onSubmit("add", event.currentTarget)}><BagIcon/> {busy === "add" ? "Agregando…" : "Agregar"}</button>
+        <button type="button" className="button button--dark" aria-disabled={busy !== null || undefined} onClick={(event) => onSubmit("buy", event.currentTarget)}>{busy === "buy" ? "Procesando…" : "Comprar ahora"}</button>
       </>}
     </div>
   );

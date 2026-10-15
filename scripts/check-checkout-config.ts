@@ -21,6 +21,8 @@ const rows: [string, boolean, string][] = [
   ["Retiro en el local", Boolean(config.pickup), `PICKUP_ADDRESS ${present("PICKUP_ADDRESS")}  PICKUP_HOURS ${present("PICKUP_HOURS")}`],
   ["Envío a domicilio", config.shippingRates.length > 0, `SHIPPING_RATES_JSON ${present("SHIPPING_RATES_JSON")}  (${config.shippingRates.length} tarifa/s válida/s)`],
   ["Mercado Pago", config.payments.mercadopago, `MP_ACCESS_TOKEN ${present("MP_ACCESS_TOKEN")}  NEXT_PUBLIC_MP_PUBLIC_KEY ${present("NEXT_PUBLIC_MP_PUBLIC_KEY")}  MP_WEBHOOK_SECRET ${present("MP_WEBHOOK_SECRET")}  NEXT_PUBLIC_SITE_URL ${present("NEXT_PUBLIC_SITE_URL")}`],
+  ["Checkout Pro (prueba)", Boolean(process.env.MP_CHECKOUT_PRO_ACCESS_TOKEN && process.env.MP_CHECKOUT_PRO_TEST_SELLER_ID),
+    `MP_CHECKOUT_PRO_ACCESS_TOKEN ${present("MP_CHECKOUT_PRO_ACCESS_TOKEN")}  MP_CHECKOUT_PRO_TEST_SELLER_ID ${present("MP_CHECKOUT_PRO_TEST_SELLER_ID")}  MP_CHECKOUT_PRO_WEBHOOK_SECRET ${present("MP_CHECKOUT_PRO_WEBHOOK_SECRET")} (solo si es otra app)`],
   ["Transferencia", config.payments.transfer, `TRANSFER_ACCOUNT ${present("TRANSFER_ACCOUNT")}  TRANSFER_HOLDER ${present("TRANSFER_HOLDER")}  TRANSFER_TAX_ID ${present("TRANSFER_TAX_ID")}`],
   ["Efectivo al retirar", config.payments.cash, `CASH_PICKUP_ENABLED ${present("CASH_PICKUP_ENABLED")} (requiere retiro)`],
   ["Emails (Resend)", report.emailsEnabled, `RESEND_API_KEY ${present("RESEND_API_KEY")}  EMAIL_FROM ${present("EMAIL_FROM")}`],

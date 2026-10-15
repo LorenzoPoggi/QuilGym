@@ -2,12 +2,15 @@
 export type BrandLogo = { src: string; width: number; height: number; tone: "dark" | "light" | "color" };
 
 export const brandLogos: Record<string, BrandLogo> = {
-  "star-nutrition": { src: "/assets/brands/star-nutrition-v2.png", width: 3314, height: 1119, tone: "dark" },
-  "ena-sport": { src: "/assets/brands/ena-sport-v2.png", width: 1321, height: 526, tone: "dark" },
-  "body-advance": { src: "/assets/brands/body-advance-v2.png", width: 289, height: 52, tone: "dark" },
-  "one-fit": { src: "/assets/brands/one-fit-v2.png", width: 428, height: 135, tone: "color" },
-  "gold-nutrition": { src: "/assets/brands/gold-nutrition-horizontal-v2.png", width: 487, height: 128, tone: "color" },
-  xtrenght: { src: "/assets/brands/xtrenght-v2.png", width: 486, height: 111, tone: "light" },
+  "star-nutrition": { src: "/assets/brands/star-nutrition-v2.webp", width: 640, height: 216, tone: "dark" },
+  "ena-sport": { src: "/assets/brands/ena-sport-v2.webp", width: 640, height: 255, tone: "dark" },
+  // Body Advance, One Fit y Gold: logos oficiales (bodyadvancenutrition.com, tiendaxnutrition.com —tienda del
+  // fabricante de One Fit— y goldnutrition.com.ar) pasados a blanco con los detalles internos calados, para que
+  // se lean al 50 % sobre el video del hero (el filtro blanco de la cinta convertía los sellos en manchas).
+  "body-advance": { src: "/assets/brands/body-advance-white.webp", width: 338, height: 58, tone: "light" },
+  "one-fit": { src: "/assets/brands/one-fit-white.webp", width: 199, height: 79, tone: "light" },
+  "gold-nutrition": { src: "/assets/brands/gold-nutrition-white.webp", width: 205, height: 67, tone: "light" },
+  xtrenght: { src: "/assets/brands/xtrenght-v2.webp", width: 486, height: 111, tone: "light" },
 };
 
 /** Devuelve solo las marcas con logo, conservando el orden recibido. */

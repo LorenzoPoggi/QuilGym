@@ -1,31 +1,47 @@
 import "server-only";
-import { and, eq, isNull, lt } from "drizzle-orm";
+import { and, asc, eq, isNull, lt } from "drizzle-orm";
 import { db } from "./db";
-import { orderEmails, orders } from "./db/schema";
-import { formatArs } from "./commerce";
-import { orderPageUrl } from "./checkout-config";
-import { orderStatusLabels, type OrderStatus } from "./checkout-types";
+import { invoices, orderEmails, orderItems, orders, shipments } from "./db/schema";
+import { orderPageUrl, siteUrl } from "./checkout-config";
+import { readEmailConfig, sendWithResend } from "./email-config";
+import { orderEmailContent, type OrderEmailEvent } from "./email-templates";
+import { invoicesAvailable, processPendingInvoices } from "./invoicing";
 
-/** Outbox persistente: se reintenta con el mismo Idempotency-Key; nunca envía pedidos demo. */
+const KNOWN_EVENTS = new Set<OrderEmailEvent>(["created", "approved", "payment_rejected", "rejected", "cancelled", "expired", "refunded", "ready_for_pickup", "shipped", "invoice_issued"]);
+
+/**
+ * Outbox persistente de avisos al cliente. Antes de enviar intenta emitir las facturas pendientes (proveedor con
+ * API), así el cron diario y cada aprobación también reintentan la facturación. Se reintenta con el mismo
+ * Idempotency-Key; nunca envía pedidos demo y nunca registra emails, nombres ni enlaces.
+ */
 export async function deliverOrderEmails(orderId?: string) {
-  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return;
-  const rows = await db.select({ event: orderEmails, order: orders }).from(orderEmails)
-    .innerJoin(orders, eq(orderEmails.orderId, orders.id))
+  try { await processPendingInvoices(orderId); }
+  catch (error) { console.error("[Facturación] Falló el procesamiento de facturas", { name: error instanceof Error ? error.name : "UnknownError" }); }
+  if (!readEmailConfig(process.env).enabled) return;
+  const rows = await db.select({ event: orderEmails, order: orders, shipment: shipments }).from(orderEmails)
+    .innerJoin(orders, eq(orderEmails.orderId, orders.id)).leftJoin(shipments, eq(shipments.orderId, orders.id))
     .where(and(isNull(orderEmails.sentAt), eq(orders.isDemo, false), lt(orderEmails.attempts, 10), orderId ? eq(orders.id, orderId) : undefined)).limit(20);
-  for (const { event, order } of rows) {
+  const site = siteUrl();
+  const invoicesReady = rows.some(({ event }) => event.event === "invoice_issued") && await invoicesAvailable();
+  for (const { event, order, shipment } of rows) {
     // Resend retiene idempotencia 24 h: después se requiere revisión operativa, no reenviar a ciegas.
     if (event.attempts > 0 && Date.now() - event.createdAt.getTime() > 23 * 60 * 60_000) continue;
+    const kind = KNOWN_EVENTS.has(event.event as OrderEmailEvent) ? event.event as OrderEmailEvent : null;
+    if (!kind) continue;
     await db.update(orderEmails).set({ attempts: event.attempts + 1 }).where(eq(orderEmails.id, event.id));
-    const status = event.event === "created" ? "Pedido recibido" : orderStatusLabels[event.event as OrderStatus];
-    const link = orderPageUrl(order.id);
-    try {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST", headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": `order-email-${event.id}` },
-        body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [order.email], subject: `QuilGym · ${status}`,
-          text: `Hola ${order.name}.\n${status}.\nPedido: ${order.id}\nTotal: ${formatArs(order.totalArs)}.\n${order.delivery === "pickup" ? "Retiro en el local: esperá nuestro aviso antes de acercarte." : "Te avisaremos cuando el pedido se despache."}\nSi el pago está pendiente, el pedido todavía no está aprobado.${link ? `\nVer tu pedido: ${link}` : ""}` }),
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (response.ok) await db.update(orderEmails).set({ sentAt: new Date() }).where(eq(orderEmails.id, event.id));
-    } catch { /* Se conserva en la outbox sin registrar PII ni credenciales. */ }
+    const withLines = kind === "created" || kind === "approved";
+    const lines = withLines ? (await db.select().from(orderItems).where(eq(orderItems.orderId, order.id)).orderBy(asc(orderItems.id)))
+      .map((line) => ({ name: [line.name, line.variantLabel].filter(Boolean).join(" · "), quantity: line.quantity, totalArs: line.quantity * line.unitPriceArs })) : undefined;
+    const [invoice] = kind === "invoice_issued" && invoicesReady ? await db.select().from(invoices).where(eq(invoices.orderId, order.id)).limit(1) : [];
+    if (kind === "invoice_issued" && invoice?.status !== "issued") continue;
+    const content = orderEmailContent(kind, { order, link: orderPageUrl(order.id), siteUrl: site, shipment, lines, invoice });
+    const pdf = invoice?.pdfUrl?.startsWith("https://") ? invoice.pdfUrl : null;
+    const result = await sendWithResend(process.env, {
+      to: order.email, ...content, tag: `order_${kind}`,
+      // Resend descarga el PDF desde la URL (la del proveedor es temporal: se adjunta al emitir).
+      ...(pdf ? { attachments: [{ filename: `factura-QG-${order.id.slice(0, 8).toUpperCase()}.pdf`, path: pdf }] } : {}),
+    }, `order-email-${event.id}`);
+    if (result.ok) await db.update(orderEmails).set({ sentAt: new Date() }).where(eq(orderEmails.id, event.id));
+    else console.warn("[Emails] No se pudo enviar un aviso de pedido", { order: order.id.slice(0, 8), event: kind, reason: result.reason });
   }
 }

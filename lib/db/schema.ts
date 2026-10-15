@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { bigint, boolean, check, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, check, date, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -253,3 +253,77 @@ export const orderEmails = pgTable("order_emails", {
   attempts: integer("attempts").notNull().default(0),
   ...timestamps,
 }, (t) => [uniqueIndex("order_emails_event_idx").on(t.orderId, t.event)]);
+
+/** Historial de cambios de stock hechos desde el panel. `null` = sin control de inventario. */
+export const productStockChanges = pgTable("product_stock_changes", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  variantId: integer("variant_id").references(() => productVariants.id, { onDelete: "set null" }),
+  sku: text("sku").notNull(), previousStock: integer("previous_stock"), newStock: integer("new_stock"),
+  source: text("source").notNull().default("admin"), changedBy: text("changed_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("product_stock_changes_product_idx").on(t.productId, t.createdAt)]);
+
+/**
+ * Factura por pedido (migración 0008). Se crea al aprobarse el pago, o antes si el comprador informó DNI/CUIT
+ * en el checkout. `pending` = a emitir por el proveedor con API; `processing` = enviada al proveedor, sin respuesta
+ * todavía; `manual` = a emitir en «Comprobantes en línea» y registrar desde el panel; `issued` = con CAE;
+ * `failed` = el proveedor la rechazó (ver `error`). El código tolera que la tabla falte (to_regclass).
+ */
+export const invoices = pgTable("invoices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orderId: uuid("order_id").notNull().unique().references(() => orders.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("pending"),
+  provider: text("provider").notNull().default("manual"),
+  voucherType: text("voucher_type"),
+  pointOfSale: integer("point_of_sale"),
+  number: integer("number"),
+  cae: text("cae"),
+  caeDueDate: date("cae_due_date", { mode: "string" }),
+  issuedAt: timestamp("issued_at", { withTimezone: true }),
+  amountArs: integer("amount_ars").notNull(),
+  receiverDocType: text("receiver_doc_type").notNull().default("CF"),
+  receiverDocNumber: text("receiver_doc_number"),
+  receiverName: text("receiver_name"),
+  pdfUrl: text("pdf_url"),
+  error: text("error"),
+  attempts: integer("attempts").notNull().default(0),
+  registeredBy: text("registered_by"),
+  ...timestamps,
+}, (t) => [
+  index("invoices_status_idx").on(t.status),
+  uniqueIndex("invoices_voucher_idx").on(t.voucherType, t.pointOfSale, t.number),
+  check("invoices_status_check", sql`${t.status} in ('pending', 'processing', 'issued', 'failed', 'manual')`),
+  check("invoices_receiver_check", sql`${t.receiverDocType} in ('CF', 'DNI', 'CUIT') and (${t.receiverDocType} = 'CF' or ${t.receiverDocNumber} is not null)`),
+  check("invoices_voucher_check", sql`${t.voucherType} is null or ${t.voucherType} in ('A', 'B', 'C')`),
+  check("invoices_amount_check", sql`${t.amountArs} > 0`),
+]);
+export type Invoice = typeof invoices.$inferSelect;
+
+/**
+ * Métricas de rentabilidad (migración 0009). Tablas aparte a propósito: agregar columnas a variantes, ítems o
+ * pagos rompería cualquier `select()` de esas tablas mientras la migración no esté aplicada. El código consulta
+ * `to_regclass` antes de usarlas (ver lib/db/table-exists.ts).
+ */
+export const productCosts = pgTable("product_costs", {
+  variantId: integer("variant_id").primaryKey().references(() => productVariants.id, { onDelete: "cascade" }),
+  /** Costo unitario de compra en ARS, sin IVA recuperable si corresponde. */
+  costArs: integer("cost_ars").notNull(),
+  ...timestamps,
+}, (t) => [check("product_costs_cost_check", sql`${t.costArs} >= 0`)]);
+
+/** Costo unitario congelado al momento de la venta: cambiar el costo después no altera la ganancia histórica. */
+export const orderItemCosts = pgTable("order_item_costs", {
+  orderItemId: integer("order_item_id").primaryKey().references(() => orderItems.id, { onDelete: "cascade" }),
+  unitCostArs: integer("unit_cost_ars").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [check("order_item_costs_cost_check", sql`${t.unitCostArs} >= 0`)]);
+
+/** Comisiones reales que informa Mercado Pago en cada pago aprobado (fee_details y neto recibido). */
+export const paymentFees = pgTable("payment_fees", {
+  orderId: uuid("order_id").primaryKey().references(() => orders.id, { onDelete: "cascade" }),
+  providerId: text("provider_id").notNull(),
+  feeArs: integer("fee_ars").notNull(),
+  netReceivedArs: integer("net_received_ars"),
+  ...timestamps,
+}, (t) => [check("payment_fees_fee_check", sql`${t.feeArs} >= 0`)]);

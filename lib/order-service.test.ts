@@ -17,6 +17,7 @@ vi.mock("./db/transaction", () => ({ withOrderTransaction: mocks.transaction }))
 vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null, orderAccessSecret: () => null, pendingOrderTtlHours: () => 72 }));
 import { createOrder, findOwnedOrder, transitionOrder } from "./order-service";
 import { expirePendingOrders } from "./order-expiry";
+import { expireAbandonedCarts } from "./abandoned-cart-expiry";
 
 const pg = new PGlite();
 const database = drizzle(pg, { schema });
@@ -143,6 +144,25 @@ describe("transacciones de órdenes en PostgreSQL aislado", () => {
   });
 });
 
+describe("DNI/CUIT para la factura (umbral configurable)", () => {
+  it("desde el umbral exige DNI/CUIT y lo guarda para la factura; debajo no lo pide", async () => {
+    const { cart, input } = await fixture();
+    mocks.config.mockReturnValue({ ...config, taxIdThresholdArs: 2000 });
+    await expect(createOrder(input, cart.id)).rejects.toThrow("DNI o CUIT");
+    expect(await database.select().from(schema.orders)).toHaveLength(0);
+    const id = await createOrder({ ...input, taxId: { type: "DNI", number: "12345678" } }, cart.id);
+    expect((await database.select().from(schema.invoices).where(eq(schema.invoices.orderId, id)))[0]).toMatchObject({ status: "pending", receiverDocType: "DNI", receiverDocNumber: "12345678", amountArs: 2000 });
+    const [order] = await database.select().from(schema.orders).where(eq(schema.orders.id, id));
+    await mocks.transaction((tx: Parameters<typeof transitionOrder>[0]) => transitionOrder(tx, order, "approved"));
+    expect((await database.select().from(schema.invoices).where(eq(schema.invoices.orderId, id)))[0]).toMatchObject({ status: "manual", receiverDocType: "DNI" });
+  });
+  it("sin umbral configurado no pide nada ni crea facturas antes del pago", async () => {
+    const { cart, input } = await fixture();
+    await createOrder(input, cart.id);
+    expect(await database.select().from(schema.invoices)).toHaveLength(0);
+  });
+});
+
 describe("vencimiento de pedidos pendientes", () => {
   const hours = (n: number) => n * 60 * 60_000;
   it("cancela un pendiente vencido, repone stock y cupón una sola vez", async () => {
@@ -156,7 +176,7 @@ describe("vencimiento de pedidos pendientes", () => {
     expect(order.resourcesReleasedAt).not.toBeNull();
     expect((await database.select().from(schema.productVariants))[0].stock).toBe(3);
     expect((await database.select().from(schema.coupons))[0].redemptions).toBe(0);
-    expect((await database.select().from(schema.orderEmails)).map((row) => row.event).sort()).toEqual(["cancelled", "created"]);
+    expect((await database.select().from(schema.orderEmails)).map((row) => row.event).sort()).toEqual(["created", "expired"]);
   });
   it("respeta los pedidos recientes", async () => {
     const { cart, input } = await fixture();
@@ -172,5 +192,32 @@ describe("vencimiento de pedidos pendientes", () => {
     await createOrder(demo.input, demo.cart.id);
     expect((await expirePendingOrders(new Date(Date.now() + hours(200)), 72)).cancelled).toBe(0);
     expect((await database.select().from(schema.orders)).every((order) => order.status === "pending")).toBe(true);
+  });
+});
+
+describe("limpieza de carritos abandonados", () => {
+  it("borra solo carritos inactivos sin orden y sus contadores", async () => {
+    const now = new Date("2026-10-09T12:00:00.000Z");
+    const staleFixture = await fixture({ key: "stale-cart" });
+    const protectedFixture = await fixture({ key: "ordered-cart" });
+    const recentFixture = await fixture({ key: "recent-cart" });
+    await createOrder(protectedFixture.input, protectedFixture.cart.id);
+    const cutoff = new Date(now.getTime() - 60 * 24 * 60 * 60_000);
+    await database.update(schema.carts).set({ updatedAt: new Date(cutoff.getTime() - 1) }).where(eq(schema.carts.id, staleFixture.cart.id));
+    await database.update(schema.carts).set({ updatedAt: new Date(cutoff.getTime() - 1) }).where(eq(schema.carts.id, protectedFixture.cart.id));
+    await database.insert(schema.authRateLimits).values({ id: `coupon:apply:${staleFixture.cart.id}`, key: `coupon:apply:${staleFixture.cart.id}`, count: 1, lastRequest: now.getTime() });
+
+    const result = await expireAbandonedCarts(now);
+
+    expect(result.deleted).toBe(1);
+    expect(await database.select().from(schema.carts).where(eq(schema.carts.id, staleFixture.cart.id))).toHaveLength(0);
+    expect(await database.select().from(schema.cartItems).where(eq(schema.cartItems.cartId, staleFixture.cart.id))).toHaveLength(0);
+    expect(await database.select().from(schema.carts).where(eq(schema.carts.id, protectedFixture.cart.id))).toHaveLength(1);
+    expect(await database.select().from(schema.carts).where(eq(schema.carts.id, recentFixture.cart.id))).toHaveLength(1);
+    expect(await database.select().from(schema.authRateLimits).where(eq(schema.authRateLimits.key, `coupon:apply:${staleFixture.cart.id}`))).toHaveLength(0);
+  });
+
+  it("no permite acortar la retención por debajo de la duración de la cookie", async () => {
+    await expect(expireAbandonedCarts(new Date(), 30)).rejects.toThrow("Retención de carrito fuera de rango");
   });
 });

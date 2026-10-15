@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 
+// Las reseñas consumen un contador compartido en Postgres: se simulan para que el E2E no escriba en la base.
+test.beforeEach(async ({ page }) => { await page.route("**/api/reviews", (request) => request.fulfill({ json: { reviews: [] } })); });
+
 const fitsViewport = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const stickyHeight = (page: Page) => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--sticky-buy-h").trim());
 
@@ -177,9 +180,9 @@ test("comparador: tarjetas apiladas en mobile y link al rótulo cuando existe", 
   expect(await fitsViewport(page)).toBe(true);
   if (await links.count()) {
     const href = await links.first().getAttribute("href");
-    expect(href).toMatch(/^\/productos\/[\w-]+#informacion-nutricional$/);
+    expect(href).toMatch(/^\/productos\/[\w-]+#galeria-producto$/);
     await links.first().click();
     await expect(page).toHaveURL(new RegExp(`${href}$`), { timeout: 60000 });
-    await expect(page.locator("#informacion-nutricional")).toBeInViewport();
+    await expect(page.locator("#galeria-producto")).toBeInViewport();
   }
 });

@@ -1,0 +1,12 @@
+{
+  "brand": "Body Advance",
+  "officialSites": ["https://bodyadvancenutrition.com"],
+  "products": {
+    "preentreno-beast-blood": {
+      "sources": [
+        { "url": "https://bodyadvancenutrition.com/wp-content/uploads/2026/06/beast-blood-multifruta.png", "kind": "product", "sourcePage": "https://bodyadvancenutrition.com/product/beast-blood-pre-entreno-multifruta-2/" }
+      ],
+      "dropBaseline": true
+    }
+  }
+}

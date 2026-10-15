@@ -1,0 +1,87 @@
+/* Páginas legales (/legales/*, /arrepentimiento) y fila legal del footer. Tokens de globals.css. */
+.legal-page { padding-block: 48px 72px; background: var(--paper); }
+.legal-layout { display: grid; grid-template-columns: 230px minmax(0, 760px); gap: 56px; align-items: start; }
+.legal-nav { position: sticky; top: 100px; padding: 18px; background: var(--soft); border-radius: var(--radius-md); }
+.legal-nav .eyebrow { color: var(--muted); }
+.legal-nav ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.legal-nav a { min-height: 44px; display: flex; align-items: center; padding: 8px 10px; color: var(--ink); border-radius: var(--radius-sm); font-size: .88rem; font-weight: 600; line-height: 1.3; }
+.legal-nav a:hover { background: #e4e7e8; }
+.legal-nav a[aria-current="page"] { color: #fff; background: var(--ink); }
+.legal-article { min-width: 0; }
+.legal-head { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.legal-head .eyebrow { color: var(--muted); }
+.legal-head h1 { margin: 0 0 14px; font-size: clamp(1.9rem, 4vw, 2.6rem); }
+.legal-intro p { margin: 0 0 10px; font-size: 1.05rem; line-height: 1.6; }
+.legal-updated { margin: 12px 0 0; color: var(--muted); font-size: .82rem; }
+.legal-section { padding-block: 22px; border-bottom: 1px solid #eceeef; scroll-margin-top: 100px; }
+.legal-section:last-child { border-bottom: 0; }
+.legal-section h2 { margin: 0 0 12px; font-size: 1.25rem; }
+.legal-section p, .legal-section li { color: #33393c; font-size: .95rem; line-height: 1.65; }
+.legal-section p { margin: 0 0 12px; }
+.legal-section ul, .legal-section ol { display: grid; gap: 8px; margin: 0 0 12px; padding-left: 22px; }
+.legal-section ul { list-style: disc; }
+.legal-section ol { list-style: decimal; }
+.legal-section a:not(.button) { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.legal-steps li::marker { font-weight: 800; }
+.legal-identity { display: grid; gap: 0; margin: 4px 0 16px; border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+.legal-identity div { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 12px; padding: 11px 16px; border-bottom: 1px solid #eceeef; font-size: .9rem; }
+.legal-identity div:last-child { border-bottom: 0; }
+.legal-identity dt { color: var(--muted); font-weight: 600; }
+.legal-identity dd { margin: 0; overflow-wrap: anywhere; }
+.legal-callout { margin: 16px 0; padding: 16px 18px; background: var(--soft); border-left: 4px solid var(--ink); border-radius: var(--radius-sm); }
+.legal-callout strong { display: block; margin-bottom: 6px; }
+.legal-callout p { margin: 0 0 8px; font-size: .9rem; }
+.legal-callout p:last-child { margin-bottom: 0; }
+.legal-section .legal-callout--plain { font-size: .82rem; line-height: 1.55; }
+.legal-review-note { display: grid; gap: 4px; margin: 0 0 20px; padding: 14px 16px; color: #5c3d00; background: #fff8e8; border: 1px dashed #c99a2e; border-radius: var(--radius-sm); font-size: .84rem; }
+.legal-table-wrap { margin: 12px 0 16px; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.legal-table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: .84rem; }
+.legal-table th, .legal-table td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid #eceeef; line-height: 1.45; }
+.legal-table thead th { color: #4a5155; background: var(--soft); font-size: .75rem; letter-spacing: .02em; text-transform: uppercase; }
+.legal-table tbody th { font-weight: 700; overflow-wrap: anywhere; }
+.legal-table tbody tr:last-child :is(th, td) { border-bottom: 0; }
+.legal-claims-link { display: inline-flex; min-height: 44px; align-items: center; }
+
+/* Botón de arrepentimiento */
+.withdrawal-form { display: grid; gap: 14px; margin-top: 18px; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius-md); }
+.withdrawal-form .form-grid label { color: var(--ink); font-size: .8rem; font-weight: 700; }
+.withdrawal-form .form-grid input, .withdrawal-form .form-grid textarea { min-height: 46px; padding: 10px 14px; color: var(--ink); background: #fff; border: 1px solid #8c9396; border-radius: 10px; font: inherit; font-size: .92rem; font-weight: 400; }
+.withdrawal-form .form-grid textarea { resize: vertical; }
+.withdrawal-form :is(input, textarea)[aria-invalid="true"] { border-color: #b42a44; }
+.withdrawal-form .terms { margin-top: 0; }
+.withdrawal-form .form-error { margin: 0; color: #9b3030; font-size: .78rem; font-weight: 600; }
+.withdrawal-form > .button { justify-self: start; min-height: 48px; }
+.withdrawal-note { color: var(--muted); font-size: .8rem; }
+.withdrawal-done { display: grid; justify-items: start; gap: 12px; margin-top: 18px; padding: 24px; background: #edf7f1; border: 1px solid #a6d3b8; border-radius: var(--radius-md); }
+.withdrawal-done:focus { outline: 2px solid var(--ink); outline-offset: 3px; }
+.withdrawal-done > svg { width: 32px; height: 32px; color: #137344; }
+.withdrawal-done h2 { margin: 0; font-size: 1.2rem; line-height: 1.35; }
+.withdrawal-done p { margin: 0; }
+.withdrawal-code { display: inline-block; padding: 2px 8px; background: #fff; border-radius: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; }
+
+/* Fila legal del footer (Res. SCI 424/2020 y 274/2021) */
+.footer-legal { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px 28px; align-items: center; padding-block: 20px; border-top: 1px solid #303437; }
+.footer-withdrawal { min-height: 46px; display: inline-flex; align-items: center; gap: 9px; padding: 0 18px; color: var(--ink); background: #fff; border-radius: 10px; font-size: .9rem; font-weight: 800; white-space: nowrap; }
+.footer-withdrawal:hover { background: #e4e7e8; }
+.footer-withdrawal svg { width: 18px; height: 18px; }
+.footer-legal nav { display: flex; flex-wrap: wrap; gap: 4px 22px; }
+.footer-legal nav a { min-height: 44px; display: inline-flex; align-items: center; color: #d6d8d9; font-size: .8rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.footer-legal nav a:hover { color: #fff; }
+.footer-supplements { grid-column: 1 / -1; margin: 0; color: #9aa0a3; font-size: .74rem; line-height: 1.5; }
+
+@media (max-width: 1100px) { .legal-layout { grid-template-columns: 200px minmax(0, 1fr); gap: 36px; } }
+@media (max-width: 768px) {
+  .legal-page { padding-block: 28px 48px; }
+  .legal-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .legal-nav { position: static; padding: 14px; }
+  .legal-nav ul { grid-template-columns: 1fr 1fr; }
+  .legal-identity div { grid-template-columns: 1fr; gap: 2px; }
+  .footer-legal { grid-template-columns: 1fr; }
+  .footer-withdrawal { justify-content: center; }
+}
+@media (max-width: 520px) {
+  .legal-nav ul { grid-template-columns: 1fr; }
+  .withdrawal-form { padding: 16px; }
+  .withdrawal-form > .button { width: 100%; justify-self: stretch; }
+}
+.legal-table-wrap:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }

@@ -7,6 +7,7 @@ import { priceRanges, type CatalogQuery, type CatalogResult, type CatalogSort, t
 import { normalizeText } from "./slugify";
 import { MAX_QUANTITY_PER_LINE } from "./cart-types";
 import { maxQuantityFor } from "./pricing";
+import { comboParts } from "./combo-contents";
 
 export const CATALOG_TAG = "catalog";
 export const PAGE_SIZE = 12;
@@ -16,6 +17,7 @@ const isAvailable = (stock: number | null) => stock === null || stock > 0;
 /** Primera foto de producto (no rótulo) de cada id. */
 export async function getPrimaryImages(productIds: number[]) {
   if (productIds.length === 0) return new Map<number, string>();
+  const slugs = await db.select({ id: products.id, slug: products.slug }).from(products).where(inArray(products.id, productIds));
   const rows = await db
     .select({ productId: productImages.productId, url: productImages.url })
     .from(productImages)
@@ -23,6 +25,10 @@ export async function getPrimaryImages(productIds: number[]) {
     .orderBy(asc(productImages.productId), asc(productImages.position));
   const primary = new Map<number, string>();
   for (const row of rows) if (!primary.has(row.productId)) primary.set(row.productId, row.url);
+  for (const product of slugs) {
+    const comboPhoto = comboParts(product.slug)?.[0]?.photoUrl;
+    if (comboPhoto) primary.set(product.id, comboPhoto);
+  }
   return primary;
 }
 
@@ -76,22 +82,26 @@ const getActiveProducts = unstable_cache(async (): Promise<CatalogRow[]> => {
 
   const photos = await getProductPhotos(rows.map((row) => row.id));
 
-  return rows.map((row) => ({
-    id: row.id,
-    variantId: row.variantId,
-    slug: row.slug,
-    name: row.name,
-    brand: row.brandSlug && row.brandName ? { slug: row.brandSlug, name: row.brandName } : null,
-    category: { slug: row.categorySlug, name: row.categoryName },
-    priceArs: row.priceArs,
-    compareAtPriceArs: row.compareAtPriceArs,
-    inStock: isAvailable(row.stock),
-    imageUrl: photos.get(row.id)?.[0] ?? null,
-    photoUrls: photos.get(row.id) ?? [],
-    isFeatured: row.isFeatured,
-    categoryPosition: row.categoryPosition,
-  }));
-}, ["catalog:active-products:v2"], { tags: [CATALOG_TAG], revalidate: 300 });
+  return rows.map((row) => {
+    const comboPhotos = comboParts(row.slug)?.map((part) => part.photoUrl);
+    const photoUrls = comboPhotos?.length ? comboPhotos : photos.get(row.id) ?? [];
+    return {
+      id: row.id,
+      variantId: row.variantId,
+      slug: row.slug,
+      name: row.name,
+      brand: row.brandSlug && row.brandName ? { slug: row.brandSlug, name: row.brandName } : null,
+      category: { slug: row.categorySlug, name: row.categoryName },
+      priceArs: row.priceArs,
+      compareAtPriceArs: row.compareAtPriceArs,
+      inStock: isAvailable(row.stock),
+      imageUrl: photoUrls[0] ?? null,
+      photoUrls,
+      isFeatured: row.isFeatured,
+      categoryPosition: row.categoryPosition,
+    };
+  });
+}, ["catalog:active-products:v3"], { tags: [CATALOG_TAG], revalidate: 300 });
 
 function toSummary(row: CatalogRow): ProductSummary {
   const { id, variantId, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl, photoUrls } = row;
@@ -157,6 +167,11 @@ export async function queryCatalog(query: CatalogQuery): Promise<CatalogResult> 
 
 export async function getAllProducts() {
   return (await getActiveProducts()).map(toSummary);
+}
+
+/** Productos en el mismo orden de relevancia que usa el catálogo, para búsqueda predictiva. */
+export async function getSearchProducts() {
+  return (await getActiveProducts()).sort(compare("relevancia")).map(toSummary);
 }
 
 export async function getFeaturedProducts(limit = 4) {

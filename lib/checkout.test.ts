@@ -3,16 +3,50 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { validateCheckout, quoteDelivery } from "./checkout-validation";
 import { readQuote, signQuote, checkoutFingerprint, verifyMercadoPagoSignature } from "./checkout-security";
 import { canTransition } from "./order-state";
-import { parseCheckoutEnv } from "./checkout-env";
+import { parseCheckoutEnv, readMercadoPagoTestMode, readOrderAccessSecret, readSiteUrl } from "./checkout-env";
 import { orderAccessToken, verifyOrderAccess } from "./order-access";
 import type { CheckoutConfig, CheckoutInput } from "./checkout-types";
 vi.mock("server-only", () => ({}));
-import { getCheckoutConfig } from "./checkout-config";
+import { getCheckoutConfig, orderPageUrl, siteUrl } from "./checkout-config";
 
 const valid: CheckoutInput = { checkoutKey: randomUUID(), quoteToken: "quote", name: "Cliente de prueba", email: "prueba@example.com", phone: "1144444444", delivery: "pickup", payment: "cash", paymentChoice: "cash", street: "", streetNumber: "", apartment: "", postalCode: "", city: "", province: "", notes: "", accepted: true };
 const config: CheckoutConfig = { demo: false, pickup: { address: "Local", hours: "A coordinar" }, shippingRates: [{ id: "quilmes", label: "Estándar", postalCodes: ["1878"], priceArs: 5000, estimate: "A coordinar" }], payments: { cash: true, transfer: true, mercadopago: true } };
 
 afterEach(() => vi.unstubAllEnvs());
+describe("origen del retorno de Mercado Pago", () => {
+  const deployment = "quilgym-new-build.vercel.app";
+  it("vuelve al Preview creador aunque la URL pública apunte a un alias viejo", () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("VERCEL_URL", deployment);
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://quilgym-git-mp-sandbox.vercel.app");
+    vi.stubEnv("ORDER_ACCESS_SECRET", "a".repeat(32));
+    const id = randomUUID();
+    const url = new URL(orderPageUrl(id)!);
+    expect(url.origin).toBe(`https://${deployment}`);
+    expect(url.pathname).toBe(`/checkout/confirmacion/${id}`);
+    expect(verifyOrderAccess(id, url.searchParams.get("t")!, "a".repeat(32))).toBe(true);
+    // Preference returns and notification_url share the same origin resolver.
+    expect(siteUrl()).toBe(url.origin);
+  });
+  it("conserva el dominio público de producción y la configuración local", () => {
+    for (const environment of ["production", "development", undefined]) {
+      expect(readSiteUrl({ VERCEL_ENV: environment, VERCEL_URL: deployment,
+        NEXT_PUBLIC_SITE_URL: "https://quilgym.vercel.app/" })).toBe("https://quilgym.vercel.app");
+    }
+  });
+  it("no cae silenciosamente en producción si falta el origen del Preview", () => {
+    for (const host of [undefined, "", "https://quilgym.vercel.app", "evil.com", "x.vercel.app/path", "x.vercel.app@evil.com"]) {
+      expect(readSiteUrl({ VERCEL_ENV: "preview", VERCEL_URL: host,
+        NEXT_PUBLIC_SITE_URL: "https://quilgym.vercel.app" })).toBeNull();
+    }
+  });
+  it("permite configurar MP en Preview sin usar el dominio de producción", () => {
+    const report = parseCheckoutEnv({ NODE_ENV: "production", VERCEL_ENV: "preview",
+      VERCEL_URL: deployment, VERCEL_AUTOMATION_BYPASS_SECRET: "bypass-para-webhook", MP_ACCESS_TOKEN: "TEST-token", NEXT_PUBLIC_MP_PUBLIC_KEY: "TEST-key",
+      MP_WEBHOOK_SECRET: "s".repeat(32) });
+    expect(report.config.payments.mercadopago).toBe(true);
+  });
+});
 describe("validación compartida", () => {
   it("acepta retiro sin dirección", () => expect(validateCheckout(valid).ok).toBe(true));
   it("rechaza efectivo con envío y dirección incompleta", () => {
@@ -103,9 +137,22 @@ describe("diagnóstico de configuración", () => {
     expect(mixed.issues.join(" ")).toMatch(/mezclan/);
     expect(parseCheckoutEnv({ ...base, MP_ACCESS_TOKEN: "TEST-token" }).issues.join(" ")).toMatch(/incompleto/);
   });
+  it("declara explícitamente el modo de prueba para claves APP_USR y no lo habilita en Production", () => {
+    const mp = { MP_ACCESS_TOKEN: "APP_USR-test-token", NEXT_PUBLIC_MP_PUBLIC_KEY: "APP_USR-test-key", MP_WEBHOOK_SECRET: "secret" };
+    const preview = { ...base, ...mp, VERCEL_ENV: "preview", VERCEL_URL: "quilgym-preview.vercel.app", VERCEL_AUTOMATION_BYPASS_SECRET: "bypass", MP_TEST_MODE: "true" };
+    expect(readMercadoPagoTestMode(preview)).toBe(true);
+    expect(parseCheckoutEnv(preview).config.payments.mercadopago).toBe(true);
+    const production = { ...base, ...mp, VERCEL_ENV: "production", NEXT_PUBLIC_SITE_URL: "https://quilgym.vercel.app", MP_TEST_MODE: "true" };
+    expect(parseCheckoutEnv(production).config.payments.mercadopago).toBe(false);
+    expect(parseCheckoutEnv(production).issues.join(" ")).toMatch(/MP_TEST_MODE=true/);
+    expect(readMercadoPagoTestMode({ MP_ACCESS_TOKEN: "APP_USR-token" })).toBe(false);
+    expect(readMercadoPagoTestMode({ MP_ACCESS_TOKEN: "TEST-token" })).toBe(true);
+  });
   it("efectivo requiere retiro y el TTL se valida", () => {
     expect(parseCheckoutEnv({ ...base, CASH_PICKUP_ENABLED: "true" }).issues.join(" ")).toMatch(/requiere PICKUP_ADDRESS/);
     expect(parseCheckoutEnv({ ...base, CASH_PICKUP_ENABLED: "true", PICKUP_ADDRESS: "Calle 1", PICKUP_HOURS: "9 a 18" }).config.payments.cash).toBe(true);
+    expect(parseCheckoutEnv({ ...base, PICKUP_ADDRESS: "Calle 1", PICKUP_HOURS: "9 a 18" }).config.payments.cash).toBe(true);
+    expect(parseCheckoutEnv({ ...base, CASH_PICKUP_ENABLED: "false", PICKUP_ADDRESS: "Calle 1", PICKUP_HOURS: "9 a 18" }).config.payments.cash).toBe(false);
     expect(parseCheckoutEnv({ ...base, PENDING_ORDER_TTL_HOURS: "0" }).pendingOrderTtlHours).toBe(72);
     expect(parseCheckoutEnv({ ...base, PENDING_ORDER_TTL_HOURS: "48" }).pendingOrderTtlHours).toBe(48);
   });
@@ -126,5 +173,10 @@ describe("link firmado al pedido", () => {
     expect(orderAccessToken(id, null)).toBeNull();
     expect(verifyOrderAccess(id, orderAccessToken(id, secret), null)).toBe(false);
     expect(parseCheckoutEnv({ NODE_ENV: "production", ORDER_ACCESS_SECRET: "corto" }).orderAccessEnabled).toBe(false);
+  });
+  it("usa el secreto webhook como respaldo para autorizar el retorno de Mercado Pago", () => {
+    const report = parseCheckoutEnv({ NODE_ENV: "production", MP_WEBHOOK_SECRET: secret });
+    expect(report.orderAccessEnabled).toBe(true);
+    expect(readOrderAccessSecret({ MP_WEBHOOK_SECRET: secret })).toBe(secret);
   });
 });

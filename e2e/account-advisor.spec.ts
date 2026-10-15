@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { databaseWritesEnabled, databaseWriteSkipReason } from "./database-safety";
 
 test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout", async ({ page, browser }, info) => {
+  test.skip(!databaseWritesEnabled, databaseWriteSkipReason);
   const email = `quilgym-qa-${info.project.name}-${Date.now()}@example.com`;
   const password = "QuilGym-QA-only-2026";
   const errors: string[] = [];
@@ -48,9 +50,9 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   await page.getByLabel("Nombre y apellido").fill("Cliente QA");
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Teléfono").fill("1144444444");
-  await page.getByRole("button", { name: "Confirmar retiro y total" }).click();
+  await page.getByRole("button", { name: "Confirmar retiro gratis" }).click();
   await page.getByRole("checkbox", { name: /Confirmo que los datos/ }).check();
-  await page.getByRole("button", { name: "Crear pedido de prueba" }).click();
+  await page.getByRole("button", { name: /^Preparar pedido/ }).click();
   await expect(page).toHaveURL(/\/checkout\/confirmacion\/[a-f0-9-]+$/, { timeout: 60000 });
   const orderUrl = page.url();
   await page.context().clearCookies({ name: "qg_cart" });
@@ -62,6 +64,16 @@ test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout",
   await expect(page.getByRole("navigation", { name: "Secciones de tu cuenta" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver compra" })).toHaveCount(1);
   await page.goto("/cuenta/configuracion");
+  const deleteSection = page.locator("#eliminar-cuenta");
+  await expect(deleteSection.getByLabel("Escribí ELIMINAR para confirmar")).toHaveCount(0);
+  const deleteConfirmation = deleteSection.getByRole("checkbox", { name: /acción es permanente/ });
+  const deleteButton = deleteSection.getByRole("button", { name: "Eliminar mi cuenta definitivamente" });
+  await expect(deleteButton).toBeDisabled();
+  await deleteConfirmation.check();
+  await expect(deleteButton).toBeDisabled(); // Sigue bloqueado hasta revalidar la contraseña.
+  await deleteSection.getByLabel("Contraseña actual").fill(password);
+  await expect(deleteButton).toBeEnabled();
+  // No confirmar el borrado en E2E: conservamos la cuenta QA para el resto del recorrido.
   await page.getByRole("button", { name: "Cerrar sesión", exact: true }).click();
   await expect(page).toHaveURL("/");
   await page.goto("/cuenta/ingresar");
@@ -94,11 +106,30 @@ test("asesor conversacional: texto libre, contexto, tarjetas, reintento y reinic
     return route.fulfill({ json: { reply: "Por lo que contás, una opción práctica puede acompañar tus comidas sin reemplazarlas.", recommendations: [{ product: { id: 1, variantId: 1, slug: "proteina-star-nutrition-2-lb", name: "Proteína de prueba QA", category: { slug: "proteinas", name: "Proteínas" }, brand: null, priceArs: 20000, compareAtPriceArs: null, inStock: true, imageUrl: null }, reason: "Por tus horarios, podría darte practicidad cuando te cuesta incluir proteína en las comidas.", caution: "Revisá ingredientes y advertencias en el rótulo." }] } });
   });
   await page.goto("/asesor");
+  if (info.project.name === "mobile") {
+    await expect(page.locator(".advisor-sidebar")).toBeHidden();
+    await expect(page.locator("#advisor-privacy > p")).toContainText("no reemplaza a un profesional de salud");
+    await expect(page.locator("#advisor-privacy summary")).toHaveText("Más info");
+  } else {
+    await expect(page.locator(".advisor-sidebar")).toBeVisible();
+  }
+  await expect(page.getByRole("region", { name: "Chat con el asesor QuilGym" })).toBeVisible();
+  if (info.project.name === "mobile") {
+    const conversation = page.locator(".advisor-conversation");
+    await expect(conversation).toHaveCSS("flex-grow", "1");
+    await expect(page.getByRole("textbox", { name: "Tu mensaje al asesor" })).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(await page.evaluate(() => document.documentElement.clientHeight));
+  }
   const message = page.getByRole("textbox", { name: "Tu mensaje al asesor" });
   await expect(message).toBeEnabled();
   await expect(page.getByText(/Soy tu asesor fitness virtual/)).toBeVisible();
   await expect(page.getByText("¿Tenés 18 años o más?", { exact: true })).toHaveCount(0);
   await expect(page.locator(".advisor-options")).toHaveCount(0);
+  const starters = page.locator(".advisor-starters button");
+  await expect(starters).toHaveCount(3);
+  await starters.first().click();
+  await expect(page.getByRole("textbox", { name: "Tu mensaje al asesor" })).toHaveValue("Quiero ganar masa muscular, ¿por dónde empiezo?");
+  await expect(page.getByRole("button", { name: "Enviar mensaje" })).toBeEnabled();
   await page.screenshot({ path: info.outputPath("advisor-welcome.png"), fullPage: true });
   await message.fill("Quiero ganar fuerza, entreno hace dos años tres veces por semana.");
   await page.getByRole("button", { name: "Enviar mensaje" }).click();
@@ -132,6 +163,19 @@ test("asesor: conexión pendiente conserva el mensaje y los enlaces anteriores l
   await expect(page.locator(".advisor-entry--user")).toContainText("mejorar mis hábitos");
   await expect(page.locator(".advisor-entry--assistant")).toHaveCount(1);
   await expect(page.locator(".product-card")).toHaveCount(0);
+});
+
+test("asesor vacío: la rueda del mouse sigue desplazando la página", async ({ page }, info) => {
+  test.skip(info.project.name === "mobile", "El chat mobile usa el historial como su área de scroll única.");
+  await page.goto("/asesor");
+  const conversation = page.locator(".advisor-conversation");
+  await expect(conversation).toBeVisible();
+  await expect(page.locator(".advisor-entry")).toHaveCount(1);
+  const box = await conversation.boundingBox();
+  if (!box) throw new Error("No se encontró el área de conversación.");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
 
 test("acceso flotante, mapa real y carrito offcanvas accesible", async ({ page }, info) => {

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { History, Package, Settings, Star } from "lucide-react";
+import { AccountAvatar } from "@/components/account-avatar";
 import { AccountShell } from "@/components/account-shell";
 import { requireAccountUser } from "@/lib/account-page";
 
@@ -15,5 +16,5 @@ export default async function AccountPage() {
     { href: "/cuenta/configuracion", title: "Configuración", copy: "Actualizá tu nombre, avatar y preferencias.", icon: Settings },
   ];
   const firstName = user.name.trim().split(/\s+/)[0];
-  return <AccountShell user={user} active="/cuenta" showNavigation={false}><h1 className="account-page-title">Hola, {firstName}</h1><p className="account-page-intro">Este es tu perfil: desde acá podés seguir tus compras y elegir tus próximos productos.</p><div className="account-summary-grid">{sections.map(({ href, title, copy, icon: Icon }) => <Link href={href} key={href}><Icon aria-hidden="true"/><strong>{title}</strong><small>{copy}</small></Link>)}</div></AccountShell>;
+  return <AccountShell user={user} active="/cuenta" showNavigation={false}><h1 className="account-page-title"><AccountAvatar name={user.name} image={user.image} size="large"/><span>Hola, {firstName}</span></h1><p className="account-page-intro">Este es tu perfil: desde acá podés seguir tus compras y elegir tus próximos productos.</p><div className="account-summary-grid">{sections.map(({ href, title, copy, icon: Icon }) => <Link href={href} key={href}><Icon aria-hidden="true"/><strong>{title}</strong><small>{copy}</small></Link>)}</div></AccountShell>;
 }

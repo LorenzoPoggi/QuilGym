@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { Lock, Mail, Store, Truck } from "lucide-react";
+import { Lock, Mail, RotateCcw, Store, Truck } from "lucide-react";
 import { commerce } from "@/lib/commerce";
+import { Logo } from "./logo";
+import { consumerClaimsLabel, consumerClaimsUrl } from "@/lib/legal";
 
 const groups = [
   { title: "Comprar", links: [["Todos los productos", "/productos"], ["Proteínas", "/productos?categoria=proteinas"], ["Creatinas", "/productos?categoria=creatinas"], ["Pre-entrenos", "/productos?categoria=pre-entrenos"], ["Vitaminas y minerales", "/productos?categoria=vitaminas-y-minerales"], ["Accesorios", "/productos?categoria=accesorios"]] },
@@ -30,10 +32,16 @@ export function Footer() {
       </section>
       <div className="footer-main">
         <div className="container footer-grid">
-          <div className="footer-brand"><Link href="/" className="wordmark wordmark--light">QUILGYM</Link><p>Suplementos, accesorios e información para acompañar tu entrenamiento con claridad.</p></div>
+          <div className="footer-brand"><Link href="/" className="wordmark wordmark--light" aria-label="QuilGym, volver al inicio"><Logo/></Link><p>Suplementos, accesorios e información para acompañar tu entrenamiento con claridad.</p></div>
           {groups.map((group) => <nav key={group.title} aria-label={group.title}><h3>{group.title}</h3>{group.links.map(([label, href]) => <Link key={label} href={href}>{label}</Link>)}</nav>)}
         </div>
         <div className="container footer-trust">{trust.map(({ icon: Icon, label }) => <span key={label}><Icon aria-hidden="true"/>{label}</span>)}</div>
+        {/* Res. SCI 424/2020: acceso directo y destacado al Botón de arrepentimiento desde todas las páginas, sin registro. */}
+        <div className="container footer-legal">
+          <Link className="footer-withdrawal" href="/arrepentimiento"><RotateCcw aria-hidden="true"/>Botón de arrepentimiento</Link>
+          <nav aria-label="Información legal"><Link href="/legales/terminos">Términos y condiciones</Link><Link href="/legales/privacidad">Política de privacidad</Link><Link href="/legales/cambios-y-devoluciones">Cambios y devoluciones</Link><a href={consumerClaimsUrl} target="_blank" rel="noopener noreferrer">{consumerClaimsLabel}</a></nav>
+          <p className="footer-supplements">Los suplementos dietarios no son medicamentos ni reemplazan una alimentación variada y equilibrada. Consultá a tu médico o nutricionista.</p>
+        </div>
         <div className="container footer-bottom"><span>© 2026 QuilGym. Todos los derechos reservados.</span><span>Suplementos deportivos en {commerce.pickupLocation}, Buenos Aires.</span></div>
       </div>
     </footer>

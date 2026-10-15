@@ -1,4 +1,5 @@
 import type { CheckoutInput, CheckoutConfig, DeliveryMethod } from "./checkout-types";
+import { parseTaxId } from "./invoicing-config";
 
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function normalizePostalCode(value: string) {
@@ -38,8 +39,18 @@ export function validateCheckout(raw: unknown): { ok: true; value: CheckoutInput
   if (!UUID_PATTERN.test(checkoutKey)) fields.checkoutKey = "Recargá el checkout para continuar.";
   const quoteToken = text("quoteToken", 1, 4096);
   if (input.accepted !== true) fields.accepted = "Confirmá los datos de tu pedido para continuar.";
+  // DNI/CUIT es opcional acá: `createOrder` lo exige solo si el total supera el umbral de facturación.
+  // Acepta los campos del formulario (taxIdType/taxIdNumber) o el objeto ya validado que reenvía el cliente.
+  const taxIdObject = input.taxId && typeof input.taxId === "object" ? input.taxId as Record<string, unknown> : {};
+  const rawTaxIdNumber = typeof input.taxIdNumber === "string" ? input.taxIdNumber : taxIdObject.number;
+  const rawTaxId = typeof rawTaxIdNumber === "string" ? rawTaxIdNumber.trim() : "";
+  let taxId: CheckoutInput["taxId"] = null;
+  if (rawTaxId) {
+    const parsedTaxId = parseTaxId(input.taxIdType ?? taxIdObject.type, rawTaxId);
+    if (parsedTaxId.ok) taxId = parsedTaxId.value; else fields.taxIdNumber = parsedTaxId.error;
+  }
   if (Object.keys(fields).length) return { ok: false, fields };
-  return { ok: true, value: { name, email, phone, delivery, payment, paymentChoice: paymentChoice!, street, streetNumber, apartment, postalCode, city, province, notes, checkoutKey, quoteToken, accepted: true } };
+  return { ok: true, value: { name, email, phone, delivery, payment, paymentChoice: paymentChoice!, street, streetNumber, apartment, postalCode, city, province, notes, checkoutKey, quoteToken, accepted: true, taxId } };
 }
 
 /** Tarifas configuradas por el negocio. Nunca supone envío gratis. */

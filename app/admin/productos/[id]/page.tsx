@@ -1,11 +1,14 @@
 import { notFound } from "next/navigation";
 import { getAdminProduct, getAdminTaxonomy } from "@/lib/admin-catalog";
-import { AdminProductForm } from "@/components/admin-product-form";
-export default async function EditAdminProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+import { AdminProductForm, type AdminNotice } from "@/components/admin-product-form";
+
+const notices = new Set(["creado", "guardado", "archivado"]);
+export default async function EditAdminProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aviso?: string }> }) {
+  const [{ id }, { aviso }] = await Promise.all([params, searchParams]);
   const productId = Number(id);
-  if (!Number.isSafeInteger(productId) || productId < 1) notFound();
+  if (!/^\d+$/.test(id) || !Number.isSafeInteger(productId) || productId < 1) notFound();
   const [entry, taxonomy] = await Promise.all([getAdminProduct(productId), getAdminTaxonomy()]);
   if (!entry) notFound();
-  return <AdminProductForm entry={entry} taxonomy={taxonomy}/>;
+  const notice = (aviso && notices.has(aviso) ? aviso : null) as AdminNotice;
+  return <AdminProductForm key={`${entry.product.updatedAt.getTime()}-${notice}`} entry={entry} taxonomy={taxonomy} notice={notice}/>;
 }

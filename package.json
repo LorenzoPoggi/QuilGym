@@ -11,13 +11,19 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx scripts/seed.ts",
     "db:sync-names": "tsx scripts/sync-product-names.ts",
+    "db:sync-images": "tsx scripts/sync-product-images.ts",
+    "db:sync-descriptions": "tsx scripts/sync-product-descriptions.ts",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "checkout:check": "tsx scripts/check-checkout-config.ts",
+    "email:check": "tsx scripts/check-email-config.ts",
+    "images:check": "node scripts/check-product-gallery.mjs",
     "images:fetch": "node scripts/fetch-product-images.mjs",
     "images:build": "node scripts/build-product-images.mjs",
+    "images:official:fetch": "node scripts/fetch-official-photos.mjs",
+    "images:official:build": "node scripts/build-product-images.mjs",
     "video:hero": "node scripts/build-hero-video.mjs"
   },
   "dependencies": {
@@ -34,6 +40,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@electric-sql/pglite": "^0.5.8",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.1.0",
@@ -42,12 +49,20 @@
     "@types/react-dom": "^19.2.0",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9.0.0",
-    "eslint-config-next": "^16.0.0",
+    "eslint-config-next": "^16.4.0",
     "ffmpeg-static": "^5.3.0",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.1.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.0",
     "vitest": "^5.0.3"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.12"
+    },
+    "@next/eslint-plugin-next": {
+      "fast-glob": "npm:tinyglobby@^0.2.17"
+    }
   }
 }
