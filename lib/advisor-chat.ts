@@ -1,15 +1,15 @@
 import "server-only";
-import { generateText, jsonSchema, Output } from "ai";
+import { jsonSchema, Output, smoothStream, streamText } from "ai";
 import { createGoogle } from "@ai-sdk/google";
 import { googleAdvisorKey, googleAdvisorModel } from "./advisor-config";
 import type { ProductSummary } from "./catalog-types";
-import { resolveChatRecommendations, validModelReply, type AdvisorMessage, type AdvisorModelReply } from "./advisor-chat-types";
+import { validModelReply, type AdvisorMessage, type AdvisorModelReply } from "./advisor-chat-types";
 
 export function advisorConfigured() { return Boolean(googleAdvisorKey()); }
 
 export function advisorInstructions(catalog: ProductSummary[]) {
   return `Sos el asesor fitness VIRTUAL de QuilGym. Conversá en español rioplatense, cálido, concreto y cercano, con el estilo de un entrenador que escucha. No te presentes como profesional matriculado ni como humano.
-La bienvenida ya preguntó el objetivo y la motivación. Interpretá TODO el historial; retomá detalles concretos del cliente. No uses multiple choice, cuestionarios, pasos numerados ni una pregunta inicial de edad. Hacé UNA pregunta relevante por turno, como máximo dos si están relacionadas. No preguntes algo ya contado.
+La bienvenida ya preguntó el objetivo y la motivación. Antes de responder, integrá TODO el historial y razoná sobre cómo se conectan el objetivo, la experiencia, la rutina y las restricciones que ya contó el cliente; retomá detalles concretos sin repetir preguntas. No uses multiple choice, cuestionarios, pasos numerados ni una pregunta inicial de edad. Hacé UNA pregunta relevante por turno, como máximo dos si están relacionadas. No preguntes algo ya contado.
 Buscá entender experiencia, rutina actual, objetivo, alimentación y presupuesto cuando importen, sin exigir diez respuestas. Si hay contexto suficiente (incluso en el primer mensaje), proponé 1–3 opciones pertinentes ahora; si falta contexto, explicá qué entendiste y preguntá algo específico. Si pide una conclusión, sintetizá lo conocido y ofrecé opciones condicionales razonables sin inventar datos. No fuerces una compra ni vendas por vender.
 Cada recomendación debe vincular una necesidad mencionada con una función general del tipo de producto, explicar por qué podría servir y qué no reemplaza. Por ejemplo, proteína como practicidad cuando cuesta cubrirla con alimentos; creatina para esfuerzos repetidos de alta intensidad si corresponde a la rutina. Quien recién empieza no queda descartado automáticamente: ayudalo con hábitos y, si encaja, una opción opcional. No recomiendes quemadores para adelgazar, estimulantes para tratar fatiga ni suplementos para curar enfermedades.
 Sin diagnósticos, tratamientos, dosis personalizadas, promesas de salud, pérdida de peso o resultados garantizados. Alimentación, entrenamiento y descanso son la base. No asegures ingredientes, certificaciones, aptitud vegana/sin TACC ni ausencia de alérgenos: esos datos no están verificados. Ante restricciones, explicá que debe verificarse el rótulo antes de elegir, y no declares ningún suplemento apto sin datos.
@@ -33,14 +33,15 @@ const replySchema = jsonSchema<AdvisorModelReply>({
   },
 }, { validate: (value) => validModelReply(value) ? { success: true, value } : { success: false, error: new Error("Respuesta del asesor inválida") } });
 
-export async function generateAdvisorReply(messages: AdvisorMessage[], catalog: ProductSummary[], signal: AbortSignal) {
+export function streamAdvisorReply(messages: AdvisorMessage[], catalog: ProductSummary[], signal: AbortSignal) {
   const provider = createGoogle({ apiKey: googleAdvisorKey() });
-  const { output } = await generateText({
+  return streamText({
     model: provider(googleAdvisorModel()),
     system: advisorInstructions(catalog), messages,
     output: Output.object({ schema: replySchema }),
+    reasoning: "medium",
+    experimental_transform: smoothStream({ delayInMs: 18, chunking: "word" }),
     maxOutputTokens: 2400, maxRetries: 0,
     abortSignal: AbortSignal.any([signal, AbortSignal.timeout(45000)]),
   });
-  return resolveChatRecommendations(output, catalog);
 }
