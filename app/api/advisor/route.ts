@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllProducts } from "@/lib/catalog";
-import { advisorConfigured, generateAdvisorReply } from "@/lib/advisor-chat";
-import { parseChatMessages } from "@/lib/advisor-chat-types";
+import { advisorConfigured, streamAdvisorReply } from "@/lib/advisor-chat";
+import { parseChatMessages, resolveChatRecommendations } from "@/lib/advisor-chat-types";
 import { advisorVisitor, allowAdvisorRequest } from "@/lib/advisor-rate-limit";
 import { advisorServiceError } from "@/lib/advisor-config";
 
@@ -9,6 +9,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 const headers = { "Cache-Control": "private, no-store" };
 function error(message: string, status: number) { return NextResponse.json({ error: message }, { status, headers }); }
+const encoder = new TextEncoder();
+function event(value: unknown) { return encoder.encode(`${JSON.stringify(value)}\n`); }
 
 export async function POST(request: NextRequest) {
   const origin = request.headers.get("origin");
@@ -37,8 +39,37 @@ export async function POST(request: NextRequest) {
   try {
     if (!await allowAdvisorRequest(visitor.id)) return error("Alcanzamos el límite de consultas. Probá más tarde.", 429);
     const catalog = await getAllProducts();
-    const reply = await generateAdvisorReply(messages, catalog, request.signal);
-    const response = NextResponse.json(reply, { headers });
+    const streamAbort = new AbortController();
+    const generation = streamAdvisorReply(messages, catalog, AbortSignal.any([request.signal, streamAbort.signal]));
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        let lastReply = "";
+        try {
+          for await (const partial of generation.partialOutputStream) {
+            const reply = typeof partial.reply === "string" ? partial.reply : "";
+            if (reply && reply !== lastReply) {
+              lastReply = reply;
+              if (!cancelled) controller.enqueue(event({ type: "reply", reply }));
+            }
+          }
+          const output = await generation.output;
+          const reply = resolveChatRecommendations(output, catalog);
+          if (!cancelled) controller.enqueue(event({ type: "done", ...reply }));
+        } catch (cause) {
+          // Una respuesta ya iniciada no puede cambiar su status HTTP: el error viaja como evento seguro.
+          if (!cancelled) controller.enqueue(event({ type: "error", error: advisorServiceError(cause).message }));
+        } finally {
+          if (!cancelled) controller.close();
+        }
+      },
+      cancel() { cancelled = true; streamAbort.abort(); },
+    });
+    const response = new NextResponse(body, { headers: {
+      ...headers,
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+    } });
     response.cookies.set("qg_advisor", visitor.cookie, { httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV === "production", maxAge: 86400, path: "/api/advisor" });
     return response;
   } catch (cause) {

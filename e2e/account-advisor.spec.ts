@@ -1,6 +1,18 @@
 import { test, expect } from "@playwright/test";
 import { databaseWritesEnabled, databaseWriteSkipReason } from "./database-safety";
 
+function advisorStream(reply: string, recommendations: unknown[] = []) {
+  const midpoint = Math.max(1, Math.floor(reply.length / 2));
+  return {
+    contentType: "application/x-ndjson; charset=utf-8",
+    body: [
+      JSON.stringify({ type: "reply", reply: reply.slice(0, midpoint) }),
+      JSON.stringify({ type: "reply", reply }),
+      JSON.stringify({ type: "done", reply, recommendations }),
+    ].join("\n") + "\n",
+  };
+}
+
 test("cuenta: registro, sesión persistente, favoritos, pedido propio y logout", async ({ page, browser }, info) => {
   test.skip(!databaseWritesEnabled, databaseWriteSkipReason);
   const email = `quilgym-qa-${info.project.name}-${Date.now()}@example.com`;
@@ -100,10 +112,10 @@ test("asesor conversacional: texto libre, contexto, tarjetas, reintento y reinic
   await page.route("**/api/advisor", async (route) => {
     sent.push(route.request().postDataJSON().messages);
     calls++;
-    if (calls === 1) return route.fulfill({ json: { reply: "Querés ganar fuerza y ya entrenás tres veces. ¿Cómo venís con las comidas?", recommendations: [] } });
+    if (calls === 1) return route.fulfill(advisorStream("Querés ganar fuerza y ya entrenás tres veces. ¿Cómo venís con las comidas?"));
     if (calls === 2) return route.fulfill({ status: 502, json: { error: "No pudimos consultar al asesor. Podés reintentar." } });
     // Producto y contenido simulados exclusivamente en la respuesta interceptada del test.
-    return route.fulfill({ json: { reply: "Por lo que contás, una opción práctica puede acompañar tus comidas sin reemplazarlas.", recommendations: [{ product: { id: 1, variantId: 1, slug: "proteina-star-nutrition-2-lb", name: "Proteína de prueba QA", category: { slug: "proteinas", name: "Proteínas" }, brand: null, priceArs: 20000, compareAtPriceArs: null, inStock: true, imageUrl: null }, reason: "Por tus horarios, podría darte practicidad cuando te cuesta incluir proteína en las comidas.", caution: "Revisá ingredientes y advertencias en el rótulo." }] } });
+    return route.fulfill(advisorStream("Por lo que contás, una opción práctica puede acompañar tus comidas sin reemplazarlas.", [{ product: { id: 1, variantId: 1, slug: "proteina-star-nutrition-2-lb", name: "Proteína de prueba QA", category: { slug: "proteinas", name: "Proteínas" }, brand: null, priceArs: 20000, compareAtPriceArs: null, inStock: true, imageUrl: null }, reason: "Por tus horarios, podría darte practicidad cuando te cuesta incluir proteína en las comidas.", caution: "Revisá ingredientes y advertencias en el rótulo." }]));
   });
   await page.goto("/asesor");
   if (info.project.name === "mobile") {

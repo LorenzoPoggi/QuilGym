@@ -98,7 +98,7 @@ export default async function Home() {
             <div className="product-grid">{featured.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} className={desktopFeaturedSlugs.has(product.slug) ? (mobileFeaturedSlugs.has(product.slug) ? "" : "featured-product--desktop-only") : "featured-product--mobile-only"} />)}</div>
             <div className="advisor-banner">
               <div className="advisor-icon"><MessagesSquare aria-hidden="true"/></div>
-              <div><p className="eyebrow">TE ORIENTAMOS EN 3 MINUTOS</p><h3>¿No sabés qué suplemento elegir?</h3><p className="advisor-preview">Nuestro asesor fitness virtual puede responder tus consultas para que logres alcanzar tu objetivo</p></div>
+              <div><p className="eyebrow">TE ORIENTAMOS EN 3 MINUTOS</p><h3>¿No sabés qué suplemento elegir?</h3><p className="advisor-preview">Nuestro asesor fitness virtual te acompaña en cada paso, con recomendaciones pensadas para tus objetivos y tu rutina.</p></div>
               <div className="advisor-cta"><Link className="button button--outline" href="/asesor">Conversar con el asesor <ArrowRight aria-hidden="true"/></Link><small>Asesor virtual · orientación informativa</small></div>
             </div>
           </div>

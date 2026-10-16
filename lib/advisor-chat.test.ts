@@ -2,15 +2,15 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { ProductSummary } from "./catalog-types";
 import { parseChatMessages, validModelReply, resolveChatRecommendations } from "./advisor-chat-types";
 
-const mocks = vi.hoisted(() => ({ generate: vi.fn(), gateway: vi.fn(() => (id: string) => id) }));
+const mocks = vi.hoisted(() => ({ stream: vi.fn(), gateway: vi.fn(() => (id: string) => id), smooth: vi.fn((options: unknown) => options) }));
 vi.mock("server-only", () => ({}));
-vi.mock("ai", () => ({ createGateway: mocks.gateway, generateText: mocks.generate, jsonSchema: (schema: unknown) => schema, Output: { object: (schema: unknown) => schema } }));
+vi.mock("ai", () => ({ streamText: mocks.stream, smoothStream: mocks.smooth, jsonSchema: (schema: unknown) => schema, Output: { object: (schema: unknown) => schema } }));
 vi.mock("@ai-sdk/google", () => ({ createGoogle: mocks.gateway }));
-import { advisorConfigured, advisorInstructions, generateAdvisorReply } from "./advisor-chat";
+import { advisorConfigured, advisorInstructions, streamAdvisorReply } from "./advisor-chat";
 
 const product: ProductSummary = { id: 1, variantId: 1, slug: "creatina-test", name: "Creatina", category: { slug: "creatinas", name: "Creatinas" }, brand: null, priceArs: 10000, compareAtPriceArs: null, inStock: true, imageUrl: null, photoUrls: [] };
 const output = { reply: "Contame cómo entrenás hoy.", needsProfessional: false, recommendations: [{ productId: 1, reason: "Una opción para tu entrenamiento de fuerza.", caution: "Verificá el rótulo." }] };
-beforeEach(() => { vi.unstubAllEnvs(); mocks.generate.mockReset(); });
+beforeEach(() => { vi.unstubAllEnvs(); mocks.stream.mockReset(); mocks.smooth.mockClear(); });
 
 describe("contratos y catálogo del chat", () => {
   it("acepta texto libre, conserva detalles y rechaza roles privilegiados", () => {
@@ -48,11 +48,13 @@ describe("integración LLM sin costos ni credenciales en tests", () => {
   it("pasa historial completo y catálogo al LLM; no reinterpreta con palabras clave", async () => {
     vi.stubEnv("GOOGLE_GENERATIVE_AI_API_KEY", "test-only");
     vi.stubEnv("ADVISOR_MODEL", "test/model");
-    mocks.generate.mockResolvedValue({ output });
+    mocks.stream.mockReturnValue({ output: Promise.resolve(output), partialOutputStream: [] });
     const messages = [{ role: "user" as const, content: "Retomé hace un mes, estoy cuidando mi alimentación." }];
-    const result = await generateAdvisorReply(messages, [product], new AbortController().signal);
-    expect(mocks.generate.mock.calls[0][0]).toMatchObject({ model: "test/model", messages, maxRetries: 0 });
-    expect(mocks.generate.mock.calls[0][0].system).toContain('"id":1');
+    const generation = streamAdvisorReply(messages, [product], new AbortController().signal);
+    const result = resolveChatRecommendations(await generation.output, [product]);
+    expect(mocks.stream.mock.calls[0][0]).toMatchObject({ model: "test/model", messages, maxRetries: 0, reasoning: "medium" });
+    expect(mocks.stream.mock.calls[0][0].system).toContain('"id":1');
+    expect(mocks.smooth).toHaveBeenCalledWith({ delayInMs: 18, chunking: "word" });
     expect(result.recommendations[0].product.id).toBe(1);
   });
   it("instrucciones prohíben cuestionario, promesas, inventar datos y compras forzadas", () => {

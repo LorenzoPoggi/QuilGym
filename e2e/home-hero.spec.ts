@@ -109,7 +109,7 @@ test("home: objetivos con contraste AA y banner del asesor con el texto aprobado
   const banner = page.locator(".advisor-banner");
   await expect(banner.getByText("TE ORIENTAMOS EN 3 MINUTOS")).toBeVisible();
   await expect(banner.getByRole("heading", { name: "¿No sabés qué suplemento elegir?" })).toBeVisible();
-  await expect(banner.locator(".advisor-preview")).toHaveText("Nuestro asesor fitness virtual puede responder tus consultas para que logres alcanzar tu objetivo");
+  await expect(banner.locator(".advisor-preview")).toHaveText("Nuestro asesor fitness virtual te acompaña en cada paso, con recomendaciones pensadas para tus objetivos y tu rutina.");
   await expect(banner.locator(".advisor-preview")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(banner.getByRole("link", { name: "Conversar con el asesor" })).toHaveAttribute("href", "/asesor");
   expect(await fitsViewport(page)).toBe(true);

@@ -4,16 +4,28 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({ configured: vi.fn(), generate: vi.fn(), catalog: vi.fn(), limit: vi.fn(), visitor: vi.fn(() => ({ id: "visitor", cookie: "signed-cookie" })) }));
 vi.mock("server-only", () => ({}));
 vi.mock("./catalog", () => ({ getAllProducts: mocks.catalog }));
-vi.mock("./advisor-chat", () => ({ advisorConfigured: mocks.configured, generateAdvisorReply: mocks.generate }));
+vi.mock("./advisor-chat", async (importOriginal) => {
+  const original = await importOriginal<typeof import("./advisor-chat")>();
+  return { ...original, advisorConfigured: mocks.configured, streamAdvisorReply: mocks.generate };
+});
 vi.mock("./advisor-rate-limit", () => ({ advisorVisitor: mocks.visitor, allowAdvisorRequest: mocks.limit }));
 import { POST } from "../app/api/advisor/route";
 
 function request(body: unknown = { messages: [{ role: "user", content: "Entreno tres días para ganar fuerza" }] }, origin = "http://localhost:3000", type = "application/json") {
   return new NextRequest("http://localhost:3000/api/advisor", { method: "POST", headers: { origin, "content-type": type }, body: JSON.stringify(body) });
 }
+function streamed(output = { reply: "¿Cómo es tu rutina?", needsProfessional: false, recommendations: [] }, partials = [{ reply: "¿Cómo" }, { reply: output.reply }]) {
+  return {
+    partialOutputStream: { async *[Symbol.asyncIterator]() { yield* partials; } },
+    output: Promise.resolve(output),
+  };
+}
+async function events(response: Response) {
+  return (await response.text()).trim().split("\n").filter(Boolean).map((line) => JSON.parse(line));
+}
 beforeEach(() => {
   vi.clearAllMocks(); mocks.configured.mockReturnValue(true); mocks.limit.mockResolvedValue(true); mocks.catalog.mockResolvedValue([]);
-  mocks.generate.mockResolvedValue({ reply: "¿Cómo es tu rutina?", recommendations: [] });
+  mocks.generate.mockReturnValue(streamed());
 });
 describe("endpoint del asesor", () => {
   it("falla de forma transparente sin credenciales y no llama al proveedor", async () => {
@@ -45,18 +57,26 @@ describe("endpoint del asesor", () => {
     const result = await POST(request());
     expect(result.status).toBe(200);
     expect(result.headers.get("cache-control")).toBe("private, no-store");
+    expect(result.headers.get("content-type")).toContain("application/x-ndjson");
     expect(result.headers.get("set-cookie")).toContain("HttpOnly");
-    expect((await result.json()).reply).toContain("rutina");
+    expect(await events(result)).toEqual([
+      { type: "reply", reply: "¿Cómo" },
+      { type: "reply", reply: "¿Cómo es tu rutina?" },
+      { type: "done", reply: "¿Cómo es tu rutina?", recommendations: [] },
+    ]);
     expect(mocks.generate.mock.calls[0][0]).toEqual([{ role: "user", content: "Entreno tres días para ganar fuerza" }]);
   });
   it("errores del proveedor no filtran credenciales ni el mensaje del cliente", async () => {
-    mocks.generate.mockRejectedValue(new Error("private-secret and sensitive user content"));
+    mocks.generate.mockReturnValue({
+      partialOutputStream: { async *[Symbol.asyncIterator]() { throw new Error("private-secret and sensitive user content"); } },
+      output: Promise.resolve({ reply: "no se usa", needsProfessional: false, recommendations: [] }),
+    });
     const result = await POST(request());
-    expect(result.status).toBe(502);
-    expect(JSON.stringify(await result.json())).not.toContain("private-secret");
+    expect(result.status).toBe(200);
+    expect(JSON.stringify(await events(result))).not.toContain("private-secret");
   });
   it.each([403, 429, 503])("muestra una explicación segura para el error Google %s", async (statusCode) => {
-    mocks.generate.mockRejectedValue(Object.assign(new Error("private-secret"), { statusCode }));
+    mocks.generate.mockImplementationOnce(() => { throw Object.assign(new Error("private-secret"), { statusCode }); });
     const result = await POST(request());
     expect(result.status).toBe(statusCode === 429 ? 429 : 503);
     const body = await result.json();
