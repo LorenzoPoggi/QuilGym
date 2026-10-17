@@ -1,5 +1,7 @@
 import "server-only";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
+import { ADMIN_EMAIL } from "./admin-config";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -35,7 +37,10 @@ function createAuth() {
     // Se envía la verificación al registrarse, pero no se exige para ingresar: las cuentas existentes siguen funcionando.
     ...(email ? { emailVerification: { sendOnSignUp: true, autoSignInAfterVerification: true, expiresIn: 60 * 60,
       sendVerificationEmail: async ({ user, url, token }: { user: { email: string; name: string }; url: string; token: string }) => { await sendAuthEmail(process.env, "verify-email", user.email, user.name, url, token); } } } : {}),
-    user: { deleteUser: { enabled: true } },
+    // La cuenta del administrador no se puede eliminar desde la tienda (perdería el acceso al panel).
+    user: { deleteUser: { enabled: true, beforeDelete: async (user) => {
+      if (user.email.trim().toLowerCase() === ADMIN_EMAIL) throw new APIError("FORBIDDEN", { message: "La cuenta del administrador no se puede eliminar." });
+    } } },
     socialProviders: googleConfigured() ? { google: {
       clientId: process.env.GOOGLE_CLIENT_ID!, clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     } } : {},

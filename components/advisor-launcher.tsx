@@ -41,7 +41,7 @@ export function AdvisorLauncher() {
     window.addEventListener("scroll", schedule, { passive: true }); window.addEventListener("resize", schedule); window.addEventListener("load", schedule);
     return () => { cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule); window.removeEventListener("load", schedule); };
   }, [pathname]);
-  if (pathname.startsWith("/asesor") || pathname.startsWith("/checkout") || pathname === "/cuenta/ingresar" || pathname === "/cuenta/registro") return null;
+  if (pathname.startsWith("/asesor") || pathname.startsWith("/checkout") || pathname.startsWith("/pedido") || pathname.startsWith("/admin") || pathname === "/cuenta/ingresar" || pathname === "/cuenta/registro") return null;
   return <aside className="advisor-floating" aria-label="Ayuda y contacto" ref={region} data-covering={covering && !open && !dial ? "" : undefined} onBlur={(event) => {
     // Con teclado, salir del grupo cierra el menú mobile. Sin relatedTarget (tap) se deja al clic afuera.
     const next = event.relatedTarget as Node | null;

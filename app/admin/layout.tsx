@@ -1,6 +1,7 @@
 import { requireAdminUser } from "@/lib/admin-auth";
 import { AdminShell } from "@/components/admin-shell-nav";
 import "../styles/admin.css";
+import "../styles/admin-form.css";
 import "../styles/admin-orders.css";
 import "../styles/admin-ui.css";
 
