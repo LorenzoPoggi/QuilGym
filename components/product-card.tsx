@@ -7,6 +7,7 @@ import { AddToCartButton } from "./cart-buttons";
 import { ProductImage } from "./product-image";
 import { ProductCardMedia } from "./product-card-media";
 import { FavoriteButton } from "./account-controls";
+import { AdminEditProduct } from "./admin-edit-product";
 import { ComboVisual } from "./combo-visual";
 import { comboParts } from "@/lib/combo-contents";
 
@@ -26,6 +27,7 @@ export function ProductCard({ product, compact = false, priority = false, classN
     <article className={`product-card ${compact ? "product-card--compact" : ""} ${className}`}>
       <div className="product-image">
         <FavoriteButton productId={product.id} name={product.name}/>
+        <AdminEditProduct productId={product.id} name={product.name}/>
         {combo
           ? <Link className="card-media-single product-card__combo-visual" href={href} aria-label={`Ver ${product.name}`}><ComboVisual parts={combo} sizes="(max-width: 520px) 82vw, (max-width: 1100px) 42vw, 22vw" preload={priority}/></Link>
           : photos.length > 1

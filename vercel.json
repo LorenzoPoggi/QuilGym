@@ -3,6 +3,7 @@
   "crons": [
     { "path": "/api/internal/order-emails", "schedule": "0 12 * * *" },
     { "path": "/api/internal/expire-orders", "schedule": "30 12 * * *" },
-    { "path": "/api/internal/expire-carts", "schedule": "0 13 * * *" }
+    { "path": "/api/internal/expire-carts", "schedule": "0 13 * * *" },
+    { "path": "/api/internal/sync-shipments", "schedule": "30 13 * * *" }
   ]
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { formatArs } from "@/lib/commerce";
 import type { AdminOrderList } from "@/lib/admin-orders";
-import { ADMIN_ORDERS_PAGE_SIZE, adminOrdersHref, adminOrderStatusLabels, isPaidOnClosedOrder, ORDER_STATUSES, orderCode, paymentChoiceLabels, paymentLabel, shipmentLabel, type AdminOrderFilters } from "@/lib/admin-orders-types";
+import { ADMIN_ORDERS_PAGE_SIZE, adminOrdersHref, deliveryLabels, adminOrderStatusLabels, isPaidOnClosedOrder, ORDER_STATUSES, orderCode, paymentChoiceLabels, paymentLabel, shipmentLabel, type AdminOrderFilters } from "@/lib/admin-orders-types";
 
 const dateFormat = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
 export const formatAdminDate = (value: Date | string) => dateFormat.format(new Date(value));
@@ -22,9 +22,9 @@ export function AdminOrdersView({ data, filters }: { data: AdminOrderList; filte
     <div className="admin-stats"><div><span>Esperan confirmar el pago</span><strong>{summary.awaitingPayment}</strong></div><div><span>Para preparar</span><strong>{summary.toPrepare}</strong></div><div className={summary.alerts ? "is-alert" : undefined}><span>Alertas de pago</span><strong>{summary.alerts}</strong></div></div>
     <form className="admin-filters admin-order-filters" action="/admin/pedidos">
       <label className="admin-order-search"><Search size={18} aria-hidden="true"/><input name="q" defaultValue={filters.q} placeholder="Buscar por código, email, nombre o teléfono" aria-label="Buscar pedidos"/></label>
-      <select name="estado" defaultValue={filters.status} aria-label="Filtrar por estado"><option value="all">Todos los estados</option>{ORDER_STATUSES.map((status) => <option key={status} value={status}>{adminOrderStatusLabels[status]}</option>)}</select>
-      <select name="medio" defaultValue={filters.choice} aria-label="Filtrar por medio de pago"><option value="all">Todos los medios</option>{Object.entries(paymentChoiceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-      <select name="tipo" defaultValue={filters.kind} aria-label="Filtrar pedidos reales o de prueba"><option value="all">Reales y de prueba</option><option value="real">Solo reales</option><option value="demo">Solo de prueba</option></select>
+      <select className="select-field" name="estado" defaultValue={filters.status} aria-label="Filtrar por estado"><option value="all">Todos los estados</option>{ORDER_STATUSES.map((status) => <option key={status} value={status}>{adminOrderStatusLabels[status]}</option>)}</select>
+      <select className="select-field" name="medio" defaultValue={filters.choice} aria-label="Filtrar por medio de pago"><option value="all">Todos los medios</option>{Object.entries(paymentChoiceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <select className="select-field" name="tipo" defaultValue={filters.kind} aria-label="Filtrar pedidos reales o de prueba"><option value="all">Reales y de prueba</option><option value="real">Solo reales</option><option value="demo">Solo de prueba</option></select>
       <label className="admin-order-date"><span>Desde</span><input type="date" name="desde" defaultValue={filters.from}/></label>
       <label className="admin-order-date"><span>Hasta</span><input type="date" name="hasta" defaultValue={filters.to}/></label>
       {filters.alerts && <input type="hidden" name="alertas" value="1"/>}
@@ -38,7 +38,7 @@ export function AdminOrdersView({ data, filters }: { data: AdminOrderList; filte
         <td data-label="Cliente"><strong>{row.name}</strong><small>{row.email}</small></td>
         <td data-label="Pago">{paymentLabel(row)}{row.providerId && <small>MP #{row.providerId}</small>}</td>
         <td data-label="Estado"><span className="admin-order-badges"><AdminOrderStatus status={row.status}/>{row.isDemo && <span className="admin-status admin-order-demo">Prueba</span>}{alert && <span className="admin-status admin-order-status--alert"><AlertTriangle size={12} aria-hidden="true"/> Pago aprobado</span>}</span></td>
-        <td data-label="Entrega">{row.delivery === "pickup" ? "Retiro" : "Envío"}<small>{shipmentLabel(row.shipmentStatus ?? "pending")}{row.trackingCode ? ` · ${row.trackingCode}` : ""}</small></td>
+        <td data-label="Entrega">{deliveryLabels[row.delivery]}<small>{shipmentLabel(row.shipmentStatus ?? "pending")}{row.trackingCode ? ` · ${row.trackingCode}` : ""}</small></td>
         <td data-label="Total"><strong>{formatArs(row.totalArs)}</strong><small>{row.units} u.</small></td>
         <td><Link href={`/admin/pedidos/${row.id}`} aria-label={`Ver pedido ${orderCode(row.id)}`}>Ver</Link></td>
       </tr>; })}</tbody>

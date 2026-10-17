@@ -71,6 +71,20 @@
       "when": 1791945889363,
       "tag": "0009_metrics_costs_fees",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792210593686,
+      "tag": "0010_delivery_tracking",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792257775530,
+      "tag": "0011_analytics",
+      "breakpoints": true
     }
   ]
 }

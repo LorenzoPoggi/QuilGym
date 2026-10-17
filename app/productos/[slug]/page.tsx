@@ -13,6 +13,7 @@ import { TrustStrip } from "@/components/trust-strip";
 import { InstallmentsBlock } from "@/components/product-installments";
 import { ProductPurchase } from "@/components/cart-buttons";
 import { FavoriteButton } from "@/components/account-controls";
+import { AdminEditProduct } from "@/components/admin-edit-product";
 import { getAllProducts, getProduct, getProductsByCategory } from "@/lib/catalog";
 import { comboParts } from "@/lib/combo-contents";
 import { commerce, formatArs, transferPrice } from "@/lib/commerce";
@@ -57,7 +58,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       {combo && activeSlugs ? <ComboGallery name={product.name} parts={combo} activeSlugs={activeSlugs}/> : <ProductGallery product={product}/>}
       <div className="product-buybox">
         <div className="buybox-brand">{product.brand?.name ?? product.category.name}</div>
-        <div className="product-title-row"><h1>{product.name}</h1><FavoriteButton productId={product.id} name={product.name}/></div>
+        <div className="product-title-row"><h1>{product.name}</h1><AdminEditProduct productId={product.id} name={product.name} currentSlug={product.slug}/><FavoriteButton productId={product.id} name={product.name}/></div>
         <p className="buybox-price">{formatArs(product.priceArs)} {product.compareAtPriceArs ? <del>{formatArs(product.compareAtPriceArs)}</del> : null}</p>
         <InstallmentsBlock price={product.priceArs}/>
         {commerce.transferDiscountPercent > 0 ? <p className="transfer-price">{formatArs(transferPrice(product.priceArs))} con transferencia bancaria</p> : null}

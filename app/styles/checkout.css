@@ -162,7 +162,7 @@
 .terms input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: #1d2022; cursor: pointer; }
 .terms input:focus-visible { outline: 2px solid #34393c; outline-offset: 3px; }
 .checkout-summary .button--full { min-height: 48px; margin-top: 14px; font-size: .9rem; font-weight: 700; }
-.secure-note { font-size: .72rem; }
+.secure-note { display: block; margin-top: 10px; color: var(--muted); font-size: .72rem; line-height: 1.45; }
 
 /* Checkout: resumen desplegable en pantallas sin columna lateral */
 .checkout-summary-mobile { display: none; }

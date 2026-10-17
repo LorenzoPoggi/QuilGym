@@ -6,17 +6,31 @@ import { after } from "next/server";
 import { getCart, readCartId } from "./cart";
 import { getCheckoutConfig } from "./checkout-config";
 import { checkoutFingerprint, signQuote } from "./checkout-security";
-import { normalizePostalCode, quoteDelivery, UUID_PATTERN, validateCheckout } from "./checkout-validation";
+import { UUID_PATTERN, validateCheckout } from "./checkout-validation";
+import { buildDeliveryOptions, parseQuoteRequest } from "./delivery-quote";
+import { geocodeAddress } from "./geo";
+import { getCarrier } from "./carriers";
+import { parcelForLines } from "./shipping-parcel";
+import { tableExists } from "./db/table-exists";
+import { db } from "./db";
 import { CheckoutError, createOrder, findOwnedOrder, transitionOrder } from "./order-service";
 import { withOrderTransaction } from "./db/transaction";
 import { orders } from "./db/schema";
-import type { CheckoutQuote, CheckoutResult, DeliveryMethod, OrderStatus } from "./checkout-types";
+import type { CheckoutQuoteResponse, CheckoutResult, OrderStatus } from "./checkout-types";
 import { deliverOrderEmails } from "./order-email";
 import { currentUser } from "./auth";
 import { consumeRateLimit } from "./rate-limit";
+import { rememberOrder } from "./order-cookie-server";
+import { linkOrderToVisit } from "./analytics";
 
-export async function getCheckoutQuote(delivery: DeliveryMethod, rawPostalCode: string): Promise<{ ok: true; quote: CheckoutQuote } | { ok: false; error: string }> {
-  if (!["pickup", "shipping"].includes(delivery) || typeof rawPostalCode !== "string" || rawPostalCode.length > 12) return { ok: false, error: "Revisá los datos de entrega." };
+/**
+ * Cotiza el retiro o todas las opciones para una dirección (entrega propia, transportista o tarifa fija).
+ * El navegador manda la dirección y, como mucho, una pista de ubicación: precio, distancia y elegibilidad
+ * los calcula el servidor, y cada opción vuelve con su propia cotización firmada.
+ */
+export async function getCheckoutQuote(rawRequest: unknown): Promise<CheckoutQuoteResponse> {
+  const request = parseQuoteRequest(rawRequest);
+  if (!request) return { ok: false, error: "Revisá los datos de entrega." };
   try {
     const cartId = await readCartId();
     if (!cartId) return { ok: false, error: "Agregá productos al carrito." };
@@ -24,14 +38,17 @@ export async function getCheckoutQuote(delivery: DeliveryMethod, rawPostalCode: 
     const cart = await getCart(cartId);
     if (!cart.lines.length || cart.hasBlockingIssues || cart.hasPriceChanges) return { ok: false, error: "Revisá el stock y confirmá los precios en el carrito." };
     const config = getCheckoutConfig();
-    const postalCode = delivery === "pickup" ? "" : normalizePostalCode(rawPostalCode);
-    const shipping = quoteDelivery(config, delivery, postalCode);
-    const totalArs = cart.totalArs + shipping.shippingArs;
-    const token = signQuote(cartId, { expires: Date.now() + 15 * 60_000, delivery, postalCode, demo: config.demo,
-      fingerprint: checkoutFingerprint(cart.lines, cart.discountArs, cart.coupon?.code ?? null), shippingArs: shipping.shippingArs, totalArs });
-    return { ok: true, quote: { ...shipping, totalArs, token } };
+    const result = await buildDeliveryOptions(config, request, { totalArs: cart.totalArs, fingerprint: checkoutFingerprint(cart.lines, cart.discountArs, cart.coupon?.code ?? null) }, {
+      geocode: (address) => geocodeAddress(address),
+      deliveryTablesReady: () => tableExists(db, "order_delivery"),
+      carrier: request.delivery === "address" ? getCarrier() : null,
+      parcel: () => parcelForLines(cart.lines.filter((line) => line.available)),
+      sign: (payload) => signQuote(cartId, payload),
+    });
+    if (!result.ok) return result;
+    return { ok: true, quote: result.options[0], options: result.options, ...(result.notice ? { notice: result.notice } : {}) };
   } catch (error) {
-    return { ok: false, error: error instanceof Error && !('query' in error) && /tarifa|postal|retiro/.test(error.message) ? error.message : "No pudimos cotizar la entrega. Intentá nuevamente." };
+    return { ok: false, error: error instanceof Error && !('query' in error) && /tarifa|postal|retiro|entrega/.test(error.message) ? error.message : "No pudimos cotizar la entrega. Intentá nuevamente." };
   }
 }
 
@@ -44,6 +61,9 @@ export async function submitCheckout(raw: unknown): Promise<CheckoutResult> {
     if (!await consumeRateLimit(`checkout:submit:${cartId}`, 10, 10 * 60_000)) return { ok: false, error: "Recibimos muchos intentos para este carrito. Esperá unos minutos antes de reintentar." };
     const user = await currentUser();
     const orderId = await createOrder(parsed.value, cartId, user?.id);
+    // Invitados: el aviso de pedido en curso los encuentra por esta cookie firmada (las cuentas, por la sesión).
+    if (!user) await rememberOrder(orderId);
+    await linkOrderToVisit(orderId);
     revalidatePath("/carrito");
     after(() => deliverOrderEmails(orderId));
     return { ok: true, orderId };

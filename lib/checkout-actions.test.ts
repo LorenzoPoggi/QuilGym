@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 const mocks = vi.hoisted(() => ({
   readCartId: vi.fn(), getCart: vi.fn(), config: vi.fn(), createOrder: vi.fn(),
   findOwnedOrder: vi.fn(), transitionOrder: vi.fn(), currentUser: vi.fn(),
-  consumeRateLimit: vi.fn(), deliverOrderEmails: vi.fn(), revalidatePath: vi.fn(), after: vi.fn(),
+  consumeRateLimit: vi.fn(), deliverOrderEmails: vi.fn(), revalidatePath: vi.fn(), after: vi.fn(), rememberOrder: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
@@ -19,6 +19,10 @@ vi.mock("./order-service", () => ({
 vi.mock("./order-email", () => ({ deliverOrderEmails: mocks.deliverOrderEmails }));
 vi.mock("./auth", () => ({ currentUser: mocks.currentUser }));
 vi.mock("./rate-limit", () => ({ consumeRateLimit: mocks.consumeRateLimit }));
+vi.mock("./db", () => ({ db: {} }));
+vi.mock("./shipping-parcel", () => ({ parcelForLines: vi.fn() }));
+vi.mock("./carriers", () => ({ getCarrier: () => null }));
+vi.mock("./order-cookie-server", () => ({ rememberOrder: mocks.rememberOrder }));
 
 import { getCheckoutQuote, submitCheckout } from "./checkout-actions";
 
@@ -42,14 +46,31 @@ describe("límites del checkout", () => {
     mocks.deliverOrderEmails.mockReset();
     mocks.revalidatePath.mockReset();
     mocks.after.mockReset();
+    mocks.rememberOrder.mockReset();
+  });
+
+  it("recuerda en la cookie qg_orders solo los pedidos de invitado", async () => {
+    mocks.createOrder.mockResolvedValue("00000000-0000-4000-8000-000000000009");
+    expect(await submitCheckout(validCheckout)).toEqual({ ok: true, orderId: "00000000-0000-4000-8000-000000000009" });
+    expect(mocks.rememberOrder).toHaveBeenCalledWith("00000000-0000-4000-8000-000000000009");
+    mocks.rememberOrder.mockReset();
+    mocks.currentUser.mockResolvedValue({ id: "cuenta" });
+    await submitCheckout({ ...validCheckout, checkoutKey: randomUUID() });
+    expect(mocks.rememberOrder).not.toHaveBeenCalled();
   });
 
   it("limita la cotización por carrito antes de leer el carrito", async () => {
     mocks.consumeRateLimit.mockResolvedValue(false);
-    const result = await getCheckoutQuote("shipping", "1878");
+    const result = await getCheckoutQuote({ delivery: "address", address: { street: "San Martín", streetNumber: "492", postalCode: "1878", city: "Quilmes", province: "Buenos Aires" } });
     expect(result).toMatchObject({ ok: false, error: expect.stringContaining("muchas consultas") });
     expect(mocks.consumeRateLimit).toHaveBeenCalledWith(`checkout:quote:${cartId}`, 30, 60_000);
     expect(mocks.getCart).not.toHaveBeenCalled();
+  });
+
+  it("rechaza pedidos de cotización mal formados sin consultar el carrito", async () => {
+    expect(await getCheckoutQuote({ delivery: "address", address: { street: "", streetNumber: "1", postalCode: "1878", city: "Quilmes", province: "Bs As" } })).toMatchObject({ ok: false });
+    expect(await getCheckoutQuote({ delivery: "local" })).toMatchObject({ ok: false });
+    expect(mocks.readCartId).not.toHaveBeenCalled();
   });
 
   it("limita creación por carrito antes de crear una orden", async () => {

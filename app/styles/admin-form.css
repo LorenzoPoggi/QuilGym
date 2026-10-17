@@ -1,0 +1,116 @@
+/* Formulario del editor de producto. Lo usan /admin/productos/[id], /nuevo y el diálogo de edición en la vitrina,
+   así que no depende de los demás estilos del panel. */
+.admin-primary{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid #1d2022;border-radius:10px;padding:13px 18px;background:#1d2022;color:white;font:inherit;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer}
+.admin-primary:hover{background:#343b3d}
+.admin-primary:disabled{opacity:.55;cursor:wait}
+.admin-status{display:inline-block;border-radius:99px;padding:5px 10px;font-weight:700;font-size:.73rem}
+.admin-status--active{background:#e4f7eb;color:#137344}
+.admin-status--draft{background:#eceef0;color:#566266}
+.admin-status--archived{background:#f8e7e5;color:#9b4240}
+.admin-editor-grid{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:22px;align-items:start}
+.admin-editor-main{display:grid;gap:20px}
+.admin-editor-side{display:grid;gap:14px;position:sticky;top:25px}
+.admin-card{border:1px solid #d6dadd;border-radius:16px;background:white;padding:25px}
+.admin-card h2{font-size:1.08rem;margin:0 0 20px}
+.admin-card label:not(.admin-check):not(.admin-upload-tile){display:grid;gap:7px;font-size:.84rem;font-weight:700;margin-bottom:17px}
+.admin-card input:not([type=checkbox]):not([type=file]),.admin-card select,.admin-card textarea{width:100%;min-width:0;border:1px solid #cbd1d3;border-radius:9px;padding:11px 12px;background:#fff;color:#1d2022;font:inherit;font-weight:400}
+.admin-card textarea{resize:vertical}
+.admin-form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.admin-help{color:#697477;font-size:.77rem;line-height:1.5}
+.admin-card>.admin-help{margin:-9px 0 18px}
+.admin-check{display:flex;align-items:center;gap:10px;font-size:.84rem;font-weight:650;margin:12px 0 18px}
+.admin-check input{width:18px;height:18px;accent-color:#1d2022}
+.admin-image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin:18px 0}
+.admin-image-tile,.admin-upload-tile{position:relative;min-height:170px;border:1px solid #d6dadd;border-radius:11px;background:#f7f8f7;padding:10px}
+.admin-image-tile img{width:100%;height:98px;object-fit:contain}
+.admin-image-tile span{display:block;font-size:.7rem;color:#667174;margin:4px 0}
+.admin-image-tile button{position:absolute;right:7px;top:7px;border:0;border-radius:50%;width:28px;height:28px;background:white;cursor:pointer}
+.admin-image-tile select{padding:4px;font-size:.75rem}
+.admin-upload-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-style:dashed;cursor:pointer;color:#465155}
+.admin-upload-tile input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.admin-save{width:100%}
+.admin-error{border:1px solid #e0a6a3;border-radius:9px;background:#fff1f0;color:#a03030;padding:12px;font-size:.82rem}
+@media(max-width:950px){.admin-editor-grid{grid-template-columns:1fr}.admin-editor-side{position:static}}
+@media(max-width:620px){.admin-form-row{grid-template-columns:1fr}.admin-card{padding:18px}}
+.admin-secondary{ display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid #cbd1d3; border-radius: 10px; background: #fff; color: #1d2022; font: inherit; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.admin-secondary:hover:not(:disabled){ border-color: #1d2022; }
+.admin-secondary:disabled{ opacity: .5; cursor: not-allowed; }
+.admin-card-head{ display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.admin-card-head h2{ margin: 0; }
+.admin-field-error{ display: block; color: #a03030; font-size: .78rem; font-weight: 600; line-height: 1.4; }
+.admin-card input[aria-invalid]:not([type=checkbox]):not([type=file]), .admin-card select[aria-invalid], .admin-card textarea[aria-invalid]{ border-color: #b3261e; }
+.admin-help--inline{ display: block; margin: -6px 0 17px; }
+.admin-editor-main, .admin-editor-side{ grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.admin-variants{ display: grid; gap: 14px; margin-top: 16px; }
+.admin-variant{ min-width: 0; margin: 0; padding: 16px 18px 4px; border: 1px solid #d6dadd; border-radius: 12px; background: #fbfbfa; }
+.admin-variant.is-default{ border-color: #1d2022; background: #fff; }
+.admin-variant legend{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 6px; font-size: .9rem; font-weight: 750; }
+.admin-variant-stock{ display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 20px; }
+.admin-variant-stock .admin-check{ min-height: 44px; margin: 0 0 6px; }
+.admin-variant-stock > label:not(.admin-check):not(.admin-upload-tile){ flex: 1 1 200px; }
+.admin-variant-stock > .admin-help{ flex: 1 1 220px; margin: 12px 0 17px; }
+.admin-variant-actions{ display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 4px 0; border-top: 1px solid #e8ebeb; }
+.admin-variant-actions .admin-check{ flex: none; min-height: 44px; margin: 0; white-space: nowrap; }
+.admin-link-button{ display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: #1d2022; font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.admin-link-button--danger{ color: #a03030; }
+.admin-link-button:disabled{ color: #9aa3a6; text-decoration: none; cursor: not-allowed; }
+.admin-image-tile{ display: grid; align-content: start; gap: 6px; }
+.admin-image-tile .admin-image-remove{ display: grid; place-items: center; width: 36px; height: 36px; box-shadow: 0 1px 4px rgba(31, 35, 37, .18); }
+.admin-image-tools{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.admin-image-tools select{ flex: 1 1 100%; min-width: 0; }
+.admin-image-tile .admin-image-tools button{ position: static; flex: none; width: 40px; height: 40px; border: 1px solid #cbd1d3; border-radius: 8px; background: #fff; }
+.admin-image-tile .admin-image-tools button:disabled{ opacity: .4; cursor: not-allowed; }
+.admin-save-bar{ display: grid; gap: 10px; }
+.admin-dirty{ min-height: 1.2em; margin: 0; color: #7a4f00; font-size: .8rem; font-weight: 650; }
+.admin-history ol{ display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.admin-history li{ display: grid; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid #eceef0; font-size: .84rem; }
+.admin-history li:last-child{ padding-bottom: 0; border-bottom: 0; }
+.admin-history small{ color: #656c71; }
+@media (max-width: 950px){.admin-save-bar{ position: fixed; right: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); left: 0; z-index: 25; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 10px 16px; border-top: 1px solid #d6dadd; background: rgba(255, 255, 255, .97); box-shadow: 0 -8px 20px rgba(31, 35, 37, .08); }.admin-save-bar .admin-save{ min-height: 46px; white-space: normal; }.admin-save-bar .admin-dirty{ grid-column: 1 / -1; order: -1; min-height: 0; }.admin-save-bar .admin-dirty:empty{ display: none; }}
+@media (max-width: 620px){.admin-card-head .admin-secondary{ width: 100%; }}
+
+/* Confirmación de descarte dentro del formulario (modo diálogo). */
+.admin-confirm{display:grid;gap:10px;padding:12px;border:1px solid #e0c98a;border-radius:12px;background:#fff8e6;color:#5c4100}
+.admin-confirm p{margin:0;font-size:.86rem;font-weight:650;line-height:1.4}
+.admin-confirm div{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.admin-confirm .admin-secondary,.admin-confirm .admin-primary{min-height:44px;padding:0 12px;white-space:normal}
+
+/* Diálogo lateral para editar un producto desde la vitrina (pantalla completa hasta 768 px). */
+.admin-edit-dialog{position:fixed;inset:0 0 0 auto;margin:0;padding:0;border:0;width:min(780px,100vw);max-width:100vw;height:100dvh;max-height:100dvh;background:#f6f7f6;color:#1d2022;font-family:var(--font-sans),sans-serif;box-shadow:-18px 0 44px rgba(24,27,29,.22);overflow:hidden}
+.admin-edit-dialog[open]{display:flex;flex-direction:column}
+.admin-edit-dialog::backdrop{background:rgba(24,27,29,.5)}
+html:has(.admin-edit-dialog[open]){overflow:hidden}
+.admin-edit-dialog__bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;padding:10px 12px 10px 24px;border-bottom:1px solid #d6dadd;background:#fff}
+.admin-edit-dialog__bar h2{margin:0;font-size:1.15rem;letter-spacing:-.02em}
+.admin-edit-dialog__close{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:10px;background:transparent;color:#1d2022;cursor:pointer}
+.admin-edit-dialog__close:hover{background:#eceef0}
+.admin-edit-dialog__body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:20px 24px 0}
+.admin-edit-dialog__state{display:grid;gap:16px;justify-items:start;padding:32px 0}
+.admin-edit-dialog__state p{margin:0;color:#465155;font-weight:650}
+.admin-edit-dialog__state div{display:flex;flex-wrap:wrap;gap:8px}
+.admin-edit-dialog__state :is(.admin-primary,.admin-secondary){min-height:44px}
+/* Una sola columna; la barra de guardado queda pegada abajo mientras se desplaza el formulario. */
+.admin-edit-dialog .admin-editor-grid{grid-template-columns:minmax(0,1fr);gap:20px}
+.admin-edit-dialog .admin-editor-side{display:contents}
+.admin-edit-dialog .admin-editor-main{display:contents}
+.admin-edit-dialog .admin-save-bar{order:10;position:sticky;right:auto;bottom:0;left:auto;z-index:5;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:0 -24px;padding:12px 24px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid #d6dadd;background:rgba(255,255,255,.97);box-shadow:0 -8px 20px rgba(31,35,37,.08)}
+.admin-edit-dialog .admin-save-bar .admin-save{min-height:46px;white-space:normal}
+.admin-edit-dialog .admin-save-bar .admin-dirty{grid-column:1/-1;order:-1;min-height:0}
+.admin-edit-dialog .admin-save-bar .admin-dirty:empty{display:none}
+.admin-edit-dialog .admin-save-bar .admin-confirm{grid-column:1/-1;order:-2}
+.admin-edit-dialog .admin-error{order:9}
+.admin-edit-dialog .admin-history{order:20;margin-bottom:24px}
+@media(max-width:768px){
+  .admin-edit-dialog{width:100vw}
+  .admin-edit-dialog__bar{padding-left:16px}
+  .admin-edit-dialog__body{padding:16px 16px 0}
+  .admin-edit-dialog .admin-save-bar{margin:0 -16px;padding-inline:16px}
+}
+
+/* Datos para envío de cada variante (colapsable). */
+.admin-shipping{margin:0 0 12px;border-top:1px solid #e8ebeb;padding-top:4px}
+.admin-shipping summary{display:flex;align-items:center;gap:6px;min-height:44px;font-size:.86rem;font-weight:700;cursor:pointer}
+.admin-shipping summary span{color:#697477;font-weight:400}
+.admin-shipping[open]>.admin-help{margin:0 0 12px}
+.admin-shipping-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.admin-card .admin-shipping-grid label:not(.admin-check):not(.admin-upload-tile){margin-bottom:12px}

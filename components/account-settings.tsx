@@ -16,7 +16,7 @@ const avatars = [
   { value: "/assets/avatars/runner.svg", label: "Corredor" },
 ];
 
-export function AccountSettings({ name: initialName, image: initialImage, marketing, hasPassword, googleLinked, googleAvailable }: { name: string; image: string | null | undefined; marketing: boolean; hasPassword: boolean; googleLinked: boolean; googleAvailable: boolean }) {
+export function AccountSettings({ name: initialName, image: initialImage, marketing, hasPassword, googleLinked, googleAvailable, canDelete = true }: { name: string; image: string | null | undefined; marketing: boolean; hasPassword: boolean; googleLinked: boolean; googleAvailable: boolean; canDelete?: boolean }) {
   const [name, setName] = useState(initialName);
   const [image, setImage] = useState(initialImage ?? "");
   const [pending, setPending] = useState(false);
@@ -40,7 +40,8 @@ export function AccountSettings({ name: initialName, image: initialImage, market
     <GoogleConnection linked={googleLinked} available={googleAvailable}/>
     <section className="settings-card account-settings-preferences"><h3>Novedades y ofertas</h3><MarketingPreference initial={marketing}/></section>
     <section className="settings-card account-settings-preferences"><h3>Sesión</h3><p>Si compartís este dispositivo, cerrá tu sesión al terminar.</p><SignOutButton/></section>
-    <DeleteAccount hasPassword={hasPassword}/>
+    {/* El admin no puede eliminar su cuenta desde acá: el servidor también lo bloquea. */}
+    {canDelete ? <DeleteAccount hasPassword={hasPassword}/> : null}
   </>;
 }
 

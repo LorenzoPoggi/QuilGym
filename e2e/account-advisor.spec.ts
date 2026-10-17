@@ -256,7 +256,7 @@ test("sin reseñas la sección invita a visitar el local sin prometer opiniones"
   await reviewsResponse;
   await expect(page.getByRole("heading", { name: "Visitanos en Quilmes" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver reseñas y cómo llegar" })).toHaveAttribute("href", /1791416799115149607/);
-  await expect(page.getByTitle("Ubicación de QuilGym en Google Maps")).toBeAttached();
+  await expect(page.getByTitle("Mapa interactivo: ubicación de QuilGym en Quilmes (Google Maps)")).toBeAttached();
   await expect(page.getByText("EXPERIENCIAS REALES", { exact: true })).toHaveCount(0);
   await expect(page.locator(".review-card")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

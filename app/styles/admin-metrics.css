@@ -22,7 +22,7 @@
 .metrics-hero .metrics-delta--down{background:rgba(255,120,110,.16);color:#ffaba3}
 .metrics-hero .metrics-delta--neutral,.metrics-hero .metrics-delta--none{background:rgba(255,255,255,.1);color:#d6dadd}
 .metrics-hero .metrics-delta__vs{color:inherit;opacity:.8}
-.metrics-hero__side{display:flex;gap:28px;margin:0}
+.metrics-hero__side{display:flex;flex-wrap:wrap;gap:14px 28px;margin:0;min-width:0}
 .metrics-hero__side div{display:grid;gap:2px}
 .metrics-hero__side dt{color:#c9d0d3;font-size:.82rem;font-weight:600}
 .metrics-hero__side dd{margin:0;font-size:1.45rem;font-weight:800}
@@ -49,7 +49,7 @@
 .metrics-chart svg{display:block;width:100%;height:auto;overflow:visible}
 .metrics-grid{stroke:#eceef0;stroke-width:1}
 .metrics-axis-zero{stroke:#b9c0c4;stroke-width:1}
-.metrics-tick{fill:#656c71;font-size:11px;font-family:inherit}
+.metrics-tick{fill:#656c71;font-size:11px;font-family:inherit}.metrics-tick--narrow{font-size:12.5px}
 .metrics-bar{fill:var(--m-sales);transition:opacity .15s}
 .metrics-line{fill:none;stroke:var(--m-profit);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .metrics-dot{fill:var(--m-profit);stroke:#fff;stroke-width:2}

@@ -7,6 +7,7 @@ import { db } from "./db";
 import { cartItems, carts, coupons, productVariants } from "./db/schema";
 import { evaluateCoupon, normalizeCouponCode } from "./pricing";
 import { consumeRateLimit } from "./rate-limit";
+import { trackServerEvent } from "./analytics";
 
 const isId = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) > 0;
 const isQuantity = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) <= 1000;
@@ -35,6 +36,7 @@ export async function addToCart(variantId: number, quantity = 1): Promise<CartAc
       set: { quantity: sql`least(${cartItems.quantity} + ${quantity}, ${variant.maxQuantity})`, seenPriceArs: variant.priceArs, updatedAt: new Date() },
     });
   await touchCart(cartId);
+  await trackServerEvent("add_to_cart", { productSlug: variant.slug, canWriteCookies: true });
 
   const message = next - current < quantity
     ? `Agregamos ${next - current} de ${variant.name}: es el máximo disponible.`

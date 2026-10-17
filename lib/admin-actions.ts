@@ -4,15 +4,15 @@ import { and, eq, inArray, ne } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { del } from "@vercel/blob";
 import { getAdminUser } from "./admin-auth";
-import { ownedBlobUrl, slugPattern, stockHistoryAvailable, validateProductInput, validateTaxonomyInput, type AdminProductInput, type AdminTaxonomyInput, type FieldErrors } from "./admin-catalog";
+import { getAdminProduct, getAdminTaxonomy, ownedBlobUrl, slugPattern, stockHistoryAvailable, validateProductInput, variantShippingAvailable, validateTaxonomyInput, type AdminProductInput, type AdminTaxonomyInput, type FieldErrors } from "./admin-catalog";
 import { CATALOG_TAG } from "./catalog";
 import { db } from "./db";
-import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants } from "./db/schema";
+import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants, variantShipping } from "./db/schema";
 import { withOrderTransaction } from "./db/transaction";
 import { slugify } from "./slugify";
 
 export type { AdminImageInput, AdminProductInput, AdminTaxonomyInput, AdminVariantInput, FieldErrors } from "./admin-catalog";
-export type ActionResult = { ok: true; id: number } | { ok: false; error: string; fields?: FieldErrors };
+export type ActionResult = { ok: true; id: number; slug?: string } | { ok: false; error: string; fields?: FieldErrors };
 
 const unauthorized: ActionResult = { ok: false, error: "No tenés permisos de administrador. Ingresá con Google usando la cuenta autorizada." };
 const firstError = (fields: FieldErrors) => fields.form ?? "Revisá los campos marcados.";
@@ -60,6 +60,7 @@ export async function saveAdminProduct(input: AdminProductInput): Promise<Action
     const result = await withOrderTransaction(async (tx) => {
       let id = input.id;
       let oldSlug: string | undefined;
+      let newSlug: string | undefined;
       if (id) {
         const [old] = await tx.select({ id: products.id, slug: products.slug }).from(products).where(eq(products.id, id)).limit(1).for("update");
         if (!old) throw new FieldError({ form: "No encontramos el producto." });
@@ -68,7 +69,8 @@ export async function saveAdminProduct(input: AdminProductInput): Promise<Action
       } else {
         const [created] = await tx.insert(products).values({ ...values, slug: `nuevo-${crypto.randomUUID()}` }).returning({ id: products.id });
         id = created.id;
-        await tx.update(products).set({ slug: `${slugify(input.name) || "producto"}-${id}` }).where(eq(products.id, id));
+        newSlug = `${slugify(input.name) || "producto"}-${id}`;
+        await tx.update(products).set({ slug: newSlug }).where(eq(products.id, id));
       }
       const productId = id;
       const existing = await tx.select().from(productVariants).where(eq(productVariants.productId, productId)).for("update");
@@ -90,16 +92,27 @@ export async function saveAdminProduct(input: AdminProductInput): Promise<Action
       if (input.removedVariantIds.length) await tx.delete(productVariants).where(and(eq(productVariants.productId, productId), inArray(productVariants.id, input.removedVariantIds)));
       await tx.update(productVariants).set({ isDefault: false }).where(and(eq(productVariants.productId, productId), eq(productVariants.isDefault, true)));
       const changes: { variantId: number; sku: string; previousStock: number | null; newStock: number | null }[] = [];
+      // Peso y medidas: solo si la migración 0010 está aplicada; con todo vacío se borra la fila (vuelve el estimado por categoría).
+      const shippingReady = input.variants.some((variant) => variant.shipping !== undefined) && await variantShippingAvailable(tx);
       for (const [index, variant] of input.variants.entries()) {
         const position = index === input.defaultIndex ? 0 : index < input.defaultIndex ? index + 1 : index;
         const data = { sku: variant.sku.trim(), label: variant.label.trim() || null, priceArs: variant.priceArs, compareAtPriceArs: variant.compareAtPriceArs, stock: variant.stock, isDefault: index === input.defaultIndex, position };
+        let variantId: number;
         if (variant.id !== undefined) {
+          variantId = variant.id;
           await tx.update(productVariants).set(data).where(eq(productVariants.id, variant.id));
           const before = byId.get(variant.id)!.stock;
           if (before !== variant.stock) changes.push({ variantId: variant.id, sku: data.sku, previousStock: before, newStock: variant.stock });
         } else {
           const [created] = await tx.insert(productVariants).values({ ...data, productId }).returning({ id: productVariants.id });
+          variantId = created.id;
           changes.push({ variantId: created.id, sku: data.sku, previousStock: null, newStock: variant.stock });
+        }
+        if (shippingReady && variant.shipping) {
+          const { weightGrams, lengthCm, widthCm, heightCm } = variant.shipping;
+          if (weightGrams === null && lengthCm === null && widthCm === null && heightCm === null) await tx.delete(variantShipping).where(eq(variantShipping.variantId, variantId));
+          else await tx.insert(variantShipping).values({ variantId, weightGrams, lengthCm, widthCm, heightCm })
+            .onConflictDoUpdate({ target: variantShipping.variantId, set: { weightGrams, lengthCm, widthCm, heightCm, updatedAt: new Date() } });
         }
       }
       if (changes.length && await stockHistoryAvailable(tx)) await tx.insert(productStockChanges).values(changes.map((change) => ({ ...change, productId, source: input.id ? "admin" : "alta", changedBy: admin.email })));
@@ -108,11 +121,11 @@ export async function saveAdminProduct(input: AdminProductInput): Promise<Action
       await tx.delete(productImages).where(eq(productImages.productId, productId));
       if (input.images.length) await tx.insert(productImages).values(input.images.map((image, position) => ({ productId, url: image.url, kind: image.kind, width: image.width, height: image.height, position })));
       const keptUrls = new Set(input.images.map((image) => image.url));
-      return { id: productId, oldSlug, removedUrls: oldImages.map((image) => image.url).filter((url) => !keptUrls.has(url)) };
+      return { id: productId, oldSlug, slug: newSlug ?? oldSlug, removedUrls: oldImages.map((image) => image.url).filter((url) => !keptUrls.has(url)) };
     });
     await removeOrphanBlobs(result.removedUrls);
     revalidateCatalog(result.oldSlug ? [`/productos/${result.oldSlug}`, `/admin/productos/${result.id}`] : []);
-    return { ok: true, id: result.id };
+    return { ok: true, id: result.id, slug: result.slug };
   } catch (error) {
     if (error instanceof FieldError) return { ok: false, error: firstError(error.fields), fields: error.fields };
     if (isUniqueViolation(error)) return { ok: false, error: "Ese SKU ya existe. Elegí otro.", fields: { variants: "Hay un SKU repetido." } };
@@ -172,3 +185,16 @@ export async function saveAdminBrand(input: AdminTaxonomyInput) { return saveTax
 export async function saveAdminCategory(input: AdminTaxonomyInput) { return saveTaxonomy("category", input); }
 export async function deleteAdminBrand(id: number) { return deleteTaxonomy("brand", id); }
 export async function deleteAdminCategory(id: number) { return deleteTaxonomy("category", id); }
+
+export type AdminProductEditorResult =
+  | { ok: true; entry: NonNullable<Awaited<ReturnType<typeof getAdminProduct>>>; taxonomy: Awaited<ReturnType<typeof getAdminTaxonomy>> }
+  | { ok: false; error: string };
+
+/** Datos del editor para abrirlo desde la vitrina. Solo lectura y solo para el admin. */
+export async function getAdminProductEditor(id: number): Promise<AdminProductEditorResult> {
+  if (!(await getAdminUser())) return { ok: false, error: "No tenés permisos de administrador." };
+  if (!Number.isSafeInteger(id) || id < 1) return { ok: false, error: "Producto inválido." };
+  const [entry, taxonomy] = await Promise.all([getAdminProduct(id), getAdminTaxonomy()]);
+  if (!entry) return { ok: false, error: "No encontramos el producto." };
+  return { ok: true, entry, taxonomy };
+}

@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { bigint, boolean, check, date, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { bigint, bigserial, boolean, check, date, doublePrecision, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -146,7 +146,8 @@ export type ProductVariant = typeof productVariants.$inferSelect;
 export type ProductImageRow = typeof productImages.$inferSelect;
 
 export const orderStatus = pgEnum("order_status", ["pending", "approved", "rejected", "cancelled", "refunded"]);
-export const deliveryMethod = pgEnum("delivery_method", ["pickup", "shipping"]);
+/** `local` (migración 0010): entrega propia de QuilGym dentro del radio del local. */
+export const deliveryMethod = pgEnum("delivery_method", ["pickup", "shipping", "local"]);
 export const paymentMethod = pgEnum("payment_method", ["mercadopago", "transfer", "cash"]);
 
 /** Better Auth: sesiones revocables y credenciales con hash, nunca contraseñas en claro. */
@@ -220,7 +221,9 @@ export const orders = pgTable("orders", {
   uniqueIndex("orders_cart_checkout_idx").on(t.cartId, t.checkoutKey),
   index("orders_status_idx").on(t.status),
   check("orders_totals_check", sql`${t.subtotalArs} >= 0 and ${t.discountArs} >= 0 and ${t.discountArs} <= ${t.subtotalArs} and ${t.shippingArs} >= 0 and ${t.totalArs} = ${t.subtotalArs} - ${t.discountArs} + ${t.shippingArs}`),
-  check("orders_cash_pickup_check", sql`${t.paymentMethod} <> 'cash' or ${t.delivery} = 'pickup'`),
+  // Efectivo solo con retiro o con entrega propia (esta última, además, solo con LOCAL_DELIVERY_CASH=true en la app).
+  // El cast a texto evita usar el valor nuevo del enum en la misma transacción que lo agrega (migración 0010).
+  check("orders_cash_pickup_check", sql`${t.paymentMethod} <> 'cash' or ${t.delivery}::text in ('pickup', 'local')`),
 ]);
 
 export const orderItems = pgTable("order_items", {
@@ -327,3 +330,106 @@ export const paymentFees = pgTable("payment_fees", {
   netReceivedArs: integer("net_received_ars"),
   ...timestamps,
 }, (t) => [check("payment_fees_fee_check", sql`${t.feeArs} >= 0`)]);
+
+/**
+ * Entrega y seguimiento (migración 0010). Tablas aparte por la misma razón que 0009: columnas nuevas en
+ * `orders`, `shipments` o `product_variants` romperían sus `select()` mientras la migración no esté aplicada.
+ * El código consulta `to_regclass` antes de usarlas (lib/db/table-exists.ts).
+ */
+/** Opción de entrega elegida y, para la entrega propia, el punto geocodificado por el servidor. */
+export const orderDelivery = pgTable("order_delivery", {
+  orderId: uuid("order_id").primaryKey().references(() => orders.id, { onDelete: "cascade" }),
+  /** `local`, `rate:<id>`, `carrier:<servicio>` o `pickup`. */
+  optionId: text("option_id").notNull(),
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  distanceM: integer("distance_m"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  check("order_delivery_point_check", sql`(${t.lat} is null and ${t.lng} is null) or (${t.lat} between -90 and 90 and ${t.lng} between -180 and 180)`),
+  check("order_delivery_distance_check", sql`${t.distanceM} is null or ${t.distanceM} >= 0`),
+]);
+
+/** Datos del transportista para un envío: referencia, URL de seguimiento y ventana de llegada. */
+export const shipmentTracking = pgTable("shipment_tracking", {
+  shipmentId: uuid("shipment_id").primaryKey().references(() => shipments.id, { onDelete: "cascade" }),
+  /** `own` (entrega propia), `correo_argentino` o `mock` (simulación). */
+  carrier: text("carrier").notNull(),
+  /** Servicio cotizado (p. ej. `D:CP`), para dar de alta el envío con el mismo producto. */
+  serviceId: text("service_id"),
+  carrierShipmentId: text("carrier_shipment_id"),
+  trackingUrl: text("tracking_url"),
+  etaFrom: timestamp("eta_from", { withTimezone: true }),
+  etaTo: timestamp("eta_to", { withTimezone: true }),
+  trackingCheckedAt: timestamp("tracking_checked_at", { withTimezone: true }),
+  ...timestamps,
+}, (t) => [check("shipment_tracking_carrier_check", sql`${t.carrier} in ('own', 'correo_argentino', 'mock')`)]);
+
+/** Línea de tiempo del envío (panel y transportista). El índice único evita duplicar al sincronizar. */
+export const shipmentEvents = pgTable("shipment_events", {
+  id: serial("id").primaryKey(),
+  shipmentId: uuid("shipment_id").notNull().references(() => shipments.id, { onDelete: "cascade" }),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  status: text("status").notNull(),
+  description: text("description").notNull(),
+  location: text("location"),
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  source: text("source").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("shipment_events_dedupe_idx").on(t.shipmentId, t.occurredAt, t.description),
+  check("shipment_events_source_check", sql`${t.source} in ('admin', 'carrier')`),
+]);
+
+/** Última posición del repartidor en la entrega propia; se borra al entregar o a las 4 h. */
+export const courierPositions = pgTable("courier_positions", {
+  shipmentId: uuid("shipment_id").primaryKey().references(() => shipments.id, { onDelete: "cascade" }),
+  lat: doublePrecision("lat").notNull(),
+  lng: doublePrecision("lng").notNull(),
+  accuracyM: integer("accuracy_m"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [check("courier_positions_point_check", sql`${t.lat} between -90 and 90 and ${t.lng} between -180 and 180`)]);
+
+/** Peso y medidas reales de una variante para cotizar con el transportista (default por categoría si falta). */
+export const variantShipping = pgTable("variant_shipping", {
+  variantId: integer("variant_id").primaryKey().references(() => productVariants.id, { onDelete: "cascade" }),
+  weightGrams: integer("weight_grams"),
+  lengthCm: integer("length_cm"),
+  widthCm: integer("width_cm"),
+  heightCm: integer("height_cm"),
+  ...timestamps,
+}, (t) => [check("variant_shipping_values_check", sql`(${t.weightGrams} is null or ${t.weightGrams} > 0) and (${t.lengthCm} is null or ${t.lengthCm} > 0) and (${t.widthCm} is null or ${t.widthCm} > 0) and (${t.heightCm} is null or ${t.heightCm} > 0)`)]);
+
+/**
+ * Analítica propia y anónima (migración 0011): una fila por evento. `visitor_id` y `session_id` son UUID aleatorios
+ * de cookies propias; no se guarda IP, email ni ningún dato personal. Se purgan los eventos de más de 400 días.
+ */
+export const analyticsEvents = pgTable("analytics_events", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+  visitorId: uuid("visitor_id").notNull(),
+  sessionId: uuid("session_id").notNull(),
+  type: text("type").notNull(),
+  path: text("path").notNull(),
+  productSlug: text("product_slug"),
+  referrerHost: text("referrer_host"),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  device: text("device").notNull(),
+}, (t) => [
+  index("analytics_events_occurred_idx").on(t.occurredAt),
+  index("analytics_events_type_occurred_idx").on(t.type, t.occurredAt),
+  index("analytics_events_visitor_idx").on(t.visitorId, t.occurredAt),
+  check("analytics_events_type_check", sql`${t.type} in ('page_view', 'product_view', 'add_to_cart', 'checkout_start')`),
+  check("analytics_events_device_check", sql`${t.device} in ('mobile', 'tablet', 'desktop')`),
+]);
+
+/** Visitante y sesión que crearon cada pedido, para medir la conversión sin agregar columnas a `orders`. */
+export const analyticsOrderVisitors = pgTable("analytics_order_visitors", {
+  orderId: uuid("order_id").primaryKey().references(() => orders.id, { onDelete: "cascade" }),
+  visitorId: uuid("visitor_id").notNull(),
+  sessionId: uuid("session_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

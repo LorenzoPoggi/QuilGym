@@ -7,6 +7,7 @@ import { getCheckoutConfig } from "@/lib/checkout-config";
 import { isOnlineCheckoutAvailable } from "@/lib/checkout-whatsapp";
 import { currentUser } from "@/lib/auth";
 import { Logo } from "@/components/logo";
+import { trackServerEvent } from "@/lib/analytics";
 
 export const metadata: Metadata = { title: "Finalizar compra | QuilGym", robots: { index: false } };
 
@@ -16,6 +17,8 @@ export default async function CheckoutPage() {
   if (cart.lines.length === 0) redirect("/carrito");
   const config = getCheckoutConfig();
   const user = await currentUser();
+  // Un Server Component no puede escribir cookies: solo se cuenta si el visitante ya tiene sus ids anónimos.
+  await trackServerEvent("checkout_start", { canWriteCookies: false });
   return <><header className="checkout-header"><div className="container"><Link href="/" className="wordmark" aria-label="QuilGym, inicio"><Logo/></Link></div></header><main className="checkout-page"><div className="container">
     <h1 className="sr-only">Finalizar compra</h1>
     <CheckoutForm initialCart={cart} config={config} whatsappOnly={!isOnlineCheckoutAvailable(config)} initialCustomer={{ name: user?.name ?? "", email: user?.email ?? "" }}/>

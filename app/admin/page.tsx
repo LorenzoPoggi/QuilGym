@@ -1,2 +1,3 @@
 import { redirect } from "next/navigation";
-export default function AdminPage() { redirect("/admin/productos"); }
+// Mismo destino que el admin al entrar a /cuenta*: los pedidos son lo primero que se opera.
+export default function AdminPage() { redirect("/admin/pedidos"); }

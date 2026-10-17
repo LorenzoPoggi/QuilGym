@@ -5,6 +5,8 @@ import { CartProvider } from "@/components/cart-provider";
 import { AccountProvider } from "@/components/account-provider";
 import { AdvisorLauncher } from "@/components/advisor-launcher";
 import { InstallmentsRoot } from "@/components/installments-root";
+import { ActiveOrderToast } from "@/components/active-order-toast";
+import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import "./globals.css";
 import "./styles/home.css";
 import "./styles/catalog.css";
@@ -16,6 +18,9 @@ import "./styles/auth.css";
 import "./styles/compare.css";
 import "./styles/legal.css";
 import "./styles/payments.css";
+import "./styles/delivery.css";
+import "./styles/tracking.css";
+import "./styles/active-order.css";
 
 // Inter autoalojada por next/font: sin pedidos a Google y sin depender de las fuentes del sistema.
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -31,7 +36,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" data-scroll-behavior="smooth" className={`${inter.variable} ${archivo.variable}`}>
-      <body><AccountProvider><CartProvider><InstallmentsRoot>{children}</InstallmentsRoot><AdvisorLauncher/><CartDialog/></CartProvider></AccountProvider></body>
+      <body><AccountProvider><CartProvider><InstallmentsRoot>{children}</InstallmentsRoot><AdvisorLauncher/><ActiveOrderToast/><AnalyticsBeacon/><CartDialog/></CartProvider></AccountProvider></body>
     </html>
   );
 }

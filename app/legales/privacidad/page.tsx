@@ -11,6 +11,10 @@ const cookies = [
   ["qg_cart", "Cookie propia esencial", "Identifica tu carrito con un código aleatorio para que no pierdas los productos.", "60 días"],
   ["quilgym.session_token (y cookies auxiliares de inicio de sesión)", "Cookie propia esencial", "Mantiene tu sesión si entrás con tu cuenta (email o Google).", "Hasta 30 días o hasta que cierres sesión"],
   ["qg_advisor", "Cookie propia esencial", "Limita la cantidad de consultas al asesor virtual para evitar abusos.", "24 horas"],
+  ["qg_vid", "Cookie propia de analítica", "Un código aleatorio que nos permite contar visitantes únicos y medir qué páginas se ven. No guarda datos personales ni se comparte con terceros.", "13 meses"],
+  ["qg_sid", "Cookie propia de analítica", "Agrupa las páginas de una misma visita; se renueva con cada página y vence a los 30 minutos sin actividad.", "30 minutos"],
+  ["qg_orders", "Cookie propia esencial", "Recuerda, firmados, los números de tus últimos 3 pedidos como invitado para mostrarte el aviso de pedido en curso. No guarda datos personales.", "30 días"],
+  ["qg_active_order_dismissed", "Almacenamiento local de tu navegador", "Recuerda que cerraste el aviso de un pedido para no volver a mostrarlo en ese estado.", "Hasta que borres los datos del sitio"],
   ["Búsquedas recientes", "Almacenamiento local del navegador", "Muestra tus últimas búsquedas en este dispositivo. No se envía a nuestros servidores.", "Hasta que las borres"],
   ["Borrador del checkout", "Almacenamiento de sesión del navegador", "Conserva los datos del formulario de compra mientras la pestaña está abierta. No guarda datos de tarjetas.", "Se borra al cerrar la pestaña o al confirmar"],
   ["Mercado Pago", "Terceros, solo en la página de pago", "El formulario de pago de Mercado Pago usa sus propias cookies y datos del dispositivo para prevenir fraudes.", "Según la política de Mercado Pago"],
@@ -28,6 +32,7 @@ export default function PrivacyPage() {
         <li><strong>Pagos:</strong> los datos de tarjeta los recibe y procesa Mercado Pago. QuilGym solo recibe el resultado del pago, su número de operación y el medio usado; nunca el número completo ni el código de seguridad.</li>
         <li><strong>Cuenta (opcional):</strong> nombre, email, contraseña guardada cifrada (no la podemos leer), foto de perfil si entrás con Google, favoritos, historial de búsquedas y tu preferencia de recibir novedades.</li>
         <li><strong>Asesor virtual:</strong> los mensajes que escribís se envían a Google (Gemini) para generar la respuesta. No escribas datos de salud ni datos personales que no quieras compartir.</li>
+        <li><strong>Entrega propia y seguimiento:</strong> para saber si llegamos con la entrega propia ubicamos tu dirección en el mapa (con la API pública Georef del Estado argentino). Si tocás «Usar mi ubicación», el navegador nos la envía solo para ubicar tu dirección y no la guardamos. Mientras QuilGym lleva tu pedido, compartimos con vos la ubicación del repartidor: se registra solo durante el reparto y se borra al entregar el pedido (o a las 4 horas, como máximo).</li>
         <li><strong>Datos técnicos:</strong> dirección IP y datos del navegador que se usan para seguridad y para limitar abusos (por ejemplo, intentos de ingreso).</li>
       </ul>
     </LegalSection>
@@ -48,13 +53,14 @@ export default function PrivacyPage() {
         <li><strong>Vercel</strong> (alojamiento del sitio) y <strong>Neon</strong> (base de datos).</li>
         <li><strong>Resend</strong>: envío de emails del pedido y de la cuenta.</li>
         <li><strong>Google</strong>: ingreso con Google (si lo elegís), asesor virtual, mapa del local y reseñas públicas.</li>
+        <li><strong>OpenStreetMap</strong>: el mapa del seguimiento del pedido se dibuja con sus teselas, que tu navegador descarga directamente de sus servidores (reciben tu IP, como cualquier sitio web).</li>
         <li>El servicio de facturación electrónica y la empresa de envíos que corresponda a tu pedido.</li>
         <li>Autoridades, cuando una ley o una orden judicial lo exija.</li>
       </ul>
       <p>Algunos de estos proveedores procesan datos fuera de la Argentina (por ejemplo, en Estados Unidos). Trabajamos con servicios que asumen compromisos contractuales de seguridad y confidencialidad.</p>
     </LegalSection>
     <LegalSection id="cookies" title="5. Cookies y almacenamiento en tu navegador">
-      <p>Usamos solo cookies y almacenamiento esenciales para que la tienda funcione. <strong>No usamos cookies de publicidad ni de analítica</strong>; por eso no mostramos un aviso para aceptarlas. Si en el futuro las sumamos, te vamos a pedir permiso antes.</p>
+      <p>Usamos cookies y almacenamiento esenciales para que la tienda funcione y dos cookies propias de analítica (<code>qg_vid</code> y <code>qg_sid</code>) para contar visitas y saber qué páginas y productos se ven. Esa analítica es anónima: no guarda tu IP, nombre ni email, no te sigue en otros sitios y no se comparte con terceros; los datos se borran a los 400 días. <strong>No usamos cookies de publicidad ni herramientas de analítica de terceros.</strong> Si en el futuro las sumamos, te vamos a pedir permiso antes.</p>
       {/* Desplazable en mobile: focusable por teclado (WCAG 2.1.1). */}
       <div className="legal-table-wrap" tabIndex={0} role="region" aria-label="Cookies y almacenamiento (tabla desplazable)"><table className="legal-table">
         <caption className="sr-only">Cookies y almacenamiento que usa el sitio</caption>

@@ -4,14 +4,24 @@ import { formatArs } from "./commerce";
 
 const paymentOrder: PaymentMethod[] = ["mercadopago", "transfer", "cash"];
 
-/** Formas de entrega configuradas, en el orden en que se ofrecen. */
-export function availableDeliveries(config: CheckoutConfig): DeliveryMethod[] {
-  return [config.pickup ? "pickup" as const : null, config.shippingRates.length ? "shipping" as const : null].filter((value) => value !== null);
+/** true si se puede cotizar una entrega a una dirección: tarifa fija, transportista o entrega propia. */
+export function addressDeliveryAvailable(config: CheckoutConfig) {
+  return config.shippingRates.length > 0 || Boolean(config.carrier) || Boolean(config.localDelivery);
 }
 
-/** Medios de pago que se pueden usar con la entrega elegida (efectivo solo con retiro). */
+/**
+ * Formas de entrega configuradas, en el orden en que se ofrecen. `shipping` representa «a domicilio»: la opción
+ * concreta (entrega propia o envío) se elige después de cotizar la dirección.
+ */
+export function availableDeliveries(config: CheckoutConfig): DeliveryMethod[] {
+  return [config.pickup ? "pickup" as const : null, addressDeliveryAvailable(config) ? "shipping" as const : null].filter((value) => value !== null);
+}
+
+/** Medios de pago que se pueden usar con la entrega elegida: efectivo al retirar o, si se habilitó, al recibir la entrega propia. */
 export function usablePayments(config: CheckoutConfig, delivery: DeliveryMethod): PaymentMethod[] {
-  return paymentOrder.filter((method) => config.payments[method] && (method !== "cash" || delivery === "pickup"));
+  return paymentOrder.filter((method) => method === "cash"
+    ? (delivery === "pickup" && config.payments.cash) || (delivery === "local" && config.localDelivery?.cash === true)
+    : config.payments[method]);
 }
 
 /** true si existe al menos una combinación de entrega y pago para comprar online. */
@@ -51,8 +61,8 @@ export function whatsappOrderMessage(cart: Cart, details?: WhatsAppCheckoutDetai
       `Nombre: ${details.name}`,
       `Email: ${details.email}`,
       `Teléfono: ${details.phone}`,
-      `Entrega: ${details.delivery === "pickup" ? "Retiro en Quilmes" : "Envío a domicilio"}`,
-      ...(details.delivery === "shipping" ? [`Dirección: ${details.street} ${details.streetNumber}${details.apartment ? `, ${details.apartment}` : ""}, ${details.city}, ${details.province}, CP ${details.postalCode}`] : []),
+      `Entrega: ${details.delivery === "pickup" ? "Retiro en Quilmes" : details.delivery === "local" ? "Entrega en Quilmes (costo a convenir)" : "Envío a domicilio"}`,
+      ...(details.delivery !== "pickup" ? [`Dirección: ${details.street} ${details.streetNumber}${details.apartment ? `, ${details.apartment}` : ""}, ${details.city}, ${details.province}, CP ${details.postalCode}`] : []),
       ...(details.delivery === "shipping" && details.shippingLabel ? [`Envío: ${details.shippingLabel}${details.shippingArs !== undefined ? ` · ${formatArs(details.shippingArs)}` : ""}`, ...(details.shippingArs !== undefined ? [`Total estimado con envío: ${formatArs(cart.totalArs + details.shippingArs)}`] : [])] : []),
       `Preferencia de pago: ${details.paymentLabel || paymentLabels[details.payment]}`,
       ...(details.notes ? [`Indicaciones: ${details.notes}`] : []),
