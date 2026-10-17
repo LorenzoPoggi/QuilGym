@@ -3,9 +3,10 @@ import Image from "next/image";
 import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { reducedMotion } from "@/lib/motion";
+import { STORE_COORDINATES } from "@/lib/store-location";
 import { quilgymMapsUrl, unavailableReviews, type GoogleReview, type ReviewsData } from "@/lib/review-types";
 
-const mapEmbedUrl = "https://maps.google.com/maps?q=QuilGym%20Suplementos%20Deportivos%20Quilmes&ll=-34.7212393,-58.2603596&z=16&output=embed";
+const mapEmbedUrl = `https://maps.google.com/maps?q=QuilGym%20Suplementos%20Deportivos%20Quilmes&ll=${STORE_COORDINATES.lat},${STORE_COORDINATES.lng}&z=16&output=embed`;
 
 /** Atribución de texto que permiten las políticas de Places cuando no se usa el logo oficial. */
 function GoogleMapsAttribution() {

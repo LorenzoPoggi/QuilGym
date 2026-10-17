@@ -1,12 +1,16 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { db } from "./db";
-import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants } from "./db/schema";
+import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants, variantShipping } from "./db/schema";
+import { tableExists } from "./db/table-exists";
 import { normalizeText } from "./slugify";
 
 export type AdminStatus = "active" | "draft" | "archived";
 export type AdminImageInput = { url: string; kind: "product" | "nutrition"; width: number; height: number };
-export type AdminVariantInput = { id?: number; sku: string; label: string; priceArs: number; compareAtPriceArs: number | null; stock: number | null };
+/** Peso y medidas de la variante para cotizar el envío. Todo opcional: vacío = se usa el estimado por categoría. */
+export type AdminShippingInput = { weightGrams: number | null; lengthCm: number | null; widthCm: number | null; heightCm: number | null };
+/** `shipping` ausente = no tocar lo guardado; con los cuatro valores en `null` se borra la fila de `variant_shipping`. */
+export type AdminVariantInput = { id?: number; sku: string; label: string; priceArs: number; compareAtPriceArs: number | null; stock: number | null; shipping?: AdminShippingInput };
 export type AdminProductInput = {
   id?: number; name: string; brandId: number | null; categoryId: number; description: string;
   status: AdminStatus; isFeatured: boolean; variants: AdminVariantInput[]; defaultIndex: number;
@@ -19,6 +23,8 @@ const validInteger = (value: unknown, min = 0) => Number.isSafeInteger(value) &&
 const blobHost = /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i;
 export const BLOB_PREFIX = "quilgym/products/";
 export const MAX_VARIANTS = 30;
+export const SHIPPING_LIMITS = { weightGrams: 100_000, lengthCm: 200, widthCm: 200, heightCm: 200 } as const;
+export const shippingFields = ["weightGrams", "lengthCm", "widthCm", "heightCm"] as const;
 export const ADMIN_PAGE_SIZE = 25;
 export const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -39,6 +45,19 @@ export function ownedBlobUrl(url: string, env: { BLOB_READ_WRITE_TOKEN?: string;
     return parsed.protocol === "https:" && parsed.hostname.toLowerCase() === `${storeId}.public.blob.vercel-storage.com`
       && !parsed.search && !parsed.hash && new RegExp(`^/${BLOB_PREFIX}[a-zA-Z0-9_.-]+\\.(webp|png|jpe?g)$`).test(parsed.pathname);
   } catch { return false; }
+}
+
+const shippingMessages = { weightGrams: "El peso va de 1 a 100.000 g.", lengthCm: "El largo va de 1 a 200 cm.", widthCm: "El ancho va de 1 a 200 cm.", heightCm: "El alto va de 1 a 200 cm." } as const;
+/** Valida los datos de envío de una variante (opcionales: enteros positivos dentro de límites razonables). */
+export function validateShippingInput(shipping: unknown, key: (field: string) => string): FieldErrors {
+  const errors: FieldErrors = {};
+  if (shipping === undefined) return errors;
+  if (!shipping || typeof shipping !== "object") return { [key("weightGrams")]: "Datos de envío inválidos." };
+  for (const field of shippingFields) {
+    const value = (shipping as Record<string, unknown>)[field];
+    if (value !== null && (!validInteger(value, 1) || Number(value) > SHIPPING_LIMITS[field])) errors[key(field)] = shippingMessages[field];
+  }
+  return errors;
 }
 
 export function validateProductInput(input: AdminProductInput): FieldErrors {
@@ -69,6 +88,7 @@ export function validateProductInput(input: AdminProductInput): FieldErrors {
       if (!validInteger(variant.priceArs) || variant.priceArs > 100_000_000) errors[key("priceArs")] = "Ingresá un precio entero en pesos.";
       if (variant.compareAtPriceArs !== null && (!validInteger(variant.compareAtPriceArs) || variant.compareAtPriceArs <= variant.priceArs)) errors[key("compareAtPriceArs")] = "El precio anterior debe superar al actual.";
       if (variant.stock !== null && (!validInteger(variant.stock) || variant.stock > 1_000_000)) errors[key("stock")] = "El stock debe ser cero o un número positivo.";
+      Object.assign(errors, validateShippingInput(variant.shipping, key));
     });
   }
   if (!Array.isArray(input.images) || input.images.length > 12 || input.images.some((image) => !image || !validImageUrl(image.url) || !["product", "nutrition"].includes(image.kind) || !validInteger(image.width, 1) || !validInteger(image.height, 1) || image.width > 6000 || image.height > 6000)) errors.images = "Revisá las imágenes (máximo 12).";
@@ -143,6 +163,11 @@ export async function getAdminCatalog() {
     .map((row) => ({ ...row, imageUrl: firstImage.get(row.id) ?? null, variantCount: variants.get(row.id) ?? 0 }));
 }
 
+/** La tabla de peso y medidas llega con la migración 0010; sin ella el panel sigue funcionando. */
+export async function variantShippingAvailable(executor: { execute: (query: SQL) => PromiseLike<unknown> } = db) {
+  return tableExists(executor, "variant_shipping");
+}
+
 /** La tabla de historial llega con la migración 0007; sin ella el panel sigue funcionando. */
 export async function stockHistoryAvailable(executor: { execute: (query: SQL) => PromiseLike<unknown> } = db) {
   try {
@@ -155,16 +180,19 @@ export async function stockHistoryAvailable(executor: { execute: (query: SQL) =>
 export async function getAdminProduct(id: number) {
   const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
   if (!product) return null;
-  const [variants, images, historyReady] = await Promise.all([
+  const [variants, images, historyReady, shippingReady] = await Promise.all([
     db.select().from(productVariants).where(eq(productVariants.productId, id)).orderBy(desc(productVariants.isDefault), asc(productVariants.position), asc(productVariants.id)),
     db.select().from(productImages).where(eq(productImages.productId, id)).orderBy(asc(productImages.position)),
     stockHistoryAvailable(),
+    variantShippingAvailable(),
   ]);
+  const shippingRows = shippingReady && variants.length ? await db.select().from(variantShipping).where(inArray(variantShipping.variantId, variants.map((variant) => variant.id))) : [];
+  const shippingByVariant = new Map(shippingRows.map((row) => [row.variantId, { weightGrams: row.weightGrams, lengthCm: row.lengthCm, widthCm: row.widthCm, heightCm: row.heightCm }]));
   const ordered = variants.length ? await db.selectDistinct({ variantId: orderItems.variantId }).from(orderItems).where(inArray(orderItems.variantId, variants.map((variant) => variant.id))) : [];
   const withOrders = new Set(ordered.map((row) => row.variantId));
   const stockHistory = historyReady ? await db.select({ id: productStockChanges.id, sku: productStockChanges.sku, previousStock: productStockChanges.previousStock, newStock: productStockChanges.newStock, changedBy: productStockChanges.changedBy, createdAt: productStockChanges.createdAt })
     .from(productStockChanges).where(eq(productStockChanges.productId, id)).orderBy(desc(productStockChanges.createdAt), desc(productStockChanges.id)).limit(20) : null;
-  return { product, variants: variants.map((variant) => ({ ...variant, hasOrders: withOrders.has(variant.id) })), images, stockHistory };
+  return { product, variants: variants.map((variant) => ({ ...variant, hasOrders: withOrders.has(variant.id), shipping: shippingByVariant.get(variant.id) ?? null })), images, stockHistory, shippingAvailable: shippingReady };
 }
 
 export async function getAdminTaxonomy() {
