@@ -79,6 +79,8 @@ export const invoiceNumberLabel = (invoice: Pick<OrderEmailInvoice, "voucherType
 
 export function orderEmailContent(event: OrderEmailEvent, input: {
   order: OrderEmailOrder; link: string | null; siteUrl: string | null;
+  /** Link firmado a `/pedido/[id]` (seguimiento con mapa y línea de tiempo). */
+  trackingLink?: string | null;
   shipment?: { label: string; trackingCode: string | null } | null;
   lines?: { name: string; quantity: number; totalArs: number }[];
   invoice?: OrderEmailInvoice | null;
@@ -93,6 +95,7 @@ export function orderEmailContent(event: OrderEmailEvent, input: {
   const delivery = order.delivery === "pickup" ? `Retiro en ${pickup}` : local ? `Entrega en Quilmes${where ? ` en ${where}` : ""} (costo a convenir)` : where ? `Envío a ${where}` : "Envío a domicilio";
   const details: Detail[] = [["Pedido", code], ["Total", formatArs(order.totalArs)], ["Pago", method], ["Entrega", delivery]];
   const view = link ? { label: "Ver mi pedido", url: link } : null;
+  const track = input.trackingLink ? { label: "Seguir mi pedido", url: input.trackingLink } : view;
   // Efectivo: al retirar o, en la entrega propia, al recibir el pedido.
   const cashPickup = order.paymentMethod === "cash" && !local;
   const cashOnDelivery = order.paymentMethod === "cash" && local;
@@ -105,7 +108,7 @@ export function orderEmailContent(event: OrderEmailEvent, input: {
       footnote: local ? `${LOCAL_DELIVERY_NOTE}. Si no hiciste este pedido, ignorá este email.` : "Si no hiciste este pedido, ignorá este email.",
     }),
     approved: () => ({
-      subject: `Pago aprobado · pedido ${code}`, preheader: "Ya estamos preparando tu pedido.", heading: "¡Gracias por tu compra!", details, lines: input.lines, action: view,
+      subject: `Pago aprobado · pedido ${code}`, preheader: "Ya estamos preparando tu pedido.", heading: "¡Gracias por tu compra!", details, lines: input.lines, action: track,
       paragraphs: [hello, cashPickup ? "Registramos el pago de tu pedido." : "Tu pago fue aprobado y ya estamos preparando tu pedido.", order.delivery === "pickup" ? "Esperá nuestro aviso de «listo para retirar» antes de acercarte al local." : local ? `Te contactamos para coordinar el día y el horario de la entrega. ${LOCAL_DELIVERY_NOTE}.` : "Te avisamos por email cuando lo despachemos, con el seguimiento si corresponde."],
     }),
     payment_rejected: () => ({
@@ -130,11 +133,11 @@ export function orderEmailContent(event: OrderEmailEvent, input: {
       paragraphs: [hello, "Registramos la devolución del pago de tu pedido. El dinero vuelve por el mismo medio: según el banco o la tarjeta puede demorar algunos días hábiles o verse en el próximo resumen."],
     }),
     ready_for_pickup: () => ({
-      subject: `Tu pedido ${code} está listo para retirar`, preheader: `Retiralo en ${pickup}.`, heading: "Tu pedido está listo", details, action: view,
+      subject: `Tu pedido ${code} está listo para retirar`, preheader: `Retiralo en ${pickup}.`, heading: "Tu pedido está listo", details, action: track,
       paragraphs: [hello, `Podés retirarlo en ${pickup}.`, ...(order.status === "pending" && cashPickup ? ["Lo pagás en efectivo al retirarlo."] : []), "Llevá el número de pedido."],
     }),
     shipped: () => ({
-      subject: `Despachamos tu pedido ${code}`, preheader: shipment?.trackingCode ? `Seguimiento: ${shipment.trackingCode}` : "Ya está en camino.", heading: "Tu pedido está en camino", action: view,
+      subject: `Despachamos tu pedido ${code}`, preheader: shipment?.trackingCode ? `Seguimiento: ${shipment.trackingCode}` : "Ya está en camino.", heading: "Tu pedido está en camino", action: track,
       details: [...details, ...(shipment?.label ? [["Envío", shipment.label] as Detail] : []), ...(shipment?.trackingCode ? [["Seguimiento", shipment.trackingCode] as Detail] : [])],
       paragraphs: [hello, shipment?.trackingCode ? "Despachamos tu pedido. Podés seguirlo con el código de abajo." : "Despachamos tu pedido. Te avisamos si tenemos un código de seguimiento."],
     }),

@@ -5,7 +5,7 @@ import type { AdminOrderDetail } from "@/lib/admin-orders";
 import { allowedShipmentStatuses, isPaidOnClosedOrder, orderCode, paymentLabel, shipmentLabel } from "@/lib/admin-orders-types";
 import { orderStatusLabels } from "@/lib/checkout-types";
 import { AdminOrderStatus, formatAdminDate } from "./admin-orders-list";
-import { AdminCarrierShipment, AdminOrderActions, AdminShipmentForm } from "./admin-orders-actions";
+import { AdminCarrierShipment, AdminOrderActions, AdminShipmentForm, AdminStartDelivery } from "./admin-orders-actions";
 import { formatDistance } from "@/lib/delivery-labels";
 import { googleMapsSearchUrl } from "@/lib/store-location";
 import { AdminOrderInvoice } from "./admin-orders-invoice";
@@ -31,6 +31,9 @@ export function AdminOrderDetailView({ detail }: { detail: AdminOrderDetail }) {
   const mapsUrl = point ? googleMapsSearchUrl(point) : addressText ? googleMapsSearchUrl(addressText) : null;
   const deliveryTitle = order.delivery === "pickup" ? "Retiro en el local" : local ? "Entrega propia en Quilmes" : "Envío a domicilio";
   const canCreateCarrierShipment = order.delivery === "shipping" && order.status === "approved" && delivery.available && !!delivery.carrier && !delivery.tracking?.carrierShipmentId;
+  const shipmentStatus = shipment?.status ?? "pending";
+  const canStartDelivery = local && delivery.available && allowedShipmentStatuses(order).includes("out_for_delivery") && shipmentStatus !== "out_for_delivery" && shipmentStatus !== "delivered";
+  const onRoute = local && shipmentStatus === "out_for_delivery";
   const carrierName = (code: string) => code === "correo_argentino" ? "Correo Argentino" : code === "mock" ? "Simulado" : code;
   return <div className="admin-content admin-orders admin-order-detail">
     <Link className="admin-back" href="/admin/pedidos"><ArrowLeft size={17} aria-hidden="true"/> Pedidos</Link>
@@ -60,7 +63,7 @@ export function AdminOrderDetailView({ detail }: { detail: AdminOrderDetail }) {
       <aside className="admin-editor-side admin-order-side">
         <section className="admin-card"><h2>Pago</h2><dl className="admin-order-dl"><Row label="Medio">{paymentLabel(order)}</Row><Row label="Estado del pago">{payment ? failedAttempt ? "Último intento rechazado · puede reintentar" : orderStatusLabels[payment.status] : "—"}</Row>{payment?.providerId && <Row label="ID en Mercado Pago">{payment.providerId}</Row>}{payment?.preferenceId && <Row label="Preferencia">{payment.preferenceId}</Row>}{payment?.providerUpdatedAt && <Row label="Última novedad">{formatAdminDate(payment.providerUpdatedAt)}</Row>}{payment?.ticketUrl && <Row label="Comprobante"><a href={payment.ticketUrl} target="_blank" rel="noreferrer">Ver ticket</a></Row>}{order.bankDetails && <Row label="Cuenta informada">{order.bankDetails.account}</Row>}</dl>
           <AdminOrderActions orderId={order.id} available={available} cancelWarning={cancelWarning}/></section>
-        <section className="admin-card"><h2>Envío</h2>{canCreateCarrierShipment && delivery.carrier && <AdminCarrierShipment orderId={order.id} carrierLabel={delivery.carrier.label}/>}<AdminShipmentForm orderId={order.id} allowed={allowedShipmentStatuses(order)} status={shipment?.status ?? "pending"} trackingCode={shipment?.trackingCode ?? null} delivery={order.delivery}/></section>
+        <section className="admin-card"><h2>Envío</h2>{canCreateCarrierShipment && delivery.carrier && <AdminCarrierShipment orderId={order.id} carrierLabel={delivery.carrier.label}/>}{canStartDelivery && <AdminStartDelivery orderId={order.id}/>}{onRoute && <Link className="admin-primary admin-route-link" href={`/admin/pedidos/${order.id}/reparto`}>Abrir la vista de reparto</Link>}<AdminShipmentForm orderId={order.id} allowed={allowedShipmentStatuses(order)} status={shipment?.status ?? "pending"} trackingCode={shipment?.trackingCode ?? null} delivery={order.delivery}/></section>
         <section className="admin-card admin-order-times"><h2>Registro</h2><dl className="admin-order-dl"><Row label="Creado">{formatAdminDate(order.createdAt)}</Row><Row label="Última actualización">{formatAdminDate(order.updatedAt)}</Row><Row label="Consentimiento">{formatAdminDate(order.consentAt)}</Row>{order.resourcesReleasedAt && <Row label="Stock liberado">{formatAdminDate(order.resourcesReleasedAt)}</Row>}{shipment && <Row label="Envío actualizado">{formatAdminDate(shipment.updatedAt)}</Row>}<Row label="ID completo"><code>{order.id}</code></Row></dl></section>
       </aside>
     </div>

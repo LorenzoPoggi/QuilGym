@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Ban, CheckCircle2, PackagePlus, RotateCcw, Truck, Undo2 } from "lucide-react";
-import { cancelAdminOrder, confirmOrderPayment, createCarrierShipment, markOrderRefunded, reactivatePaidOrder, updateOrderShipment, type AdminOrderActionResult } from "@/lib/admin-orders-actions";
+import { useRouter } from "next/navigation";
+import { Ban, CheckCircle2, Navigation, PackagePlus, RotateCcw, Truck, Undo2 } from "lucide-react";
+import { cancelAdminOrder, confirmOrderPayment, createCarrierShipment, markOrderRefunded, reactivatePaidOrder, startLocalDelivery, updateOrderShipment, type AdminOrderActionResult } from "@/lib/admin-orders-actions";
 import type { DeliveryMethod } from "@/lib/checkout-types";
 import { shipmentStatusLabels, type ShipmentStatus } from "@/lib/admin-orders-types";
 
@@ -44,6 +45,38 @@ export function AdminCarrierShipment({ orderId, carrierLabel }: { orderId: strin
     <p className="admin-help">Da de alta el envío con la dirección y el peso del pedido, guarda la referencia y le avisa al cliente que lo despachaste.</p>
     <Feedback result={result}/>
   </div>;
+}
+
+const etaPresets = [["5h", "Próximas 5 h"], ["12h", "Próximas 12 h"], ["24h", "Próximas 24 h"], ["custom", "Personalizada"]] as const;
+
+/**
+ * Entrega propia: elige la ventana de llegada, pasa el pedido a «En camino» y abre la vista de reparto,
+ * que comparte la ubicación del celular mientras está abierta.
+ */
+export function AdminStartDelivery({ orderId }: { orderId: string }) {
+  const router = useRouter();
+  const [kind, setKind] = useState<(typeof etaPresets)[number][0]>("5h");
+  const [result, setResult] = useState<AdminOrderActionResult | null>(null);
+  const [pending, start] = useTransition();
+  return <form className="admin-start-delivery" onSubmit={(event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const toIso = (name: string) => { const value = String(data.get(name) ?? ""); const date = new Date(value); return value && !Number.isNaN(date.getTime()) ? date.toISOString() : ""; };
+    const choice = kind === "custom" ? { kind, from: toIso("etaFrom"), to: toIso("etaTo") } : { kind };
+    start(async () => {
+      const next = await startLocalDelivery(orderId, choice);
+      setResult(next);
+      if (next.ok) router.push(`/admin/pedidos/${orderId}/reparto`);
+    });
+  }}>
+    <fieldset><legend>¿Cuándo llega?</legend>
+      <div className="admin-start-delivery__options">{etaPresets.map(([value, label]) => <label key={value} className={kind === value ? "is-active" : undefined}><input type="radio" name="etaKind" value={value} checked={kind === value} onChange={() => setKind(value)}/>{label}</label>)}</div>
+    </fieldset>
+    {kind === "custom" ? <div className="admin-start-delivery__custom"><label>Desde<input type="datetime-local" name="etaFrom" required/></label><label>Hasta<input type="datetime-local" name="etaTo" required/></label></div> : null}
+    <button type="submit" className="admin-primary" disabled={pending}><Navigation size={17} aria-hidden="true"/> {pending ? "Saliendo…" : "Salir a entregar"}</button>
+    <p className="admin-help">Le muestra al cliente la ventana de llegada y tu ubicación en el mapa mientras la vista de reparto esté abierta.</p>
+    <Feedback result={result}/>
+  </form>;
 }
 
 const shipmentHelp: Record<DeliveryMethod, string> = {

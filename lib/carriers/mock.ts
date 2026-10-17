@@ -4,6 +4,9 @@
  */
 import type { Carrier } from "./types";
 
+/** Hora fija por proceso: como un transportista real, repetir la consulta devuelve el mismo evento. */
+const admittedAt = new Date(Date.now() - 60 * 60_000);
+
 export function createMockCarrier(): Carrier {
   return {
     code: "mock",
@@ -18,7 +21,7 @@ export function createMockCarrier(): Carrier {
       return { carrierShipmentId: code, trackingCode: code, trackingUrl: null };
     },
     async tracking() {
-      return [{ occurredAt: new Date(Date.now() - 60 * 60_000), status: "admitted", description: "Envío admitido (simulación)", location: "Quilmes" }];
+      return [{ occurredAt: admittedAt, status: "admitted", description: "Envío admitido (simulación)", location: "Quilmes" }];
     },
   };
 }

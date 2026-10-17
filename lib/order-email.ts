@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, eq, isNull, lt } from "drizzle-orm";
 import { db } from "./db";
 import { invoices, orderEmails, orderItems, orders, shipments } from "./db/schema";
-import { orderPageUrl, siteUrl } from "./checkout-config";
+import { orderPageUrl, orderTrackingUrl, siteUrl } from "./checkout-config";
 import { readEmailConfig, sendWithResend } from "./email-config";
 import { orderEmailContent, type OrderEmailEvent } from "./email-templates";
 import { invoicesAvailable, processPendingInvoices } from "./invoicing";
@@ -34,7 +34,7 @@ export async function deliverOrderEmails(orderId?: string) {
       .map((line) => ({ name: [line.name, line.variantLabel].filter(Boolean).join(" · "), quantity: line.quantity, totalArs: line.quantity * line.unitPriceArs })) : undefined;
     const [invoice] = kind === "invoice_issued" && invoicesReady ? await db.select().from(invoices).where(eq(invoices.orderId, order.id)).limit(1) : [];
     if (kind === "invoice_issued" && invoice?.status !== "issued") continue;
-    const content = orderEmailContent(kind, { order, link: orderPageUrl(order.id), siteUrl: site, shipment, lines, invoice });
+    const content = orderEmailContent(kind, { order, link: orderPageUrl(order.id), trackingLink: orderTrackingUrl(order.id), siteUrl: site, shipment, lines, invoice });
     const pdf = invoice?.pdfUrl?.startsWith("https://") ? invoice.pdfUrl : null;
     const result = await sendWithResend(process.env, {
       to: order.email, ...content, tag: `order_${kind}`,

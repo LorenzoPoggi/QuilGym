@@ -31,6 +31,14 @@ export function orderPageUrl(orderId: string) {
   return `${site}/checkout/confirmacion/${orderId}${token ? `?t=${token}` : ""}`;
 }
 
+/** URL firmada del seguimiento (`/pedido/[id]`), con el mismo token que la confirmación. Null sin origen válido. */
+export function orderTrackingUrl(orderId: string) {
+  const site = siteUrl();
+  if (!site) return null;
+  const token = orderAccessToken(orderId, orderAccessSecret());
+  return `${site}/pedido/${orderId}${token ? `?t=${token}` : ""}`;
+}
+
 export function pendingOrderTtlHours() {
   return readPendingOrderTtlHours(process.env).hours;
 }

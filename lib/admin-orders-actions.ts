@@ -4,7 +4,7 @@ import { asc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { getAdminUser } from "./admin-auth";
-import { coupons, orderEmails, orderItems, orders, payments, productVariants, shipments, shipmentTracking } from "./db/schema";
+import { coupons, courierPositions, orderEmails, orderItems, orders, payments, productVariants, shipments, shipmentTracking } from "./db/schema";
 import { withOrderTransaction, type OrderTransaction } from "./db/transaction";
 import { transitionOrder } from "./order-service";
 import { canTransition } from "./order-state";
@@ -15,6 +15,10 @@ import { tableExists } from "./db/table-exists";
 import { CarrierError, getCarrier } from "./carriers";
 import { parcelForOrder } from "./shipping-parcel";
 import { consumeRateLimit } from "./rate-limit";
+import { applyShipmentStatus } from "./shipment-status";
+import { trackingTablesReady } from "./tracking";
+import { COURIER_REPORT_MIN_INTERVAL_MS, etaWindowFromChoice } from "./tracking-core";
+import { isValidCoordinates } from "./geo";
 import { InvoiceActionError, parseManualInvoice, prepareInvoice, queueInvoice, registerManualInvoice, retryFailedInvoice } from "./invoicing";
 
 export type AdminOrderActionResult = { ok: true; message: string } | { ok: false; error: string };
@@ -119,7 +123,7 @@ export async function updateOrderShipment(id: string, input: { status: unknown; 
     const [shipment] = await tx.select().from(shipments).where(eq(shipments.orderId, order.id)).for("update");
     if (!shipment) throw new AdminOrderError("El pedido no tiene un envío asociado.");
     if (shipment.status === status && (shipment.trackingCode ?? "") === trackingCode) return "No había cambios para guardar.";
-    await tx.update(shipments).set({ status, trackingCode: trackingCode || null }).where(eq(shipments.id, shipment.id));
+    await applyShipmentStatus(tx, shipment, status, { trackingCode: trackingCode || null });
     // Un aviso por evento (índice único): corregir el tracking después no reenvía el email.
     if (!order.isDemo && (status === "ready_for_pickup" || status === "shipped")) await tx.insert(orderEmails).values({ orderId: order.id, event: status }).onConflictDoNothing();
     return "Envío actualizado.";
@@ -166,10 +170,69 @@ export async function createCarrierShipment(id: string): Promise<AdminOrderActio
     const values = { carrier: carrier.code, carrierShipmentId: created.carrierShipmentId, trackingUrl: created.trackingUrl };
     await tx.insert(shipmentTracking).values({ shipmentId: current.id, ...values }).onConflictDoUpdate({ target: shipmentTracking.shipmentId, set: values });
     const trackingCode = created.trackingCode && TRACKING_PATTERN.test(created.trackingCode) ? created.trackingCode : current.trackingCode;
-    await tx.update(shipments).set({ status: "shipped", trackingCode }).where(eq(shipments.id, current.id));
+    await applyShipmentStatus(tx, current, "shipped", { trackingCode }, `Despachamos tu pedido con ${carrier.label}`);
     if (!locked.isDemo) await tx.insert(orderEmails).values({ orderId: locked.id, event: "shipped" }).onConflictDoNothing();
     return created.trackingCode ? `Envío generado en ${carrier.label}. Seguimiento: ${created.trackingCode}.` : `Envío generado en ${carrier.label} (referencia ${created.carrierShipmentId}). Cargá el código de seguimiento cuando lo tengas.`;
   });
+}
+
+/**
+ * Entrega propia: «Salir a entregar». Guarda la ventana de llegada que eligió el dueño, pasa el envío a «En camino»
+ * y lo registra en la línea de tiempo. Respeta las mismas reglas de estado que el formulario de envío.
+ */
+export async function startLocalDelivery(id: string, choice: unknown) {
+  const window = etaWindowFromChoice(choice);
+  if (!window) return await getAdminUser() ? { ok: false as const, error: "Elegí una ventana de llegada válida (hasta 7 días)." } : denied;
+  if (!await trackingTablesReady()) return await getAdminUser() ? { ok: false as const, error: "Falta aplicar la migración 0010 para el reparto en vivo." } : denied;
+  return run(id, async (order, tx) => {
+    if (order.delivery !== "local") throw new AdminOrderError("El reparto en vivo es solo para la entrega propia.");
+    if (!allowedShipmentStatuses(order).includes("out_for_delivery")) throw new AdminOrderError("Este pedido todavía no puede salir a entregarse.");
+    const [shipment] = await tx.select().from(shipments).where(eq(shipments.orderId, order.id)).for("update");
+    if (!shipment) throw new AdminOrderError("El pedido no tiene un envío asociado.");
+    if (shipment.status === "delivered") throw new AdminOrderError("El pedido ya figura como entregado.");
+    const eta = { etaFrom: window.from, etaTo: window.to };
+    await tx.insert(shipmentTracking).values({ shipmentId: shipment.id, carrier: "own", ...eta }).onConflictDoUpdate({ target: shipmentTracking.shipmentId, set: eta });
+    await applyShipmentStatus(tx, shipment, "out_for_delivery");
+    return "Saliste a entregar. Dejá abierta la vista de reparto para compartir tu ubicación.";
+  });
+}
+
+/** Entrega propia: «Entregado». Borra la posición; con efectivo pendiente exige confirmar antes el cobro. */
+export async function markLocalDelivered(id: string) {
+  return run(id, async (order, tx) => {
+    if (order.delivery !== "local") throw new AdminOrderError("Esta acción es solo para la entrega propia.");
+    if (!allowedShipmentStatuses(order).includes("delivered")) {
+      throw new AdminOrderError(order.paymentMethod === "cash" && order.status === "pending" ? "Confirmá primero el cobro en efectivo y después marcá el pedido como entregado." : "Este pedido no se puede marcar como entregado.");
+    }
+    const [shipment] = await tx.select().from(shipments).where(eq(shipments.orderId, order.id)).for("update");
+    if (!shipment) throw new AdminOrderError("El pedido no tiene un envío asociado.");
+    if (shipment.status === "delivered") return "El pedido ya figuraba como entregado.";
+    await applyShipmentStatus(tx, shipment, "delivered");
+    return "Pedido entregado. Dejamos de compartir tu ubicación.";
+  });
+}
+
+export type CourierReportResult = { ok: true } | { ok: false; error: string; stop?: boolean; throttled?: boolean };
+
+/**
+ * Última posición del repartidor (entrega propia «En camino»). Solo el admin, como máximo una cada 10 s por pedido,
+ * con coordenadas válidas. No pasa por `run`: no revalida páginas ni encola emails en cada lectura del GPS.
+ */
+export async function reportCourierPosition(id: string, input: { lat: unknown; lng: unknown; accuracy?: unknown }): Promise<CourierReportResult> {
+  if (!await getAdminUser()) return { ok: false, error: "No tenés permisos de administrador.", stop: true };
+  if (typeof id !== "string" || !UUID.test(id)) return { ok: false, error: "Pedido inválido.", stop: true };
+  const point = { lat: Number(input?.lat), lng: Number(input?.lng) };
+  if (!isValidCoordinates(point)) return { ok: false, error: "La ubicación recibida no es válida." };
+  const accuracy = Number(input?.accuracy);
+  const accuracyM = Number.isFinite(accuracy) && accuracy >= 0 ? Math.min(Math.round(accuracy), 100_000) : null;
+  if (!await tableExists(db, "courier_positions")) return { ok: false, error: "Falta aplicar la migración 0010.", stop: true };
+  const [row] = await db.select({ delivery: orders.delivery, shipmentId: shipments.id, status: shipments.status }).from(orders)
+    .innerJoin(shipments, eq(shipments.orderId, orders.id)).where(eq(orders.id, id)).limit(1);
+  if (!row || row.delivery !== "local" || row.status !== "out_for_delivery") return { ok: false, error: "El pedido no está en reparto.", stop: true };
+  if (!await consumeRateLimit(`courier:position:${id}`, 1, COURIER_REPORT_MIN_INTERVAL_MS)) return { ok: false, error: "Esperá unos segundos.", throttled: true };
+  const values = { lat: point.lat, lng: point.lng, accuracyM, updatedAt: new Date() };
+  await db.insert(courierPositions).values({ shipmentId: row.shipmentId, ...values }).onConflictDoUpdate({ target: courierPositions.shipmentId, set: values });
+  return { ok: true };
 }
 
 /** Registra una factura emitida en «Comprobantes en línea» (número, CAE y vencimiento) y avisa al cliente. */
