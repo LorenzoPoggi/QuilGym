@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 import type { DailyPoint } from "@/lib/admin-metrics-core";
 
 const ars = (value: number) => `$${Math.round(value).toLocaleString("es-AR")}`;
@@ -17,11 +17,21 @@ function niceStep(max: number) {
   return (unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 2.5 ? 2.5 : unit <= 5 ? 5 : 10) * power;
 }
 
+// En pantallas angostas el viewBox de 760 se escalaba a menos de la mitad y las etiquetas quedaban de ~5px.
+const narrowQuery = "(max-width: 600px)";
+function subscribeNarrow(onChange: () => void) {
+  const media = window.matchMedia(narrowQuery);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+const isNarrow = () => window.matchMedia(narrowQuery).matches;
+
 /** Ventas (barras) y ganancia (línea) por día, en una sola escala de pesos. */
 export function SalesProfitChart({ points }: { points: DailyPoint[] }) {
   const id = useId();
   const [active, setActive] = useState<number | null>(null);
-  const width = 760, height = 260, left = 64, right = 12, top = 14, bottom = 34;
+  const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
+  const width = narrow ? 360 : 760, height = narrow ? 240 : 260, left = narrow ? 52 : 64, right = narrow ? 6 : 12, top = 14, bottom = 34;
   const plotW = width - left - right, plotH = height - top - bottom;
   const maxValue = Math.max(1, ...points.map((p) => Math.max(p.sales, p.profit)));
   const minValue = Math.min(0, ...points.map((p) => p.profit));
@@ -32,7 +42,7 @@ export function SalesProfitChart({ points }: { points: DailyPoint[] }) {
   const barW = Math.max(2, Math.min(28, band - Math.max(2, band * 0.28)));
   const x = (index: number) => left + band * index + band / 2;
   const ticks: number[] = []; for (let v = yMin; v <= yMax + step / 2; v += step) ticks.push(v);
-  const labelEvery = Math.ceil(points.length / 10);
+  const labelEvery = Math.ceil(points.length / (narrow ? 5 : 10));
   const line = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.profit).toFixed(1)}`).join(" ");
   const current = active !== null ? points[active] : null;
 
@@ -42,12 +52,12 @@ export function SalesProfitChart({ points }: { points: DailyPoint[] }) {
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${id}-title`} onMouseLeave={() => setActive(null)}>
         <title id={`${id}-title`}>Ventas y ganancia neta por día. La tabla de abajo tiene los valores.</title>
         {ticks.map((tick) => <g key={tick}><line x1={left} x2={width - right} y1={y(tick)} y2={y(tick)} className={tick === 0 ? "metrics-axis-zero" : "metrics-grid"}/>
-          <text x={left - 8} y={y(tick) + 4} className="metrics-tick" textAnchor="end">{compactArs(tick)}</text></g>)}
+          <text x={left - 8} y={y(tick) + 4} className={narrow ? "metrics-tick metrics-tick--narrow" : "metrics-tick"} textAnchor="end">{compactArs(tick)}</text></g>)}
         {points.map((p, i) => {
           const h = Math.abs(y(p.sales) - y(0)), r = Math.min(4, h, barW / 2), x0 = x(i) - barW / 2;
           return <g key={p.day}>
             {p.sales > 0 && <path className="metrics-bar" d={`M${x0},${y(0)} v${-(h - r)} q0,${-r} ${r},${-r} h${barW - 2 * r} q${r},0 ${r},${r} v${h - r} z`} opacity={active === null || active === i ? 1 : .45}/>}
-            {i % labelEvery === 0 && <text x={x(i)} y={height - 12} className="metrics-tick" textAnchor="middle">{p.label}</text>}
+            {i % labelEvery === 0 && <text x={x(i)} y={height - 12} className={narrow ? "metrics-tick metrics-tick--narrow" : "metrics-tick"} textAnchor="middle">{p.label}</text>}
             <rect x={left + band * i} y={top} width={band} height={plotH} fill="transparent" onMouseEnter={() => setActive(i)} onFocus={() => setActive(i)} tabIndex={-1}/>
           </g>;
         })}

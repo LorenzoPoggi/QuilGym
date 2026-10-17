@@ -66,7 +66,7 @@ export function GoogleReviews() {
   }, [paused, hovering, data.reviews.length, advance]);
 
   if (!data.reviews.length) return <section id="resenas" ref={section} className="section-pad section-soft" aria-labelledby="resenas-title"><div className="container"><div className="visit-quilmes">
-    <div className="visit-quilmes-copy"><MapPin aria-hidden="true" size={26}/><h2 id="resenas-title">Visitanos en Quilmes</h2><p>Tenemos local en Quilmes. En Google Maps encontrás cómo llegar y las opiniones de quienes nos visitaron.</p><a className="button button--dark" href={quilgymMapsUrl} target="_blank" rel="noopener noreferrer">Ver reseñas y cómo llegar<ArrowRight aria-hidden="true" size={16}/></a></div>
+    <div className="visit-quilmes-copy"><div className="visit-quilmes-title"><span className="visit-quilmes-title__icon" aria-hidden="true"><MapPin size={26}/></span><h2 id="resenas-title">Visitanos en Quilmes</h2></div><p>Tenemos local en Quilmes. En Google Maps encontrás cómo llegar y las opiniones de quienes nos visitaron.</p><a className="button button--dark" href={quilgymMapsUrl} target="_blank" rel="noopener noreferrer">Ver reseñas y cómo llegar<ArrowRight aria-hidden="true" size={16}/></a></div>
     <div className="visit-quilmes-map"><iframe title="Mapa interactivo: ubicación de QuilGym en Quilmes (Google Maps)" src={mapEmbedUrl} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen/></div>
   </div></div></section>;
 

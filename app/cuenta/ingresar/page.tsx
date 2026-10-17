@@ -8,7 +8,8 @@ import { Footer } from "@/components/footer";
 export const metadata = { title: "Ingresar | QuilGym", robots: { index: false, follow: false } };
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string | string[]; verificado?: string; restablecida?: string }> }) {
   const params = await searchParams;
-  const next = safeAccountReturn(params.next);
+  // Sin `next`, /cuenta/continuar decide el destino según el rol (el admin va al panel).
+  const next = params.next === undefined ? "/cuenta/continuar" : safeAccountReturn(params.next);
   if (await currentUser()) redirect(next);
   return <><Header/><main className="account-page container"><AuthForm register={false} google={await googleAvailableHere()} available={authConfigured()} recovery={authEmailAvailable()} next={next} notice={loginNotice(params)}/></main><Footer/></>;
 }

@@ -72,7 +72,7 @@ export function AdminOrderInvoice({ orderId, orderStatus, billing }: { orderId: 
         run(() => registerOrderInvoice(orderId, data));
       }}>
         <div className="admin-form-row">
-          <label>Tipo<select name="voucherType" defaultValue={suggestedType ?? ""} required><option value="" disabled>Elegí</option><option value="A">Factura A</option><option value="B">Factura B</option><option value="C">Factura C</option></select></label>
+          <label>Tipo<select className="select-field" name="voucherType" defaultValue={suggestedType ?? ""} required><option value="" disabled>Elegí</option><option value="A">Factura A</option><option value="B">Factura B</option><option value="C">Factura C</option></select></label>
           <label>Punto de venta<input name="pointOfSale" inputMode="numeric" defaultValue={settings.pointOfSale ?? ""} required maxLength={5}/></label>
         </div>
         <div className="admin-form-row">

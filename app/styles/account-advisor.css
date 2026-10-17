@@ -321,14 +321,19 @@
 .floating-dial__icon svg { width: 21px; height: 21px; }
 .floating-dial__icon--whatsapp { background: #25d366; }
 @keyframes floating-dial-in { from { opacity: 0; transform: translateY(8px) scale(.96); } }
-.advisor-popover { width: min(370px, calc(100vw - 32px)); padding: 22px; border-radius: var(--radius-lg); border: 1px solid var(--line); background: var(--paper); box-shadow: var(--shadow); animation: advisor-pop .2s ease-out; }
+/* Grid con gap: encabezado, burbuja, nota (alineada con la burbuja: 24px de ícono + 12px de gap) y CTA. */
+.advisor-popover { display: grid; gap: 16px; width: min(370px, calc(100vw - 32px)); padding: 18px 22px 22px; border-radius: var(--radius-lg); border: 1px solid var(--line); background: var(--paper); box-shadow: var(--shadow); animation: advisor-pop .2s ease-out; }
 .advisor-popover header, .advisor-popover header span { display: flex; align-items: center; gap: 10px; }
-.advisor-popover header { justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
-.advisor-popover header button { display: grid; place-items: center; padding: 5px; border: 0; border-radius: 6px; background: var(--soft); cursor: pointer; }
-.advisor-popover-message { display: flex; gap: 12px; margin-top: 20px; }
-.advisor-popover-message > svg { width: 24px; flex-shrink: 0; }
+.advisor-popover header { justify-content: space-between; gap: 12px; margin-right: -8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.advisor-popover header span svg { width: 22px; height: 22px; color: #4d575c; }
+.advisor-popover header strong { font-size: 1rem; }
+.advisor-popover header button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 10px; color: var(--ink); background: transparent; cursor: pointer; transition: background-color .15s; }
+.advisor-popover header button:hover { background: var(--soft); }
+.advisor-popover header button svg { width: 20px; height: 20px; }
+.advisor-popover-message { display: flex; align-items: flex-start; gap: 12px; margin-top: 4px; }
+.advisor-popover-message > svg { width: 24px; height: 24px; margin-top: 10px; flex-shrink: 0; color: #4d575c; }
 .advisor-popover-message p { margin: 0; background: var(--soft); border-radius: var(--radius-md); padding: 14px; font-size: .9rem; line-height: 1.65; }
-.advisor-popover-note { font-size: .8rem; color: var(--muted); }
+.advisor-popover-note { margin: -4px 0 2px 36px; font-size: .8rem; line-height: 1.4; color: var(--muted); }
 @keyframes advisor-pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 /* Offcanvas: el diálogo permanece montado durante la salida y conserva el manejo nativo del foco. */
 .cart-dialog[data-state="open"] .cart-drawer { animation: cart-slide-in .26s cubic-bezier(.22,.8,.3,1); }
@@ -370,6 +375,10 @@
 /* Sin reseñas (sin configurar, error o cargando): «Visitanos en Quilmes» con mapa y CTA. */
 .visit-quilmes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; overflow: hidden; }
 .visit-quilmes-copy { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 14px; padding: 40px; }
+/* Ícono a la izquierda del título, en un chip como el de los estados vacíos de la cuenta. */
+.visit-quilmes-title { display: flex; align-items: center; gap: 14px; }
+.visit-quilmes-title__icon { display: grid; place-items: center; flex: none; width: 50px; height: 50px; color: #4d575c; background: var(--soft); border-radius: 14px; }
+.visit-quilmes-title__icon svg { width: 26px; height: 26px; }
 .visit-quilmes-copy h2 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.55rem); line-height: 1.1; letter-spacing: -.035em; }
 .visit-quilmes-copy p { margin: 0; max-width: 440px; color: var(--muted); line-height: 1.6; }
 .visit-quilmes-copy .button { margin-top: 8px; }
@@ -380,7 +389,7 @@
 .location-card iframe { display: block; width: 100%; height: 250px; border: 0; }
 .location-caption { padding: 24px; }
 .location-caption h3 { margin: 0 0 10px; }
-.location-caption p { color: var(--muted); font-size: .85rem; }
+.location-caption p { margin: 0 0 12px; color: var(--muted); font-size: .85rem; line-height: 1.55; }
 .location-caption__link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 /* Hasta 1100px el gutter es angosto y los dos botones apilados tapaban el borde derecho de las tarjetas:
    un solo botón despliega WhatsApp y el asesor (mismo patrón que en mobile). */
@@ -402,6 +411,7 @@
  .google-reviews-layout { grid-template-columns: 1fr; }.review-card { flex-basis: 85%; }.location-card { min-height: auto; }
  .reviews-source { align-items: flex-start; }
  .visit-quilmes { grid-template-columns: 1fr; }.visit-quilmes-copy { padding: 26px 22px; }.visit-quilmes-map { min-height: 240px; }
+ .visit-quilmes-title { gap: 12px; }.visit-quilmes-title__icon { width: 42px; height: 42px; border-radius: 12px; }.visit-quilmes-title__icon svg { width: 22px; height: 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
  .cart-dialog .cart-drawer, .cart-dialog::backdrop, .advisor-popover { animation: none !important; }
