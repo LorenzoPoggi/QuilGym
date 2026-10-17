@@ -16,7 +16,8 @@ export type AdminNotice = "creado" | "guardado" | "archivado" | null;
 
 const MAX_VARIANTS = 30;
 const noticeText = { creado: "Producto creado.", guardado: "Cambios guardados.", archivado: "Producto archivado: ya no se muestra en la tienda." } as const;
-const dateFormat = new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Argentina/Buenos_Aires" });
+// 24 h y sin «p. m.»: el espacio antes del período difiere entre el ICU de Node y el del navegador y rompía la hidratación.
+const dateFormat = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "America/Argentina/Buenos_Aires" });
 const stockText = (stock: number | null) => stock === null ? "sin control" : `${stock} u.`;
 const toNumber = (value: string) => value.trim() === "" ? NaN : Number(value);
 
@@ -199,9 +200,9 @@ export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: E
           {removed.length > 0 && <p className="admin-help">Al guardar se borran {removed.length === 1 ? "1 variante" : `${removed.length} variantes`} sin pedidos.</p>}</section>
       </div>
       <aside className="admin-editor-side"><section className="admin-card"><h2>Publicación</h2><label>Estado<select className="select-field" value={status} onChange={(e) => setStatus(e.target.value as AdminProductInput["status"])} {...invalid("status")}><option value="draft">Borrador</option><option value="active">Publicado</option><option value="archived">Archivado</option></select><FieldMessage id="error-status" message={fieldError("status")}/></label><p className="admin-help">Archivar lo oculta de la tienda sin perder los datos ni el historial.</p><label className="admin-check"><input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)}/> Destacar en la portada</label></section>
-        <button className="admin-primary admin-save" type="submit" disabled={saving || uploading}>{saving ? "Guardando…" : uploading ? "Esperá a que terminen las fotos" : product ? `Guardar · ${statusLabel}` : "Crear producto"}</button>
+        <div className="admin-save-bar"><button className="admin-primary admin-save" type="submit" disabled={saving || uploading}>{saving ? "Guardando…" : uploading ? "Esperá a que terminen las fotos" : product ? `Guardar · ${statusLabel}` : "Crear producto"}</button>
         <button className="admin-secondary admin-save" type="button" onClick={() => void cancel()} disabled={saving}>{product ? "Descartar cambios" : "Cancelar alta"}</button>
-        <p className="admin-dirty" aria-live="polite">{dirty && !saving ? "Hay cambios sin guardar." : ""}</p>
+        <p className="admin-dirty" aria-live="polite">{dirty && !saving ? "Hay cambios sin guardar." : ""}</p></div>
         {formError && <p className="admin-error" role="alert">{formError}</p>}
         {entry && <section className="admin-card admin-history"><h2>Historial de stock</h2>{entry.stockHistory === null ? <p className="admin-help">Se activa al aplicar la migración 0007 en la base.</p> : entry.stockHistory.length ? <ol>{entry.stockHistory.map((change) => <li key={change.id}><strong>{change.sku}</strong><span>{stockText(change.previousStock)} → {stockText(change.newStock)}</span><small>{dateFormat.format(new Date(change.createdAt))}{change.changedBy ? ` · ${change.changedBy}` : ""}</small></li>)}</ol> : <p className="admin-help">Todavía no hay cambios registrados desde el panel. Las ventas descuentan stock sin registrarse acá.</p>}</section>}
       </aside>

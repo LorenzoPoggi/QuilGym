@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useAccount } from "./account-provider";
 import { authClient } from "@/lib/auth-client";
 import { setMarketingConsent } from "@/lib/account-actions";
-import { ADMIN_EMAIL } from "@/lib/admin-config";
 import { AccountAvatar } from "./account-avatar";
 
 /** Hover solo con mouse en desktop: en touch el tap emula mouseenter y el clic lo volvía a cerrar. */
@@ -15,7 +14,7 @@ function canHover() {
 }
 
 export function AccountLink() {
-  const { user, authLoading } = useAccount();
+  const { user, authLoading, isAdmin } = useAccount();
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const menu = useRef<HTMLDivElement>(null);
@@ -35,16 +34,19 @@ export function AccountLink() {
     </button>
     <div id="account-menu-panel" className="account-menu-panel" aria-label="Menú de tu cuenta">
       <div className="account-menu-identity"><AccountAvatar name={user.name} image={user.image} size="large"/><span><strong>{user.name}</strong><small>{user.email}</small></span></div>
-      <nav aria-label="Secciones de tu cuenta">
+      {/* El admin solo ve el panel y su configuración: Compras, Historial y Favoritos son de clientes. */}
+      {isAdmin ? <nav aria-label="Secciones de tu cuenta">
+        <Link href="/admin" onClick={() => setOpen(false)}><Boxes aria-hidden="true"/>Panel de administración</Link>
+        <Link href="/cuenta/configuracion" onClick={() => setOpen(false)}><Settings aria-hidden="true"/>Configuración</Link>
+      </nav> : <nav aria-label="Secciones de tu cuenta">
         <Link href="/cuenta" onClick={() => setOpen(false)}><UserRound aria-hidden="true"/>Ver perfil</Link>
         <Link href="/cuenta/compras" onClick={() => setOpen(false)}><Package aria-hidden="true"/>Compras</Link>
         <Link href="/cuenta/historial" onClick={() => setOpen(false)}><History aria-hidden="true"/>Historial</Link>
         <Link href="/cuenta/favoritos" onClick={() => setOpen(false)}><Star aria-hidden="true"/>Favoritos</Link>
         <Link href="/cuenta/configuracion" onClick={() => setOpen(false)}><Settings aria-hidden="true"/>Configuración</Link>
-        {user.emailVerified && user.email.trim().toLowerCase() === ADMIN_EMAIL && <Link href="/admin/productos" onClick={() => setOpen(false)}><Boxes aria-hidden="true"/>Administración</Link>}
-      </nav>
+      </nav>}
       <button type="button" className="account-menu-signout" onClick={async () => { await authClient.signOut(); setOpen(false); router.push("/"); router.refresh(); }}><LogOut aria-hidden="true"/>Salir</button>
-      <Link className="account-menu-danger" href="/cuenta/configuracion#eliminar-cuenta" onClick={() => setOpen(false)}><Trash2 aria-hidden="true"/>Eliminar cuenta</Link>
+      {!isAdmin && <Link className="account-menu-danger" href="/cuenta/configuracion#eliminar-cuenta" onClick={() => setOpen(false)}><Trash2 aria-hidden="true"/>Eliminar cuenta</Link>}
     </div>
   </div>;
 }
