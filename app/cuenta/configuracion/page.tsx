@@ -17,5 +17,5 @@ export default async function SettingsPage() {
   ]);
   const hasPassword = accounts.some((account) => account.providerId === "credential" && Boolean(account.password));
   const googleLinked = accounts.some((account) => account.providerId === "google");
-  return <AccountShell user={user} active="/cuenta/configuracion" isAdmin={user.isAdmin}><h2 className="account-page-title">Configuración</h2><p className="account-page-intro">Elegí cómo se muestra tu perfil y qué comunicaciones querés recibir.</p><AccountSettings name={user.name} image={user.image} marketing={preferences?.marketing ?? false} hasPassword={hasPassword} googleLinked={googleLinked} googleAvailable={googleConfigured()}/></AccountShell>;
+  return <AccountShell user={user} active="/cuenta/configuracion" isAdmin={user.isAdmin}><h2 className="account-page-title">Configuración</h2><p className="account-page-intro">Elegí cómo se muestra tu perfil y qué comunicaciones querés recibir.</p><AccountSettings name={user.name} image={user.image} marketing={preferences?.marketing ?? false} hasPassword={hasPassword} googleLinked={googleLinked} googleAvailable={googleConfigured()} canDelete={!user.isAdmin}/></AccountShell>;
 }

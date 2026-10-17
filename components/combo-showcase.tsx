@@ -6,6 +6,7 @@ import type { ProductSummary } from "@/lib/catalog-types";
 import { comboIncludesLine, comboParts, comboUnits, type ComboPart } from "@/lib/combo-contents";
 import { formatArs } from "@/lib/commerce";
 import { FavoriteButton } from "./account-controls";
+import { AdminEditProduct } from "./admin-edit-product";
 import { AddToCartButton } from "./cart-buttons";
 import { ProductImage } from "./product-image";
 import { ComboVisual } from "./combo-visual";
@@ -57,6 +58,7 @@ function ComboCard({ combo }: { combo: ProductSummary }) {
     <article className="combo-card">
       <div className="combo-card__stage">
         <FavoriteButton productId={combo.id} name={combo.name}/>
+        <AdminEditProduct productId={combo.id} name={combo.name}/>
         {units > 1 ? <span className="combo-card__count">{units} productos</span> : null}
         <Link className="combo-card__visual" href={href} aria-label={`Ver ${combo.name}`}>
           {parts ? (

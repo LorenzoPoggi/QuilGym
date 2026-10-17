@@ -39,8 +39,13 @@ function FieldMessage({ id, message }: { id: string; message?: string }) {
   return message ? <small className="admin-field-error" id={id}>{message}</small> : null;
 }
 
-export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: Entry; taxonomy: Taxonomy; notice?: AdminNotice }) {
-  const router = useRouter();
+export type AdminProductSaved = { id: number; slug?: string; aviso: Exclude<AdminNotice, null> };
+/** `requestCloseRef` deja al contenedor (el diálogo) pedir el cierre con la misma lógica que el botón «Cerrar»: confirma si hay cambios. */
+type EditorProps = { entry?: Entry; taxonomy: Taxonomy; mode?: "page" | "dialog"; onCancel: () => void; onSaved: (result: AdminProductSaved) => void; requestCloseRef?: { current: (() => void) | null } };
+
+/** Formulario del producto sin el chrome de la página. En modo «dialog» no instala el guard global de navegación:
+ *  cerrar con cambios pide confirmación dentro del propio diálogo. */
+export function AdminProductEditor({ entry, taxonomy, mode = "page", onCancel, onSaved, requestCloseRef }: EditorProps) {
   const product = entry?.product;
   const initialVariants: VariantDraft[] = entry?.variants.length ? entry.variants.map((variant) => ({ key: `v${variant.id}`, id: variant.id, sku: variant.sku, label: variant.label ?? "", price: String(variant.priceArs), comparePrice: variant.compareAtPriceArs?.toString() ?? "", trackStock: variant.stock !== null, stock: variant.stock?.toString() ?? "0", hasOrders: variant.hasOrders }))
     : [{ key: "nueva-0", sku: "", label: "", price: "", comparePrice: "", trackStock: false, stock: "0", hasOrders: false }];
@@ -59,7 +64,7 @@ export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: E
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState("");
-  const [showNotice, setShowNotice] = useState(notice !== null);
+  const [confirmingClose, setConfirmingClose] = useState(false);
   const submitting = useRef(false);
   const leaving = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -73,6 +78,7 @@ export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: E
   useEffect(() => { dirtyRef.current = dirty; pendingRef.current = pendingUploads; }, [dirty, pendingUploads]);
 
   useEffect(() => {
+    if (mode !== "page") return;
     const beforeUnload = (event: BeforeUnloadEvent) => { if (dirtyRef.current && !leaving.current) { event.preventDefault(); event.returnValue = ""; } };
     const click = (event: MouseEvent) => {
       if (!dirtyRef.current || leaving.current || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return;
@@ -85,7 +91,7 @@ export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: E
     window.addEventListener("beforeunload", beforeUnload);
     document.addEventListener("click", click, true);
     return () => { window.removeEventListener("beforeunload", beforeUnload); document.removeEventListener("click", click, true); };
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     if (!Object.keys(errors).length) return;
@@ -137,12 +143,20 @@ export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: E
     setImages((current) => { const next = [...current]; const target = index + direction; if (target < 0 || target >= next.length) return current; [next[index], next[target]] = [next[target], next[index]]; return next; });
   }
 
-  async function cancel() {
-    if (dirty && !window.confirm("Tenés cambios sin guardar. ¿Descartarlos?")) return;
+  async function leave() {
     leaving.current = true;
     if (pendingUploads.length) await discardAdminUploads(pendingUploads).catch(() => null);
-    router.push("/admin/productos");
+    onCancel();
   }
+  /** Con cambios: en la página confirma con el navegador (como el guard de links); en el diálogo, dentro de la UI. */
+  function cancel() {
+    if (!dirty) { void leave(); return; }
+    if (mode === "page") { if (window.confirm("Tenés cambios sin guardar. ¿Descartarlos?")) void leave(); return; }
+    setConfirmingClose(true);
+  }
+
+  useEffect(() => { if (requestCloseRef) requestCloseRef.current = cancel; });
+  useEffect(() => () => { if (requestCloseRef) requestCloseRef.current = null; }, [requestCloseRef]);
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -155,7 +169,7 @@ export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: E
       if (variant.trackStock && (!Number.isSafeInteger(toNumber(variant.stock)) || toNumber(variant.stock) < 0)) local[`variants.${index}.stock`] = "Ingresá cero o un número positivo.";
     });
     if (Object.keys(local).length) { setErrors(local); setFormError("Revisá los campos marcados."); return; }
-    submitting.current = true; setSaving(true); setErrors({}); setFormError(""); setShowNotice(false);
+    submitting.current = true; setSaving(true); setErrors({}); setFormError(""); setConfirmingClose(false);
     try {
       const result = await saveAdminProduct({ id: product?.id, name, brandId: brandId ? Number(brandId) : null, categoryId: Number(categoryId), description, status, isFeatured, images,
         variants: variants.map((variant) => ({ id: variant.id, sku: variant.sku, label: variant.label, priceArs: Number(variant.price), compareAtPriceArs: variant.comparePrice ? Number(variant.comparePrice) : null, stock: variant.trackStock ? Number(variant.stock) : null })),
@@ -163,17 +177,13 @@ export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: E
       if (!result.ok) { setErrors(result.fields ?? {}); setFormError(result.error); return; }
       leaving.current = true; setPendingUploads([]);
       const aviso = !product ? "creado" : status === "archived" && product.status !== "archived" ? "archivado" : "guardado";
-      router.replace(`/admin/productos/${result.id}?aviso=${aviso}`, { scroll: true });
-      router.refresh();
+      onSaved({ id: result.id, slug: result.slug, aviso });
     } catch { setFormError("No pudimos guardar el producto. Revisá la conexión e intentá nuevamente."); }
     finally { submitting.current = false; setSaving(false); }
   }
 
   const statusLabel = { active: "Publicado", draft: "Borrador", archived: "Archivado" }[status];
-  return <div className="admin-content admin-editor">
-    <Link className="admin-back" href="/admin/productos"><ArrowLeft size={17}/> Volver a productos</Link>
-    <header className="admin-page-head"><div><p className="admin-eyebrow">{product ? `PRODUCTO #${product.id}` : "NUEVO PRODUCTO"}</p><h1>{product ? "Editar producto" : "Agregar producto"}</h1><p>Los cambios publicados se reflejan en la tienda al guardar.</p></div>{product?.status === "active" && <a className="admin-secondary" href={`/productos/${product.slug}`} target="_blank" rel="noreferrer">Ver en la tienda</a>}</header>
-    {notice && showNotice && <div className="admin-notice" role="status"><CheckCircle2 size={19}/><p>{noticeText[notice]} <Link href="/admin/productos">Volver al listado</Link></p><button type="button" aria-label="Cerrar aviso" onClick={() => setShowNotice(false)}><X size={17}/></button></div>}
+  return <>
     <form ref={formRef} onSubmit={save} className="admin-editor-grid" noValidate aria-busy={saving}>
       <div className="admin-editor-main">
         <section className="admin-card"><h2>Información básica</h2>
@@ -201,11 +211,27 @@ export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: E
       </div>
       <aside className="admin-editor-side"><section className="admin-card"><h2>Publicación</h2><label>Estado<select className="select-field" value={status} onChange={(e) => setStatus(e.target.value as AdminProductInput["status"])} {...invalid("status")}><option value="draft">Borrador</option><option value="active">Publicado</option><option value="archived">Archivado</option></select><FieldMessage id="error-status" message={fieldError("status")}/></label><p className="admin-help">Archivar lo oculta de la tienda sin perder los datos ni el historial.</p><label className="admin-check"><input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)}/> Destacar en la portada</label></section>
         <div className="admin-save-bar"><button className="admin-primary admin-save" type="submit" disabled={saving || uploading}>{saving ? "Guardando…" : uploading ? "Esperá a que terminen las fotos" : product ? `Guardar · ${statusLabel}` : "Crear producto"}</button>
-        <button className="admin-secondary admin-save" type="button" onClick={() => void cancel()} disabled={saving}>{product ? "Descartar cambios" : "Cancelar alta"}</button>
-        <p className="admin-dirty" aria-live="polite">{dirty && !saving ? "Hay cambios sin guardar." : ""}</p></div>
+        <button className="admin-secondary admin-save" type="button" onClick={() => cancel()} disabled={saving}>{mode === "dialog" ? "Cerrar" : product ? "Descartar cambios" : "Cancelar alta"}</button>
+        {confirmingClose && <div className="admin-confirm" role="alertdialog" aria-label="Descartar cambios"><p>Tenés cambios sin guardar. ¿Descartarlos?</p><div><button type="button" className="admin-secondary" onClick={() => setConfirmingClose(false)}>Seguir editando</button><button type="button" className="admin-primary" onClick={() => void leave()}>Descartar</button></div></div>}
+        <p className="admin-dirty" aria-live="polite">{dirty && !saving && !confirmingClose ? "Hay cambios sin guardar." : ""}</p></div>
         {formError && <p className="admin-error" role="alert">{formError}</p>}
         {entry && <section className="admin-card admin-history"><h2>Historial de stock</h2>{entry.stockHistory === null ? <p className="admin-help">Se activa al aplicar la migración 0007 en la base.</p> : entry.stockHistory.length ? <ol>{entry.stockHistory.map((change) => <li key={change.id}><strong>{change.sku}</strong><span>{stockText(change.previousStock)} → {stockText(change.newStock)}</span><small>{dateFormat.format(new Date(change.createdAt))}{change.changedBy ? ` · ${change.changedBy}` : ""}</small></li>)}</ol> : <p className="admin-help">Todavía no hay cambios registrados desde el panel. Las ventas descuentan stock sin registrarse acá.</p>}</section>}
       </aside>
     </form>
+  </>;
+}
+
+/** Chrome de página de /admin/productos/[id] y /nuevo: volver, cabecera, aviso y navegación al guardar o cancelar. */
+export function AdminProductForm({ entry, taxonomy, notice = null }: { entry?: Entry; taxonomy: Taxonomy; notice?: AdminNotice }) {
+  const router = useRouter();
+  const product = entry?.product;
+  const [showNotice, setShowNotice] = useState(notice !== null);
+  return <div className="admin-content admin-editor">
+    <Link className="admin-back" href="/admin/productos"><ArrowLeft size={17}/> Volver a productos</Link>
+    <header className="admin-page-head"><div><p className="admin-eyebrow">{product ? `PRODUCTO #${product.id}` : "NUEVO PRODUCTO"}</p><h1>{product ? "Editar producto" : "Agregar producto"}</h1><p>Los cambios publicados se reflejan en la tienda al guardar.</p></div>{product?.status === "active" && <a className="admin-secondary" href={`/productos/${product.slug}`} target="_blank" rel="noreferrer">Ver en la tienda</a>}</header>
+    {notice && showNotice && <div className="admin-notice" role="status"><CheckCircle2 size={19}/><p>{noticeText[notice]} <Link href="/admin/productos">Volver al listado</Link></p><button type="button" aria-label="Cerrar aviso" onClick={() => setShowNotice(false)}><X size={17}/></button></div>}
+    <AdminProductEditor entry={entry} taxonomy={taxonomy} mode="page"
+      onCancel={() => router.push("/admin/productos")}
+      onSaved={(result) => { router.replace(`/admin/productos/${result.id}?aviso=${result.aviso}`, { scroll: true }); router.refresh(); }}/>
   </div>;
 }
