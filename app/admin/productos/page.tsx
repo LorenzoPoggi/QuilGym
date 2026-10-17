@@ -36,9 +36,9 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
     <form className="admin-filters" action="/admin/productos">
       {params.estado !== "todos" && <input type="hidden" name="estado" value={params.estado}/>}
       <label className="admin-filter-search"><Search size={18} aria-hidden="true"/><input name="q" defaultValue={params.q} placeholder="Buscar por nombre, marca, categoría o SKU" aria-label="Buscar productos" type="search"/></label>
-      <select name="marca" defaultValue={params.marca} aria-label="Filtrar por marca"><option value="">Todas las marcas</option><option value="sin-marca">Sin marca</option>{taxonomy.brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}</select>
-      <select name="categoria" defaultValue={params.categoria} aria-label="Filtrar por categoría"><option value="">Todas las categorías</option>{taxonomy.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
-      <select name="orden" defaultValue={params.orden} aria-label="Ordenar">{Object.entries(adminSorts).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <select className="select-field" name="marca" defaultValue={params.marca} aria-label="Filtrar por marca"><option value="">Todas las marcas</option><option value="sin-marca">Sin marca</option>{taxonomy.brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}</select>
+      <select className="select-field" name="categoria" defaultValue={params.categoria} aria-label="Filtrar por categoría"><option value="">Todas las categorías</option>{taxonomy.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
+      <select className="select-field" name="orden" defaultValue={params.orden} aria-label="Ordenar">{Object.entries(adminSorts).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
       <button type="submit">Aplicar</button>{filtered && <Link className="admin-filter-clear" href="/admin/productos">Limpiar</Link>}
     </form>
     <p className="admin-results" aria-live="polite">{result.total ? `Mostrando ${first}–${first + result.items.length - 1} de ${result.total} ${result.total === 1 ? "producto" : "productos"}` : "Sin resultados"}</p>

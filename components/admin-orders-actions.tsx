@@ -39,7 +39,7 @@ export function AdminShipmentForm({ orderId, allowed, status, trackingCode, deli
   const [pending, start] = useTransition();
   if (!allowed.length) return <p className="admin-help">El envío se gestiona cuando el pedido esté pagado{delivery === "pickup" ? " o sea en efectivo al retirar" : ""}.</p>;
   return <form className="admin-order-shipment" onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); start(async () => setResult(await updateOrderShipment(orderId, { status: data.get("status"), trackingCode: data.get("trackingCode") ?? "" }))); }}>
-    <label>Estado del envío<select name="status" defaultValue={allowed.includes(status as ShipmentStatus) ? status : allowed[0]}>{allowed.map((value) => <option key={value} value={value}>{shipmentStatusLabels[value]}</option>)}</select></label>
+    <label>Estado del envío<select className="select-field" name="status" defaultValue={allowed.includes(status as ShipmentStatus) ? status : allowed[0]}>{allowed.map((value) => <option key={value} value={value}>{shipmentStatusLabels[value]}</option>)}</select></label>
     {delivery === "shipping" && <label>Código de seguimiento<input name="trackingCode" defaultValue={trackingCode ?? ""} maxLength={80} autoComplete="off" placeholder="Opcional"/></label>}
     <p className="admin-help">{delivery === "pickup" ? "«Listo para retirar» le avisa al cliente por email una sola vez." : "«Enviado» le avisa al cliente por email una sola vez, con el seguimiento si lo cargaste."}</p>
     <button type="submit" className="admin-primary" disabled={pending}><Truck size={17} aria-hidden="true"/> {pending ? "Guardando…" : "Guardar envío"}</button>
