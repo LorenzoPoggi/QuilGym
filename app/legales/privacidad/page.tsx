@@ -11,6 +11,8 @@ const cookies = [
   ["qg_cart", "Cookie propia esencial", "Identifica tu carrito con un código aleatorio para que no pierdas los productos.", "60 días"],
   ["quilgym.session_token (y cookies auxiliares de inicio de sesión)", "Cookie propia esencial", "Mantiene tu sesión si entrás con tu cuenta (email o Google).", "Hasta 30 días o hasta que cierres sesión"],
   ["qg_advisor", "Cookie propia esencial", "Limita la cantidad de consultas al asesor virtual para evitar abusos.", "24 horas"],
+  ["qg_orders", "Cookie propia esencial", "Recuerda, firmados, los números de tus últimos 3 pedidos como invitado para mostrarte el aviso de pedido en curso. No guarda datos personales.", "30 días"],
+  ["qg_active_order_dismissed", "Almacenamiento local de tu navegador", "Recuerda que cerraste el aviso de un pedido para no volver a mostrarlo en ese estado.", "Hasta que borres los datos del sitio"],
   ["Búsquedas recientes", "Almacenamiento local del navegador", "Muestra tus últimas búsquedas en este dispositivo. No se envía a nuestros servidores.", "Hasta que las borres"],
   ["Borrador del checkout", "Almacenamiento de sesión del navegador", "Conserva los datos del formulario de compra mientras la pestaña está abierta. No guarda datos de tarjetas.", "Se borra al cerrar la pestaña o al confirmar"],
   ["Mercado Pago", "Terceros, solo en la página de pago", "El formulario de pago de Mercado Pago usa sus propias cookies y datos del dispositivo para prevenir fraudes.", "Según la política de Mercado Pago"],

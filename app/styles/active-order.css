@@ -1,0 +1,36 @@
+/* Aviso flotante de pedido en curso (components/active-order-toast.tsx). Abajo a la izquierda en desktop; en el
+   celular ocupa el ancho libre a la izquierda de los botones flotantes (derecha) y sube con la barra de compra. */
+
+.active-order-toast {
+  position: fixed; z-index: 24; left: 24px; bottom: 24px;
+  display: flex; align-items: flex-start; gap: 12px; width: min(380px, calc(100vw - 48px));
+  padding: 14px 12px 14px 14px; color: var(--ink); background: #fff;
+  border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 14px 34px rgba(31, 35, 37, .16);
+  animation: active-order-in .32s ease-out both;
+}
+.active-order-toast__icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; color: #fff; background: #1d2022; border-radius: 12px; }
+.active-order-toast__body { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.active-order-toast__body strong { font-size: .9rem; line-height: 1.3; }
+.active-order-toast__body > span { color: var(--muted); font-size: .8rem; line-height: 1.4; }
+.active-order-toast__cta { display: inline-flex; align-items: center; gap: 6px; width: fit-content; min-height: 44px; margin-top: 2px; color: var(--ink); font-size: .86rem; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.active-order-toast__cta:focus-visible, .active-order-toast__close:focus-visible { outline: 2px solid #1d2022; outline-offset: 2px; border-radius: 8px; }
+.active-order-toast__close { flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin: -8px -6px 0 0; color: var(--muted); background: transparent; border: 0; border-radius: 10px; cursor: pointer; }
+.active-order-toast__close:hover { color: var(--ink); background: var(--soft); }
+
+@keyframes active-order-in { from { opacity: 0; transform: translateY(12px); } }
+
+@media (max-width: 768px) {
+  /* Botones flotantes: 56 px a 16 px del borde derecho. El aviso termina 12 px antes. */
+  .active-order-toast {
+    left: 12px; right: 84px; width: auto;
+    bottom: max(calc(var(--sticky-buy-h, 0px) + 16px), calc(16px + env(safe-area-inset-bottom, 0px)));
+    padding: 12px 8px 10px 12px; gap: 10px;
+  }
+  .active-order-toast__icon { width: 34px; height: 34px; border-radius: 10px; }
+  .active-order-toast__body strong { font-size: .84rem; }
+  .active-order-toast__body > span { font-size: .76rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .active-order-toast { animation: none; }
+}

@@ -20,6 +20,7 @@ import type { CheckoutQuoteResponse, CheckoutResult, OrderStatus } from "./check
 import { deliverOrderEmails } from "./order-email";
 import { currentUser } from "./auth";
 import { consumeRateLimit } from "./rate-limit";
+import { rememberOrder } from "./order-cookie-server";
 
 /**
  * Cotiza el retiro o todas las opciones para una dirección (entrega propia, transportista o tarifa fija).
@@ -59,6 +60,8 @@ export async function submitCheckout(raw: unknown): Promise<CheckoutResult> {
     if (!await consumeRateLimit(`checkout:submit:${cartId}`, 10, 10 * 60_000)) return { ok: false, error: "Recibimos muchos intentos para este carrito. Esperá unos minutos antes de reintentar." };
     const user = await currentUser();
     const orderId = await createOrder(parsed.value, cartId, user?.id);
+    // Invitados: el aviso de pedido en curso los encuentra por esta cookie firmada (las cuentas, por la sesión).
+    if (!user) await rememberOrder(orderId);
     revalidatePath("/carrito");
     after(() => deliverOrderEmails(orderId));
     return { ok: true, orderId };
