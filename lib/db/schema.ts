@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { bigint, boolean, check, date, doublePrecision, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { bigint, bigserial, boolean, check, date, doublePrecision, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -400,3 +400,36 @@ export const variantShipping = pgTable("variant_shipping", {
   heightCm: integer("height_cm"),
   ...timestamps,
 }, (t) => [check("variant_shipping_values_check", sql`(${t.weightGrams} is null or ${t.weightGrams} > 0) and (${t.lengthCm} is null or ${t.lengthCm} > 0) and (${t.widthCm} is null or ${t.widthCm} > 0) and (${t.heightCm} is null or ${t.heightCm} > 0)`)]);
+
+/**
+ * Analítica propia y anónima (migración 0011): una fila por evento. `visitor_id` y `session_id` son UUID aleatorios
+ * de cookies propias; no se guarda IP, email ni ningún dato personal. Se purgan los eventos de más de 400 días.
+ */
+export const analyticsEvents = pgTable("analytics_events", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+  visitorId: uuid("visitor_id").notNull(),
+  sessionId: uuid("session_id").notNull(),
+  type: text("type").notNull(),
+  path: text("path").notNull(),
+  productSlug: text("product_slug"),
+  referrerHost: text("referrer_host"),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  device: text("device").notNull(),
+}, (t) => [
+  index("analytics_events_occurred_idx").on(t.occurredAt),
+  index("analytics_events_type_occurred_idx").on(t.type, t.occurredAt),
+  index("analytics_events_visitor_idx").on(t.visitorId, t.occurredAt),
+  check("analytics_events_type_check", sql`${t.type} in ('page_view', 'product_view', 'add_to_cart', 'checkout_start')`),
+  check("analytics_events_device_check", sql`${t.device} in ('mobile', 'tablet', 'desktop')`),
+]);
+
+/** Visitante y sesión que crearon cada pedido, para medir la conversión sin agregar columnas a `orders`. */
+export const analyticsOrderVisitors = pgTable("analytics_order_visitors", {
+  orderId: uuid("order_id").primaryKey().references(() => orders.id, { onDelete: "cascade" }),
+  visitorId: uuid("visitor_id").notNull(),
+  sessionId: uuid("session_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

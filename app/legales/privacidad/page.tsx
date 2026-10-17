@@ -11,6 +11,8 @@ const cookies = [
   ["qg_cart", "Cookie propia esencial", "Identifica tu carrito con un código aleatorio para que no pierdas los productos.", "60 días"],
   ["quilgym.session_token (y cookies auxiliares de inicio de sesión)", "Cookie propia esencial", "Mantiene tu sesión si entrás con tu cuenta (email o Google).", "Hasta 30 días o hasta que cierres sesión"],
   ["qg_advisor", "Cookie propia esencial", "Limita la cantidad de consultas al asesor virtual para evitar abusos.", "24 horas"],
+  ["qg_vid", "Cookie propia de analítica", "Un código aleatorio que nos permite contar visitantes únicos y medir qué páginas se ven. No guarda datos personales ni se comparte con terceros.", "13 meses"],
+  ["qg_sid", "Cookie propia de analítica", "Agrupa las páginas de una misma visita; se renueva con cada página y vence a los 30 minutos sin actividad.", "30 minutos"],
   ["qg_orders", "Cookie propia esencial", "Recuerda, firmados, los números de tus últimos 3 pedidos como invitado para mostrarte el aviso de pedido en curso. No guarda datos personales.", "30 días"],
   ["qg_active_order_dismissed", "Almacenamiento local de tu navegador", "Recuerda que cerraste el aviso de un pedido para no volver a mostrarlo en ese estado.", "Hasta que borres los datos del sitio"],
   ["Búsquedas recientes", "Almacenamiento local del navegador", "Muestra tus últimas búsquedas en este dispositivo. No se envía a nuestros servidores.", "Hasta que las borres"],
@@ -58,7 +60,7 @@ export default function PrivacyPage() {
       <p>Algunos de estos proveedores procesan datos fuera de la Argentina (por ejemplo, en Estados Unidos). Trabajamos con servicios que asumen compromisos contractuales de seguridad y confidencialidad.</p>
     </LegalSection>
     <LegalSection id="cookies" title="5. Cookies y almacenamiento en tu navegador">
-      <p>Usamos solo cookies y almacenamiento esenciales para que la tienda funcione. <strong>No usamos cookies de publicidad ni de analítica</strong>; por eso no mostramos un aviso para aceptarlas. Si en el futuro las sumamos, te vamos a pedir permiso antes.</p>
+      <p>Usamos cookies y almacenamiento esenciales para que la tienda funcione y dos cookies propias de analítica (<code>qg_vid</code> y <code>qg_sid</code>) para contar visitas y saber qué páginas y productos se ven. Esa analítica es anónima: no guarda tu IP, nombre ni email, no te sigue en otros sitios y no se comparte con terceros; los datos se borran a los 400 días. <strong>No usamos cookies de publicidad ni herramientas de analítica de terceros.</strong> Si en el futuro las sumamos, te vamos a pedir permiso antes.</p>
       {/* Desplazable en mobile: focusable por teclado (WCAG 2.1.1). */}
       <div className="legal-table-wrap" tabIndex={0} role="region" aria-label="Cookies y almacenamiento (tabla desplazable)"><table className="legal-table">
         <caption className="sr-only">Cookies y almacenamiento que usa el sitio</caption>

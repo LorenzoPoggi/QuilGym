@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ authorized: vi.fn(), expire: vi.fn() }));
+const mocks = vi.hoisted(() => ({ authorized: vi.fn(), expire: vi.fn(), purge: vi.fn() }));
 vi.mock("@/lib/cron-auth", () => ({ isAuthorizedCron: mocks.authorized }));
 vi.mock("@/lib/abandoned-cart-expiry", () => ({ expireAbandonedCarts: mocks.expire }));
+vi.mock("@/lib/analytics", () => ({ purgeOldAnalytics: mocks.purge }));
 
 import { GET } from "../app/api/internal/expire-carts/route";
 
@@ -10,6 +11,7 @@ describe("GET /api/internal/expire-carts", () => {
   beforeEach(() => {
     mocks.authorized.mockReset().mockReturnValue(true);
     mocks.expire.mockReset().mockResolvedValue({ deleted: 2, cutoff: new Date("2026-08-10T12:00:00.000Z") });
+    mocks.purge.mockReset().mockResolvedValue(5);
   });
 
   it("exige el secreto de cron antes de limpiar datos", async () => {
@@ -22,8 +24,15 @@ describe("GET /api/internal/expire-carts", () => {
   it("responde con el conteo cuando la tarea autorizada termina", async () => {
     const response = await GET(new Request("https://quilgym.test/api/internal/expire-carts", { headers: { Authorization: "Bearer test" } }));
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ deleted: 2, cutoff: "2026-08-10T12:00:00.000Z" });
+    expect(await response.json()).toMatchObject({ deleted: 2, cutoff: "2026-08-10T12:00:00.000Z", analyticsPurged: 5 });
     expect(mocks.expire).toHaveBeenCalledOnce();
+  });
+
+  it("si falla la purga de analítica, la limpieza de carritos igual responde bien", async () => {
+    mocks.purge.mockRejectedValue(new Error("sin tabla"));
+    const response = await GET(new Request("https://quilgym.test/api/internal/expire-carts"));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ deleted: 2, analyticsPurged: 0 });
   });
 
   it("devuelve un error controlado si falla la limpieza", async () => {

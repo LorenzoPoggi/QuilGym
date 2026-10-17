@@ -42,7 +42,7 @@ export async function touchCart(cartId: string) {
 /** Variante comprable con su stock y precio actuales, o null si no existe o no está publicada. */
 export async function findPurchasableVariant(variantId: number) {
   const [row] = await db
-    .select({ id: productVariants.id, priceArs: productVariants.priceArs, stock: productVariants.stock, name: products.name })
+    .select({ id: productVariants.id, priceArs: productVariants.priceArs, stock: productVariants.stock, name: products.name, slug: products.slug })
     .from(productVariants)
     .innerJoin(products, eq(productVariants.productId, products.id))
     .where(and(eq(productVariants.id, variantId), eq(products.status, "active")))

@@ -6,6 +6,7 @@ import { AccountProvider } from "@/components/account-provider";
 import { AdvisorLauncher } from "@/components/advisor-launcher";
 import { InstallmentsRoot } from "@/components/installments-root";
 import { ActiveOrderToast } from "@/components/active-order-toast";
+import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import "./globals.css";
 import "./styles/home.css";
 import "./styles/catalog.css";
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" data-scroll-behavior="smooth" className={`${inter.variable} ${archivo.variable}`}>
-      <body><AccountProvider><CartProvider><InstallmentsRoot>{children}</InstallmentsRoot><AdvisorLauncher/><ActiveOrderToast/><CartDialog/></CartProvider></AccountProvider></body>
+      <body><AccountProvider><CartProvider><InstallmentsRoot>{children}</InstallmentsRoot><AdvisorLauncher/><ActiveOrderToast/><AnalyticsBeacon/><CartDialog/></CartProvider></AccountProvider></body>
     </html>
   );
 }

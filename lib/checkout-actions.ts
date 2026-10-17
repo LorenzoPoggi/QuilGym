@@ -21,6 +21,7 @@ import { deliverOrderEmails } from "./order-email";
 import { currentUser } from "./auth";
 import { consumeRateLimit } from "./rate-limit";
 import { rememberOrder } from "./order-cookie-server";
+import { linkOrderToVisit } from "./analytics";
 
 /**
  * Cotiza el retiro o todas las opciones para una dirección (entrega propia, transportista o tarifa fija).
@@ -62,6 +63,7 @@ export async function submitCheckout(raw: unknown): Promise<CheckoutResult> {
     const orderId = await createOrder(parsed.value, cartId, user?.id);
     // Invitados: el aviso de pedido en curso los encuentra por esta cookie firmada (las cuentas, por la sesión).
     if (!user) await rememberOrder(orderId);
+    await linkOrderToVisit(orderId);
     revalidatePath("/carrito");
     after(() => deliverOrderEmails(orderId));
     return { ok: true, orderId };
