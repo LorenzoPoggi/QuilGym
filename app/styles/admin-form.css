@@ -106,3 +106,11 @@ html:has(.admin-edit-dialog[open]){overflow:hidden}
   .admin-edit-dialog__body{padding:16px 16px 0}
   .admin-edit-dialog .admin-save-bar{margin:0 -16px;padding-inline:16px}
 }
+
+/* Datos para envío de cada variante (colapsable). */
+.admin-shipping{margin:0 0 12px;border-top:1px solid #e8ebeb;padding-top:4px}
+.admin-shipping summary{display:flex;align-items:center;gap:6px;min-height:44px;font-size:.86rem;font-weight:700;cursor:pointer}
+.admin-shipping summary span{color:#697477;font-weight:400}
+.admin-shipping[open]>.admin-help{margin:0 0 12px}
+.admin-shipping-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.admin-card .admin-shipping-grid label:not(.admin-check):not(.admin-upload-tile){margin-bottom:12px}

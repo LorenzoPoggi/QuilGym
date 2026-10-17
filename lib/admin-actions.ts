@@ -4,10 +4,10 @@ import { and, eq, inArray, ne } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { del } from "@vercel/blob";
 import { getAdminUser } from "./admin-auth";
-import { getAdminProduct, getAdminTaxonomy, ownedBlobUrl, slugPattern, stockHistoryAvailable, validateProductInput, validateTaxonomyInput, type AdminProductInput, type AdminTaxonomyInput, type FieldErrors } from "./admin-catalog";
+import { getAdminProduct, getAdminTaxonomy, ownedBlobUrl, slugPattern, stockHistoryAvailable, validateProductInput, variantShippingAvailable, validateTaxonomyInput, type AdminProductInput, type AdminTaxonomyInput, type FieldErrors } from "./admin-catalog";
 import { CATALOG_TAG } from "./catalog";
 import { db } from "./db";
-import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants } from "./db/schema";
+import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants, variantShipping } from "./db/schema";
 import { withOrderTransaction } from "./db/transaction";
 import { slugify } from "./slugify";
 
@@ -92,16 +92,27 @@ export async function saveAdminProduct(input: AdminProductInput): Promise<Action
       if (input.removedVariantIds.length) await tx.delete(productVariants).where(and(eq(productVariants.productId, productId), inArray(productVariants.id, input.removedVariantIds)));
       await tx.update(productVariants).set({ isDefault: false }).where(and(eq(productVariants.productId, productId), eq(productVariants.isDefault, true)));
       const changes: { variantId: number; sku: string; previousStock: number | null; newStock: number | null }[] = [];
+      // Peso y medidas: solo si la migración 0010 está aplicada; con todo vacío se borra la fila (vuelve el estimado por categoría).
+      const shippingReady = input.variants.some((variant) => variant.shipping !== undefined) && await variantShippingAvailable(tx);
       for (const [index, variant] of input.variants.entries()) {
         const position = index === input.defaultIndex ? 0 : index < input.defaultIndex ? index + 1 : index;
         const data = { sku: variant.sku.trim(), label: variant.label.trim() || null, priceArs: variant.priceArs, compareAtPriceArs: variant.compareAtPriceArs, stock: variant.stock, isDefault: index === input.defaultIndex, position };
+        let variantId: number;
         if (variant.id !== undefined) {
+          variantId = variant.id;
           await tx.update(productVariants).set(data).where(eq(productVariants.id, variant.id));
           const before = byId.get(variant.id)!.stock;
           if (before !== variant.stock) changes.push({ variantId: variant.id, sku: data.sku, previousStock: before, newStock: variant.stock });
         } else {
           const [created] = await tx.insert(productVariants).values({ ...data, productId }).returning({ id: productVariants.id });
+          variantId = created.id;
           changes.push({ variantId: created.id, sku: data.sku, previousStock: null, newStock: variant.stock });
+        }
+        if (shippingReady && variant.shipping) {
+          const { weightGrams, lengthCm, widthCm, heightCm } = variant.shipping;
+          if (weightGrams === null && lengthCm === null && widthCm === null && heightCm === null) await tx.delete(variantShipping).where(eq(variantShipping.variantId, variantId));
+          else await tx.insert(variantShipping).values({ variantId, weightGrams, lengthCm, widthCm, heightCm })
+            .onConflictDoUpdate({ target: variantShipping.variantId, set: { weightGrams, lengthCm, widthCm, heightCm, updatedAt: new Date() } });
         }
       }
       if (changes.length && await stockHistoryAvailable(tx)) await tx.insert(productStockChanges).values(changes.map((change) => ({ ...change, productId, source: input.id ? "admin" : "alta", changedBy: admin.email })));
