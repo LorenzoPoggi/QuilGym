@@ -123,9 +123,8 @@ export async function updateOrderShipment(id: string, input: { status: unknown; 
     const [shipment] = await tx.select().from(shipments).where(eq(shipments.orderId, order.id)).for("update");
     if (!shipment) throw new AdminOrderError("El pedido no tiene un envío asociado.");
     if (shipment.status === status && (shipment.trackingCode ?? "") === trackingCode) return "No había cambios para guardar.";
-    await applyShipmentStatus(tx, shipment, status, { trackingCode: trackingCode || null });
-    // Un aviso por evento (índice único): corregir el tracking después no reenvía el email.
-    if (!order.isDemo && (status === "ready_for_pickup" || status === "shipped")) await tx.insert(orderEmails).values({ orderId: order.id, event: status }).onConflictDoNothing();
+    // Encola el aviso una vez por evento (índice único): corregir el tracking después no reenvía el email.
+    await applyShipmentStatus(tx, order, shipment, status, { trackingCode: trackingCode || null });
     return "Envío actualizado.";
   });
 }
@@ -170,8 +169,7 @@ export async function createCarrierShipment(id: string): Promise<AdminOrderActio
     const values = { carrier: carrier.code, carrierShipmentId: created.carrierShipmentId, trackingUrl: created.trackingUrl };
     await tx.insert(shipmentTracking).values({ shipmentId: current.id, ...values }).onConflictDoUpdate({ target: shipmentTracking.shipmentId, set: values });
     const trackingCode = created.trackingCode && TRACKING_PATTERN.test(created.trackingCode) ? created.trackingCode : current.trackingCode;
-    await applyShipmentStatus(tx, current, "shipped", { trackingCode }, `Despachamos tu pedido con ${carrier.label}`);
-    if (!locked.isDemo) await tx.insert(orderEmails).values({ orderId: locked.id, event: "shipped" }).onConflictDoNothing();
+    await applyShipmentStatus(tx, locked, current, "shipped", { trackingCode }, `Despachamos tu pedido con ${carrier.label}`);
     return created.trackingCode ? `Envío generado en ${carrier.label}. Seguimiento: ${created.trackingCode}.` : `Envío generado en ${carrier.label} (referencia ${created.carrierShipmentId}). Cargá el código de seguimiento cuando lo tengas.`;
   });
 }
@@ -192,7 +190,7 @@ export async function startLocalDelivery(id: string, choice: unknown) {
     if (shipment.status === "delivered") throw new AdminOrderError("El pedido ya figura como entregado.");
     const eta = { etaFrom: window.from, etaTo: window.to };
     await tx.insert(shipmentTracking).values({ shipmentId: shipment.id, carrier: "own", ...eta }).onConflictDoUpdate({ target: shipmentTracking.shipmentId, set: eta });
-    await applyShipmentStatus(tx, shipment, "out_for_delivery");
+    await applyShipmentStatus(tx, order, shipment, "out_for_delivery");
     return "Saliste a entregar. Dejá abierta la vista de reparto para compartir tu ubicación.";
   });
 }
@@ -207,7 +205,7 @@ export async function markLocalDelivered(id: string) {
     const [shipment] = await tx.select().from(shipments).where(eq(shipments.orderId, order.id)).for("update");
     if (!shipment) throw new AdminOrderError("El pedido no tiene un envío asociado.");
     if (shipment.status === "delivered") return "El pedido ya figuraba como entregado.";
-    await applyShipmentStatus(tx, shipment, "delivered");
+    await applyShipmentStatus(tx, order, shipment, "delivered");
     return "Pedido entregado. Dejamos de compartir tu ubicación.";
   });
 }

@@ -4,6 +4,7 @@
  */
 import { commerce, formatArs, formatCuit } from "./commerce";
 import { LOCAL_DELIVERY_NOTE } from "./delivery-labels";
+import { formatEtaWindow, TRACKING_TIME_ZONE } from "./tracking-core";
 
 export type EmailContent = { subject: string; html: string; text: string };
 type Detail = [label: string, value: string];
@@ -16,6 +17,8 @@ export type EmailBlock = {
   details?: Detail[];
   lines?: { name: string; quantity: number; totalArs: number }[];
   action?: { label: string; url: string } | null;
+  /** Enlace secundario debajo del botón (por ejemplo «Seguir mi pedido»). */
+  secondary?: { label: string; url: string } | null;
   footnote?: string;
 };
 
@@ -31,6 +34,7 @@ function footerLines(siteUrl: string | null) {
 
 export function renderEmail(block: EmailBlock, siteUrl: string | null): EmailContent {
   const action = block.action ? safeUrl(block.action.url) : null;
+  const secondary = block.secondary ? safeUrl(block.secondary.url) : null;
   const footer = footerLines(siteUrl);
   const text = [
     block.heading, "",
@@ -38,6 +42,7 @@ export function renderEmail(block: EmailBlock, siteUrl: string | null): EmailCon
     ...(block.details?.length ? [...block.details.map(([label, value]) => `${label}: ${value}`), ""] : []),
     ...(block.lines?.length ? ["Detalle:", ...block.lines.map((line) => `- ${line.quantity} × ${line.name}: ${formatArs(line.totalArs)}`), ""] : []),
     ...(action && block.action ? [`${block.action.label}: ${action}`, ""] : []),
+    ...(secondary && block.secondary ? [`${block.secondary.label}: ${secondary}`, ""] : []),
     ...(block.footnote ? [block.footnote, ""] : []),
     "—", footer.identity,
     ...footer.links.map(([label, url]) => `${label}: ${url}`),
@@ -56,6 +61,7 @@ ${block.details?.length ? `<table role="presentation" width="100%" cellpadding="
 ${block.lines?.length ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px">${block.lines.map((line) => `<tr><td style="${cell}">${line.quantity} × ${escapeHtml(line.name)}</td><td align="right" style="${cell}">${escapeHtml(formatArs(line.totalArs))}</td></tr>`).join("")}</table>` : ""}
 ${action && block.action ? `<p style="margin:22px 0"><a href="${escapeHtml(action)}" style="display:inline-block;padding:13px 22px;background:#1d2022;color:#ffffff;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">${escapeHtml(block.action.label)}</a></p>
 <p style="margin:0 0 14px;font-size:12px;line-height:18px;color:#656c71">Si el botón no funciona, copiá este enlace: ${escapeHtml(action)}</p>` : ""}
+${secondary && block.secondary ? `<p style="margin:0 0 14px;font-size:14px;line-height:20px"><a href="${escapeHtml(secondary)}" style="color:#1d2022;font-weight:700">${escapeHtml(block.secondary.label)}</a></p>` : ""}
 ${block.footnote ? `<p style="margin:14px 0 0;font-size:13px;line-height:19px;color:#656c71">${escapeHtml(block.footnote)}</p>` : ""}
 </td></tr>
 <tr><td style="padding:18px 28px;border-top:1px solid #eceeef;font-size:12px;line-height:18px;color:#656c71">${escapeHtml(footer.identity)}${footer.links.length ? `<br>${footer.links.map(([label, url]) => `<a href="${escapeHtml(url)}" style="color:#656c71">${escapeHtml(label)}</a>`).join(" · ")}` : ""}</td></tr>
@@ -63,7 +69,23 @@ ${block.footnote ? `<p style="margin:14px 0 0;font-size:13px;line-height:19px;co
   return { subject: block.subject, html, text };
 }
 
-export type OrderEmailEvent = "created" | "approved" | "payment_rejected" | "rejected" | "cancelled" | "expired" | "refunded" | "ready_for_pickup" | "shipped" | "invoice_issued";
+export type OrderEmailEvent = "created" | "approved" | "payment_rejected" | "rejected" | "cancelled" | "expired" | "refunded" | "ready_for_pickup" | "shipped" | "out_for_delivery" | "delivered" | "invoice_issued";
+/** Ventana de llegada y transportista del envío (migración 0010); ausentes si no hay seguimiento. */
+export type OrderEmailTracking = { carrier: string | null; etaFrom: Date | null; etaTo: Date | null };
+
+const dateLabel = (date: Date) => new Intl.DateTimeFormat("es-AR", { timeZone: TRACKING_TIME_ZONE, weekday: "long", day: "numeric", month: "long" }).format(date);
+
+/**
+ * Llegada de la entrega propia: «en las próximas 5 horas» si el email sale apenas el dueño elige la ventana;
+ * si sale más tarde (por ejemplo, desde el cron), la ventana exacta para no prometer un plazo corrido.
+ */
+export function localArrivalText(from: Date | null, to: Date | null, now = new Date()) {
+  if (!from || !to || to <= from) return null;
+  const hours = Math.round((to.getTime() - from.getTime()) / 3_600_000);
+  if (Math.abs(now.getTime() - from.getTime()) <= 30 * 60_000 && hours >= 1 && hours <= 24) return `Tu pedido llega en las próximas ${hours} ${hours === 1 ? "hora" : "horas"}`;
+  const window = formatEtaWindow(from, to, now);
+  return window ? `Tu pedido llega${window.slice("Llega".length)}` : null;
+}
 export type OrderEmailOrder = {
   id: string; name: string; status: string; paymentMethod: string; paymentChoice: string; delivery: string; totalArs: number;
   pickupDetails: { address: string; hours: string } | null;
@@ -82,8 +104,10 @@ export function orderEmailContent(event: OrderEmailEvent, input: {
   /** Link firmado a `/pedido/[id]` (seguimiento con mapa y línea de tiempo). */
   trackingLink?: string | null;
   shipment?: { label: string; trackingCode: string | null } | null;
+  tracking?: OrderEmailTracking | null;
   lines?: { name: string; quantity: number; totalArs: number }[];
   invoice?: OrderEmailInvoice | null;
+  now?: Date;
 }): EmailContent {
   const { order, link, shipment } = input;
   const code = orderCodeOf(order.id);
@@ -141,6 +165,29 @@ export function orderEmailContent(event: OrderEmailEvent, input: {
       details: [...details, ...(shipment?.label ? [["Envío", shipment.label] as Detail] : []), ...(shipment?.trackingCode ? [["Seguimiento", shipment.trackingCode] as Detail] : [])],
       paragraphs: [hello, shipment?.trackingCode ? "Despachamos tu pedido. Podés seguirlo con el código de abajo." : "Despachamos tu pedido. Te avisamos si tenemos un código de seguimiento."],
     }),
+    out_for_delivery: () => {
+      const tracking = input.tracking;
+      const trackingDetails: Detail[] = [...(shipment?.label ? [["Envío", shipment.label] as Detail] : []), ...(shipment?.trackingCode ? [["Seguimiento", shipment.trackingCode] as Detail] : [])];
+      if (local) {
+        const arrival = localArrivalText(tracking?.etaFrom ?? null, tracking?.etaTo ?? null, input.now) ?? "Tu pedido está en camino";
+        return {
+          subject: `${arrival} · pedido ${code}`, preheader: "Podés ver en el mapa dónde está el repartidor.", heading: arrival, details, action: track,
+          paragraphs: [hello, "Salimos a llevarte el pedido. Desde el botón podés ver en el mapa dónde está el repartidor mientras está en camino.",
+            ...(order.paymentMethod === "cash" && order.status === "pending" ? [`Tené listo el pago en efectivo (${formatArs(order.totalArs)}).`] : [])],
+          footnote: `${LOCAL_DELIVERY_NOTE}.`,
+        };
+      }
+      const estimate = tracking?.etaTo ? `Fecha estimada de entrega: ${dateLabel(tracking.etaTo)}.` : null;
+      return {
+        subject: `Tu pedido ${code} está en distribución`, preheader: estimate ?? "Llega en los próximos días.", heading: "En distribución", action: track,
+        details: [...details, ...trackingDetails],
+        paragraphs: [hello, "Tu pedido salió a distribución y está por llegar a tu domicilio.", ...(estimate ? [estimate] : [])],
+      };
+    },
+    delivered: () => ({
+      subject: `¡Tu pedido ${code} fue entregado!`, preheader: "Gracias por comprar en QuilGym.", heading: "¡Tu pedido fue entregado!", details, action: view ?? track,
+      paragraphs: [hello, order.delivery === "pickup" ? "Registramos que retiraste tu pedido." : "Registramos la entrega de tu pedido.", "Gracias por comprar en QuilGym. Si algo no llegó bien, respondé este email o escribinos por WhatsApp."],
+    }),
     invoice_issued: () => {
       const invoice = input.invoice;
       const pdf = invoice?.pdfUrl ? safeUrl(invoice.pdfUrl) : null;
@@ -151,7 +198,10 @@ export function orderEmailContent(event: OrderEmailEvent, input: {
       };
     },
   };
-  return renderEmail(blocks[event](), input.siteUrl);
+  const block = blocks[event]();
+  // Todos los emails de pedido llevan el seguimiento: como botón o, si el botón es otro, como enlace secundario.
+  if (input.trackingLink && block.action?.url !== input.trackingLink) block.secondary = { label: "Seguir mi pedido", url: input.trackingLink };
+  return renderEmail(block, input.siteUrl);
 }
 
 export type AuthEmailKind = "reset-password" | "verify-email";

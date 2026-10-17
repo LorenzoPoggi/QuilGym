@@ -4,12 +4,13 @@
  *   npm run email:check -- --strict              → sale con código 1 si hay errores
  *   npm run email:check -- --send-test=vos@x.com → envía UN email de prueba a esa dirección (lo decidís vos)
  * Con --dns consulta los registros públicos del dominio del remitente (DKIM, SPF/MX de «send» y DMARC).
+ *   npm run email:check -- --preview  → escribe cada plantilla de pedido en .cache/email-preview/ (no envía nada)
  */
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolveCname, resolveMx, resolveTxt } from "node:dns/promises";
 import { randomUUID } from "node:crypto";
 import { readEmailConfig, sendWithResend, isEmailAddress } from "../lib/email-config";
-import { orderEmailContent } from "../lib/email-templates";
+import { orderEmailContent, type OrderEmailEvent } from "../lib/email-templates";
 import { readSiteUrl } from "../lib/checkout-env";
 
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
@@ -17,6 +18,7 @@ const args = process.argv.slice(2);
 const strict = args.includes("--strict");
 const sendTo = args.find((arg) => arg.startsWith("--send-test="))?.split("=")[1]?.trim();
 const checkDns = args.includes("--dns");
+const preview = args.includes("--preview");
 
 const env = { ...process.env };
 const config = readEmailConfig(env);
@@ -48,7 +50,31 @@ DNS públicos de ${domain} (solo lectura; compará con la pestaña «Records» d
   if (spfRoot.length > 1) console.log("  ✗ El dominio raíz tiene más de un registro SPF: unificalos en uno solo.");
 }
 
+/** Vista previa local de todas las plantillas de pedido con datos ficticios, para revisarlas en el navegador. */
+function writePreviews() {
+  const dir = ".cache/email-preview";
+  mkdirSync(dir, { recursive: true });
+  const site = readSiteUrl(env) ?? "https://quilgym.vercel.app";
+  const now = new Date();
+  const events: OrderEmailEvent[] = ["created", "approved", "payment_rejected", "rejected", "cancelled", "expired", "refunded", "ready_for_pickup", "shipped", "out_for_delivery", "delivered", "invoice_issued"];
+  for (const event of events) {
+    const content = orderEmailContent(event, {
+      order: { id: "0f3a9c2e-prueba-0000-0000-000000000000", name: "Cliente de prueba", status: "approved", paymentMethod: "mercadopago", paymentChoice: "credit_card", delivery: "local", totalArs: 24500,
+        pickupDetails: null, address: { street: "Rivadavia", number: "500", apartment: "2 A", postalCode: "1878", city: "Quilmes", province: "Buenos Aires" } },
+      link: `${site}/checkout/confirmacion/prueba`, trackingLink: `${site}/pedido/prueba`, siteUrl: site, now,
+      shipment: { label: "Entrega en Quilmes (costo a convenir)", trackingCode: null },
+      tracking: { carrier: "own", etaFrom: now, etaTo: new Date(now.getTime() + 5 * 3_600_000) },
+      lines: [{ name: "Creatina de prueba", quantity: 1, totalArs: 24500 }],
+      invoice: { voucherType: "C", pointOfSale: 1, number: 1, cae: "00000000000000", caeDueDate: null, pdfUrl: null },
+    });
+    writeFileSync(`${dir}/${event}.html`, content.html);
+  }
+  console.log(`
+✓ Vista previa de ${events.length} plantillas en ${dir}/ (abrilas en el navegador; no se envió nada).`);
+}
+
 async function main() {
+  if (preview) writePreviews();
   if (checkDns && config.fromDomain) await dns(config.fromDomain);
   if (sendTo) {
     if (!isEmailAddress(sendTo.toLowerCase())) { console.log("\n✗ --send-test necesita un email válido."); process.exit(1); }

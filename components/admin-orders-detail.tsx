@@ -10,7 +10,7 @@ import { formatDistance } from "@/lib/delivery-labels";
 import { googleMapsSearchUrl } from "@/lib/store-location";
 import { AdminOrderInvoice } from "./admin-orders-invoice";
 
-const emailLabels: Record<string, string> = { ...orderStatusLabels, created: "Pedido recibido", ready_for_pickup: "Listo para retirar", shipped: "Pedido despachado",
+const emailLabels: Record<string, string> = { ...orderStatusLabels, created: "Pedido recibido", ready_for_pickup: "Listo para retirar", shipped: "Pedido despachado", out_for_delivery: "En camino / en distribución", delivered: "Pedido entregado",
   payment_rejected: "Pago rechazado (puede reintentar)", expired: "Pedido vencido", invoice_issued: "Factura" };
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => <div><dt>{label}</dt><dd>{children}</dd></div>;
 

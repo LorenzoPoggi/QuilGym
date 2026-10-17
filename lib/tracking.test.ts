@@ -185,3 +185,38 @@ describe("sincronización con el transportista", () => {
     expect(await eventsOf(shipment.id)).toEqual(["admitted"]);
   });
 });
+
+describe("avisos por email del envío (Fase 6)", () => {
+  const queued = async (orderId: string) => (await database.select().from(schema.orderEmails).where(eq(schema.orderEmails.orderId, orderId))).map((row) => row.event).sort();
+
+  it("«Salir a entregar» y «Entregado» encolan un aviso cada uno, una sola vez", async () => {
+    const { order } = await localOrder();
+    await startLocalDelivery(order.id, { kind: "12h" });
+    await startLocalDelivery(order.id, { kind: "12h" });
+    await markLocalDelivered(order.id);
+    await markLocalDelivered(order.id);
+    expect(await queued(order.id)).toEqual(["delivered", "out_for_delivery"]);
+  });
+
+  it("los cambios del formulario encolan listo, despachado, en distribución y entregado; no los demás estados", async () => {
+    const { order } = await localOrder({ delivery: "shipping", shipmentStatus: "pending" });
+    for (const status of ["preparing", "shipped", "out_for_delivery", "delivered"]) await updateOrderShipment(order.id, { status, trackingCode: "" });
+    expect(await queued(order.id)).toEqual(["delivered", "out_for_delivery", "shipped"]);
+  });
+
+  it("los pedidos de prueba no encolan emails", async () => {
+    const { order } = await localOrder();
+    await database.update(schema.orders).set({ isDemo: true }).where(eq(schema.orders.id, order.id));
+    await startLocalDelivery(order.id, { kind: "5h" });
+    expect(await queued(order.id)).toEqual([]);
+  });
+
+  it("la sincronización con el transportista no cambia estados ni encola emails", async () => {
+    process.env.SHIPPING_CARRIER = "mock";
+    const { order, shipment } = await localOrder({ delivery: "shipping", shipmentStatus: "shipped" });
+    await database.insert(schema.shipmentTracking).values({ shipmentId: shipment.id, carrier: "mock", carrierShipmentId: "SIM999" });
+    await syncOpenShipments();
+    expect((await shipmentOf(shipment.id)).status).toBe("shipped");
+    expect(await queued(order.id)).toEqual([]);
+  });
+});
