@@ -41,6 +41,7 @@ export default async function ConfirmationPage({ params, searchParams }: { param
   const demoEnabled = getCheckoutConfig().demo;
   const pending = order.status === "pending";
   const pickup = order.delivery === "pickup";
+  const localDelivery = order.delivery === "local";
   const cashPickup = order.paymentMethod === "cash" && pickup;
   const titles = { pending: "Pedido pendiente de pago", approved: "¡Gracias por tu compra!", rejected: "Tu pago fue rechazado", cancelled: "Tu pedido está cancelado", refunded: "Tu pago fue reembolsado" };
   // Código legible derivado del ID real; el UUID completo queda como referencia secundaria.
@@ -72,6 +73,8 @@ export default async function ConfirmationPage({ params, searchParams }: { param
         { number: 3, title: "Preparación", copy: "Armamos y controlamos tu pedido.", state: order.status === "approved" ? "current" : "todo" },
         pickup
           ? { number: 4, title: "Retiro en el local", copy: "Te avisamos cuando esté listo para retirar.", state: "todo" }
+          : localDelivery
+          ? { number: 4, title: "Entrega en Quilmes", copy: "Te contactamos para coordinar la entrega. El costo se arregla con QuilGym al llevar tu pedido.", state: "todo" }
           : { number: 4, title: "Envío", copy: shipment?.trackingCode ? `Seguimiento: ${shipment.trackingCode}` : "Te enviamos el código de seguimiento al despacharlo.", state: "todo" },
       ]
     : null;
@@ -103,7 +106,7 @@ export default async function ConfirmationPage({ params, searchParams }: { param
             <div><strong>{item.name}</strong><small>{[item.variantLabel, `Cantidad ${item.quantity} × ${formatArs(item.unitPriceArs)}`].filter(Boolean).join(" · ")}</small></div><b>{formatArs(item.quantity * item.unitPriceArs)}</b>
           </article>;
         })}
-        <div className="order-total"><p><span>Subtotal</span><b>{formatArs(order.subtotalArs)}</b></p>{order.discountArs > 0 ? <p><span>Cupón {order.couponCode}</span><b>− {formatArs(order.discountArs)}</b></p> : null}<p><span>Entrega</span><b>{formatArs(order.shippingArs)}</b></p><p><strong>Total</strong><strong>{formatArs(order.totalArs)}</strong></p></div>
+        <div className="order-total"><p><span>Subtotal</span><b>{formatArs(order.subtotalArs)}</b></p>{order.discountArs > 0 ? <p><span>Cupón {order.couponCode}</span><b>− {formatArs(order.discountArs)}</b></p> : null}<p><span>Entrega</span><b>{localDelivery ? "A convenir" : formatArs(order.shippingArs)}</b></p><p><strong>Total</strong><strong>{formatArs(order.totalArs)}</strong></p></div>
       </section><aside className="next-steps"><h2>Próximos pasos</h2>
         {steps ? <ol className="order-steps">{steps.map((step) => <li key={step.title} className={`is-${step.state}`} aria-current={step.state === "current" ? "step" : undefined}>
           <span aria-hidden="true">{step.state === "done" ? <Check size={14} strokeWidth={2.5}/> : step.number}</span>

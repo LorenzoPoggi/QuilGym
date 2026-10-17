@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "./db";
-import { cartItems, carts, coupons, orderEmails, orderItemCosts, orderItems, orders, payments, productCosts, products, productVariants, shipments } from "./db/schema";
+import { cartItems, carts, coupons, orderDelivery, orderEmails, orderItemCosts, orderItems, orders, payments, productCosts, products, productVariants, shipments, shipmentTracking } from "./db/schema";
 import { tableExists } from "./db/table-exists";
 import { withOrderTransaction, type OrderTransaction } from "./db/transaction";
 import { readCartId } from "./cart";
@@ -10,7 +10,8 @@ import { MAX_QUANTITY_PER_LINE } from "./cart-types";
 import { bankDetails, getCheckoutConfig, orderAccessSecret } from "./checkout-config";
 import { verifyOrderAccess } from "./order-access";
 import { checkoutFingerprint, readQuote } from "./checkout-security";
-import { quoteDelivery, UUID_PATTERN } from "./checkout-validation";
+import { UUID_PATTERN } from "./checkout-validation";
+import { verifyDeliveryQuote } from "./delivery-quote";
 import { canTransition } from "./order-state";
 import type { CheckoutInput, OrderStatus } from "./checkout-types";
 import { currentUser } from "./auth";
@@ -74,11 +75,19 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
     if (!cart) throw new CheckoutError("El carrito ya no está disponible.");
     const [existing] = await tx.select().from(orders).where(and(eq(orders.cartId, cartId), eq(orders.checkoutKey, input.checkoutKey)));
     if (existing) return existing.id;
-    if (!config.payments[input.payment]) throw new CheckoutError("Este medio de pago todavía no está disponible.");
-    const delivery = quoteDelivery(config, input.delivery, input.postalCode);
+    // Efectivo: al retirar (CASH_PICKUP_ENABLED) o, solo si el negocio lo habilitó, al recibir la entrega propia.
+    const paymentAllowed = input.payment === "cash"
+      ? input.delivery === "pickup" ? config.payments.cash : input.delivery === "local" && config.localDelivery?.cash === true
+      : config.payments[input.payment];
+    if (!paymentAllowed) throw new CheckoutError(input.payment === "cash" && input.delivery !== "pickup" ? "El efectivo está disponible solo con retiro." : "Este medio de pago todavía no está disponible.");
+    // La entrega propia y el seguimiento usan tablas de la migración 0010: sin ella no se ofrece ni se acepta.
+    const deliveryTables = await tableExists(tx, "order_delivery");
     const quote = readQuote(cartId, input.quoteToken);
-    if (!quote || typeof quote.expires !== "number" || quote.expires < Date.now() || quote.delivery !== input.delivery || quote.postalCode !== input.postalCode || quote.demo !== config.demo) {
-      throw new CheckoutError("La cotización venció. Volvé a calcular la entrega.");
+    let delivery: ReturnType<typeof verifyDeliveryQuote>;
+    try {
+      delivery = verifyDeliveryQuote(config, input, quote, { localAvailable: deliveryTables });
+    } catch (error) {
+      throw new CheckoutError(error instanceof Error ? error.message : "La cotización venció. Volvé a calcular la entrega.");
     }
     const lines = await tx.select().from(cartItems).where(eq(cartItems.cartId, cartId)).orderBy(asc(cartItems.variantId)).for("update");
     if (!lines.length) throw new CheckoutError("Tu carrito está vacío.");
@@ -106,7 +115,7 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
     if (totalArs <= 0 || !Number.isSafeInteger(totalArs)) throw new CheckoutError("No se puede procesar el importe de este pedido.");
     // Facturación (RG 5700/2025): desde el umbral configurado hay que identificar al consumidor final.
     if (!config.demo && taxIdRequired(config.taxIdThresholdArs, totalArs) && !input.taxId) throw new CheckoutError("Para este importe necesitamos tu DNI o CUIT para la factura.");
-    if (quote.fingerprint !== checkoutFingerprint(snapshots, discountArs, cart.couponCode) || quote.shippingArs !== delivery.shippingArs || quote.totalArs !== totalArs) {
+    if (!quote || quote.fingerprint !== checkoutFingerprint(snapshots, discountArs, cart.couponCode) || quote.shippingArs !== delivery.shippingArs || quote.totalArs !== totalArs) {
       throw new CheckoutError("El importe cambió. Actualizá la cotización antes de confirmar.");
     }
     // Solo en la simulación local: los medios digitales saltean el proveedor de pagos.
@@ -115,7 +124,7 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
     const [order] = await tx.insert(orders).values({
       cartId, userId, checkoutKey: input.checkoutKey, isDemo: config.demo, status: initialStatus, paymentMethod: input.payment, paymentChoice: input.paymentChoice,
       name: input.name, email: input.email, phone: input.phone, delivery: input.delivery,
-      address: input.delivery === "shipping" ? { street: input.street, number: input.streetNumber, apartment: input.apartment, postalCode: input.postalCode, city: input.city, province: input.province } : null,
+      address: input.delivery !== "pickup" ? { street: input.street, number: input.streetNumber, apartment: input.apartment, postalCode: input.postalCode, city: input.city, province: input.province } : null,
       notes: input.notes, pickupDetails: input.delivery === "pickup" ? config.pickup : null,
       bankDetails: input.payment === "transfer" && !config.demo ? bankDetails() : null,
       subtotalArs, discountArs, shippingArs: delivery.shippingArs, totalArs,
@@ -127,7 +136,12 @@ export async function createOrder(input: CheckoutInput, cartId: string, userId?:
       await tx.update(productVariants).set({ stock: sql`${productVariants.stock} - ${line.quantity}` }).where(eq(productVariants.id, line.variantId));
     }
     await tx.insert(payments).values({ orderId: order.id, status: initialStatus });
-    await tx.insert(shipments).values({ orderId: order.id, label: delivery.label, estimate: delivery.estimate });
+    const [shipment] = await tx.insert(shipments).values({ orderId: order.id, label: delivery.label, estimate: delivery.estimate }).returning({ id: shipments.id });
+    if (deliveryTables) {
+      await tx.insert(orderDelivery).values({ orderId: order.id, optionId: delivery.optionId, lat: delivery.point?.lat ?? null, lng: delivery.point?.lng ?? null, distanceM: delivery.distanceM });
+      const carrier = input.delivery === "local" ? "own" : delivery.carrier;
+      if (carrier && await tableExists(tx, "shipment_tracking")) await tx.insert(shipmentTracking).values({ shipmentId: shipment.id, carrier, serviceId: delivery.serviceId });
+    }
     if (input.taxId && !config.demo) await saveCheckoutReceiver(tx, order, input.taxId);
     if (!config.demo) await tx.insert(orderEmails).values({ orderId: order.id, event: "created" });
     await tx.delete(cartItems).where(eq(cartItems.cartId, cartId));

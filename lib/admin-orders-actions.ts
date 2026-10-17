@@ -4,12 +4,17 @@ import { asc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { getAdminUser } from "./admin-auth";
-import { coupons, orderEmails, orderItems, orders, payments, productVariants, shipments } from "./db/schema";
+import { coupons, orderEmails, orderItems, orders, payments, productVariants, shipments, shipmentTracking } from "./db/schema";
 import { withOrderTransaction, type OrderTransaction } from "./db/transaction";
 import { transitionOrder } from "./order-service";
 import { canTransition } from "./order-state";
 import { deliverOrderEmails } from "./order-email";
-import { allowedShipmentStatuses, isPaidOnClosedOrder, isShipmentStatus, shipmentStatusLabels, TRACKING_PATTERN } from "./admin-orders-types";
+import { allowedShipmentStatuses, isPaidOnClosedOrder, isShipmentStatus, orderCode, shipmentStatusLabels, TRACKING_PATTERN } from "./admin-orders-types";
+import { db } from "./db";
+import { tableExists } from "./db/table-exists";
+import { CarrierError, getCarrier } from "./carriers";
+import { parcelForOrder } from "./shipping-parcel";
+import { consumeRateLimit } from "./rate-limit";
 import { InvoiceActionError, parseManualInvoice, prepareInvoice, queueInvoice, registerManualInvoice, retryFailedInvoice } from "./invoicing";
 
 export type AdminOrderActionResult = { ok: true; message: string } | { ok: false; error: string };
@@ -106,6 +111,7 @@ export async function updateOrderShipment(id: string, input: { status: unknown; 
     const status = input?.status;
     const trackingCode = typeof input?.trackingCode === "string" ? input.trackingCode.trim() : "";
     if (!isShipmentStatus(status)) throw new AdminOrderError("Elegí un estado de envío válido.");
+    if (order.delivery !== "shipping" && trackingCode) throw new AdminOrderError("El código de seguimiento solo aplica a envíos con transportista.");
     if (!TRACKING_PATTERN.test(trackingCode)) throw new AdminOrderError("El código de seguimiento admite hasta 80 letras, números, espacios y . _ / # -");
     const allowed = allowedShipmentStatuses(order);
     if (!allowed.length) throw new AdminOrderError("Este pedido no admite cambios de envío en su estado actual.");
@@ -117,6 +123,52 @@ export async function updateOrderShipment(id: string, input: { status: unknown; 
     // Un aviso por evento (índice único): corregir el tracking después no reenvía el email.
     if (!order.isDemo && (status === "ready_for_pickup" || status === "shipped")) await tx.insert(orderEmails).values({ orderId: order.id, event: status }).onConflictDoNothing();
     return "Envío actualizado.";
+  });
+}
+
+/**
+ * Da de alta el envío en el transportista configurado (SHIPPING_CARRIER), guarda la referencia y el seguimiento
+ * y pasa el envío a «Enviado». La llamada al proveedor ocurre fuera de la transacción; un candado de 1 minuto por
+ * pedido evita altas duplicadas por doble clic. Requiere la migración 0010 (`shipment_tracking`).
+ */
+export async function createCarrierShipment(id: string): Promise<AdminOrderActionResult> {
+  const admin = await getAdminUser();
+  if (!admin) return denied;
+  if (typeof id !== "string" || !UUID.test(id)) return { ok: false, error: "Pedido inválido." };
+  const carrier = getCarrier();
+  if (!carrier) return { ok: false, error: "No hay un transportista configurado (SHIPPING_CARRIER y sus credenciales)." };
+  if (!await tableExists(db, "shipment_tracking")) return { ok: false, error: "Falta aplicar la migración 0010 para guardar el seguimiento del envío." };
+  const [row] = await db.select({ order: orders, shipment: shipments, tracking: shipmentTracking }).from(orders)
+    .innerJoin(shipments, eq(shipments.orderId, orders.id)).leftJoin(shipmentTracking, eq(shipmentTracking.shipmentId, shipments.id))
+    .where(eq(orders.id, id)).limit(1);
+  if (!row) return { ok: false, error: "No encontramos el pedido o su envío." };
+  const { order, shipment, tracking } = row;
+  if (order.delivery !== "shipping" || !order.address) return { ok: false, error: "Solo los envíos a domicilio se generan con el transportista." };
+  if (order.status !== "approved") return { ok: false, error: "Generá el envío cuando el pedido esté pagado." };
+  if (tracking?.carrierShipmentId) return { ok: true, message: "El envío ya estaba generado." };
+  if (order.isDemo && carrier.code !== "mock") return { ok: false, error: "Los pedidos de prueba no se dan de alta en el transportista real." };
+  if (!await consumeRateLimit(`admin:carrier-shipment:${order.id}`, 1, 60_000)) return { ok: false, error: "Ya se está generando este envío. Esperá un minuto y recargá la página." };
+  let created;
+  try {
+    created = await carrier.createShipment({
+      orderId: order.id, orderCode: orderCode(order.id), serviceId: tracking?.serviceId ?? null,
+      recipient: { name: order.name, email: order.email, phone: order.phone },
+      address: { street: order.address.street, streetNumber: order.address.number, apartment: order.address.apartment, postalCode: order.address.postalCode, city: order.address.city, province: order.address.province },
+      parcel: await parcelForOrder(order.id), declaredValueArs: order.subtotalArs - order.discountArs,
+    });
+  } catch (error) {
+    console.warn("[Envíos] No se pudo dar de alta el envío", { order: order.id.slice(0, 8), carrier: carrier.code, reason: error instanceof CarrierError ? error.reason : "error" });
+    return { ok: false, error: error instanceof CarrierError ? error.message : `No pudimos generar el envío en ${carrier.label}. Reintentá en unos minutos.` };
+  }
+  return run(id, async (locked, tx) => {
+    const [current] = await tx.select().from(shipments).where(eq(shipments.id, shipment.id)).for("update");
+    if (!current) throw new AdminOrderError("El pedido no tiene un envío asociado.");
+    const values = { carrier: carrier.code, carrierShipmentId: created.carrierShipmentId, trackingUrl: created.trackingUrl };
+    await tx.insert(shipmentTracking).values({ shipmentId: current.id, ...values }).onConflictDoUpdate({ target: shipmentTracking.shipmentId, set: values });
+    const trackingCode = created.trackingCode && TRACKING_PATTERN.test(created.trackingCode) ? created.trackingCode : current.trackingCode;
+    await tx.update(shipments).set({ status: "shipped", trackingCode }).where(eq(shipments.id, current.id));
+    if (!locked.isDemo) await tx.insert(orderEmails).values({ orderId: locked.id, event: "shipped" }).onConflictDoNothing();
+    return created.trackingCode ? `Envío generado en ${carrier.label}. Seguimiento: ${created.trackingCode}.` : `Envío generado en ${carrier.label} (referencia ${created.carrierShipmentId}). Cargá el código de seguimiento cuando lo tengas.`;
   });
 }
 

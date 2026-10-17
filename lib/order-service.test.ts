@@ -5,7 +5,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { eq, sql } from "drizzle-orm";
 import { beforeAll, beforeEach, afterAll, describe, expect, it, vi } from "vitest";
 import * as schema from "./db/schema";
-import { checkoutFingerprint, signQuote } from "./checkout-security";
+import { addressFingerprint, checkoutFingerprint, signQuote } from "./checkout-security";
 import type { CheckoutInput, CheckoutConfig } from "./checkout-types";
 
 const mocks = vi.hoisted(() => ({ transaction: vi.fn(), config: vi.fn(), db: {}, user: vi.fn(), cartId: vi.fn() }));
@@ -219,5 +219,54 @@ describe("limpieza de carritos abandonados", () => {
 
   it("no permite acortar la retención por debajo de la duración de la cookie", async () => {
     await expect(expireAbandonedCarts(new Date(), 30)).rejects.toThrow("Retención de carrito fuera de rango");
+  });
+});
+
+describe("entrega propia (migración 0010) en PostgreSQL aislado", () => {
+  const address = { street: "Rivadavia", streetNumber: "500", postalCode: "B1878ABC", city: "Quilmes", province: "Buenos Aires" };
+  const point = { lat: -34.71922054165, lng: -58.2516852994957 };
+  const localConfig: CheckoutConfig = { ...config, localDelivery: { radiusKm: 5, cash: false }, store: { lat: -34.7212393, lng: -58.2603596 } };
+  async function localFixture(payment: CheckoutInput["payment"] = "mercadopago", quotePoint = point) {
+    const { cart, variant, input } = await fixture();
+    mocks.config.mockReturnValue(localConfig);
+    const local: CheckoutInput = { ...input, delivery: "local", payment, paymentChoice: payment === "cash" ? "cash" : "mercadopago", ...address, apartment: "2 A",
+      quoteToken: signQuote(cart.id, { expires: Date.now() + 60000, delivery: "local", postalCode: address.postalCode, demo: false, optionId: "local",
+        address: addressFingerprint(address), point: quotePoint, distanceM: 900,
+        fingerprint: checkoutFingerprint([{ variantId: variant.id, quantity: 2, unitPriceArs: 1000 }], 0, null), shippingArs: 0, totalArs: 2000 }) };
+    return { cart, input: local };
+  }
+
+  it("guarda la dirección, el punto geocodificado, la distancia recalculada y el seguimiento propio", async () => {
+    const { cart, input } = await localFixture();
+    const id = await createOrder(input, cart.id);
+    const [order] = await database.select().from(schema.orders).where(eq(schema.orders.id, id));
+    expect(order).toMatchObject({ delivery: "local", shippingArs: 0, totalArs: 2000, address: { street: "Rivadavia", number: "500", apartment: "2 A", postalCode: "B1878ABC", city: "Quilmes", province: "Buenos Aires" } });
+    const [shipment] = await database.select().from(schema.shipments);
+    expect(shipment.label).toBe("Entrega en Quilmes (costo a convenir)");
+    const [delivery] = await database.select().from(schema.orderDelivery);
+    expect(delivery).toMatchObject({ orderId: id, optionId: "local", lat: point.lat, lng: point.lng });
+    expect(delivery.distanceM).toBeGreaterThan(500);
+    expect(delivery.distanceM).toBeLessThan(1_500);
+    expect(await database.select().from(schema.shipmentTracking)).toEqual([expect.objectContaining({ shipmentId: shipment.id, carrier: "own" })]);
+  });
+
+  it("rechaza coordenadas firmadas fuera del radio vigente", async () => {
+    const { cart, input } = await localFixture("mercadopago", { lat: -34.80, lng: -58.40 });
+    await expect(createOrder(input, cart.id)).rejects.toThrow("fuera de la zona");
+    expect(await database.select().from(schema.orders)).toHaveLength(0);
+  });
+
+  it("no acepta efectivo con la entrega propia salvo LOCAL_DELIVERY_CASH, y la base lo permite cuando está habilitado", async () => {
+    const { cart, input } = await localFixture("cash");
+    await expect(createOrder(input, cart.id)).rejects.toThrow("efectivo");
+    mocks.config.mockReturnValue({ ...localConfig, localDelivery: { radiusKm: 5, cash: true } });
+    const id = await createOrder(input, cart.id);
+    expect((await database.select().from(schema.orders).where(eq(schema.orders.id, id)))[0]).toMatchObject({ delivery: "local", paymentMethod: "cash", status: "pending" });
+  });
+
+  it("la base sigue rechazando efectivo con envío por transportista", async () => {
+    const { cart } = await fixture();
+    await expect(database.insert(schema.orders).values({ cartId: cart.id, checkoutKey: randomUUID(), paymentMethod: "cash", name: "N", email: "e@example.com", phone: "1",
+      delivery: "shipping", subtotalArs: 100, discountArs: 0, shippingArs: 0, totalArs: 100, consentAt: new Date() }).catch((error) => { throw error.cause ?? error; })).rejects.toThrow("orders_cash_pickup_check");
   });
 });

@@ -3,6 +3,7 @@
  * para probarlas sin red. Todo dato variable se escapa: nombres, direcciones y notas los escribe el cliente.
  */
 import { commerce, formatArs, formatCuit } from "./commerce";
+import { LOCAL_DELIVERY_NOTE } from "./delivery-labels";
 
 export type EmailContent = { subject: string; html: string; text: string };
 type Detail = [label: string, value: string];
@@ -87,21 +88,25 @@ export function orderEmailContent(event: OrderEmailEvent, input: {
   const hello = firstName(order.name) ? `Hola, ${firstName(order.name)}.` : "Hola.";
   const pickup = order.pickupDetails ? `${order.pickupDetails.address} (${order.pickupDetails.hours})` : "el local";
   const method = order.paymentMethod === "mercadopago" ? paymentLabels[order.paymentChoice] ?? "Mercado Pago" : paymentLabels[order.paymentMethod] ?? order.paymentMethod;
-  const delivery = order.delivery === "pickup" ? `Retiro en ${pickup}` : order.address ? `Envío a ${order.address.street} ${order.address.number}${order.address.apartment ? ` ${order.address.apartment}` : ""}, ${order.address.city} (${order.address.postalCode})` : "Envío a domicilio";
+  const where = order.address ? `${order.address.street} ${order.address.number}${order.address.apartment ? ` ${order.address.apartment}` : ""}, ${order.address.city} (${order.address.postalCode})` : null;
+  const local = order.delivery === "local";
+  const delivery = order.delivery === "pickup" ? `Retiro en ${pickup}` : local ? `Entrega en Quilmes${where ? ` en ${where}` : ""} (costo a convenir)` : where ? `Envío a ${where}` : "Envío a domicilio";
   const details: Detail[] = [["Pedido", code], ["Total", formatArs(order.totalArs)], ["Pago", method], ["Entrega", delivery]];
   const view = link ? { label: "Ver mi pedido", url: link } : null;
-  const cashPickup = order.paymentMethod === "cash";
+  // Efectivo: al retirar o, en la entrega propia, al recibir el pedido.
+  const cashPickup = order.paymentMethod === "cash" && !local;
+  const cashOnDelivery = order.paymentMethod === "cash" && local;
   const digital = order.paymentMethod === "mercadopago";
   const blocks: Record<OrderEmailEvent, () => EmailBlock> = {
     created: () => ({
       subject: `Recibimos tu pedido ${code}`, preheader: cashPickup ? "Te avisamos cuando esté listo para retirar." : "Si todavía no pagaste, podés hacerlo desde el link.",
       heading: "Recibimos tu pedido", details, lines: input.lines, action: view,
-      paragraphs: [hello, cashPickup ? "Guardamos tu pedido. Lo preparamos y te avisamos por email cuando esté listo: lo pagás en efectivo al retirarlo." : digital ? "Guardamos tu pedido. Todavía no tiene un pago aprobado: si no terminaste de pagar, podés hacerlo desde el botón. Te escribimos apenas se acredite." : "Guardamos tu pedido. Lo confirmamos cuando verifiquemos el pago."],
-      footnote: "Si no hiciste este pedido, ignorá este email.",
+      paragraphs: [hello, cashPickup ? "Guardamos tu pedido. Lo preparamos y te avisamos por email cuando esté listo: lo pagás en efectivo al retirarlo." : cashOnDelivery ? "Guardamos tu pedido. Te contactamos para coordinar la entrega: lo pagás en efectivo al recibirlo." : digital ? "Guardamos tu pedido. Todavía no tiene un pago aprobado: si no terminaste de pagar, podés hacerlo desde el botón. Te escribimos apenas se acredite." : "Guardamos tu pedido. Lo confirmamos cuando verifiquemos el pago."],
+      footnote: local ? `${LOCAL_DELIVERY_NOTE}. Si no hiciste este pedido, ignorá este email.` : "Si no hiciste este pedido, ignorá este email.",
     }),
     approved: () => ({
       subject: `Pago aprobado · pedido ${code}`, preheader: "Ya estamos preparando tu pedido.", heading: "¡Gracias por tu compra!", details, lines: input.lines, action: view,
-      paragraphs: [hello, cashPickup ? "Registramos el pago de tu pedido." : "Tu pago fue aprobado y ya estamos preparando tu pedido.", order.delivery === "pickup" ? "Esperá nuestro aviso de «listo para retirar» antes de acercarte al local." : "Te avisamos por email cuando lo despachemos, con el seguimiento si corresponde."],
+      paragraphs: [hello, cashPickup ? "Registramos el pago de tu pedido." : "Tu pago fue aprobado y ya estamos preparando tu pedido.", order.delivery === "pickup" ? "Esperá nuestro aviso de «listo para retirar» antes de acercarte al local." : local ? `Te contactamos para coordinar el día y el horario de la entrega. ${LOCAL_DELIVERY_NOTE}.` : "Te avisamos por email cuando lo despachemos, con el seguimiento si corresponde."],
     }),
     payment_rejected: () => ({
       subject: `No se pudo completar el pago · pedido ${code}`, preheader: "Tu pedido sigue reservado: podés reintentar.", heading: "Tu pago fue rechazado", details, action: link ? { label: "Reintentar el pago", url: link } : null,

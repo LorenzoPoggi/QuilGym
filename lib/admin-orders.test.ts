@@ -18,9 +18,10 @@ vi.mock("./admin-auth", () => ({ getAdminUser: mocks.admin }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("next/server", () => ({ after: mocks.after }));
 vi.mock("./order-email", () => ({ deliverOrderEmails: mocks.deliver }));
+vi.mock("./rate-limit", () => ({ consumeRateLimit: vi.fn(async () => true) }));
 vi.mock("./checkout-config", () => ({ getCheckoutConfig: mocks.config, bankDetails: () => null, orderAccessSecret: () => null, orderPageUrl: () => null, siteUrl: () => "https://quilgym.test" }));
 import { createOrder } from "./order-service";
-import { cancelAdminOrder, confirmOrderPayment, markOrderRefunded, reactivatePaidOrder, registerOrderInvoice, updateOrderShipment } from "./admin-orders-actions";
+import { cancelAdminOrder, confirmOrderPayment, createCarrierShipment, markOrderRefunded, reactivatePaidOrder, registerOrderInvoice, updateOrderShipment } from "./admin-orders-actions";
 import { getAdminOrder, listAdminOrders } from "./admin-orders";
 import { reconcileProviderMerchantOrder, reconcileProviderPayment } from "./mercadopago";
 import { allowedShipmentStatuses, parseAdminOrderFilters } from "./admin-orders-types";
@@ -31,7 +32,7 @@ const config: CheckoutConfig = { demo: false, pickup: { address: "Local de test"
 beforeAll(async () => {
   for (const file of readdirSync("drizzle").filter((f) => f.endsWith(".sql")).sort()) await pg.exec(readFileSync(`drizzle/${file}`, "utf8"));
   mocks.transaction.mockImplementation((fn) => database.transaction(fn));
-  Object.assign(mocks.db, { select: database.select.bind(database) });
+  Object.assign(mocks.db, { select: database.select.bind(database), execute: database.execute.bind(database) });
   process.env.MP_ACCESS_TOKEN = "TEST-token";
 }, 30000);
 afterAll(async () => { await pg.close(); vi.unstubAllGlobals(); });
@@ -320,5 +321,49 @@ describe("listado y detalle", () => {
   it("normaliza filtros inválidos de la URL", () => {
     expect(parseAdminOrderFilters({ estado: "x", medio: "bitcoin", tipo: "y", desde: "2026-13-45", pagina: "-3", q: ["  hola ", "x"] }))
       .toEqual({ q: "hola", status: "all", choice: "all", kind: "all", from: "", to: "", alerts: false, page: 1 });
+  });
+});
+
+describe("alta del envío en el transportista (migración 0010)", () => {
+  async function shippingOrder({ status = "approved" as "approved" | "pending", delivery = "shipping" as "shipping" | "pickup" } = {}) {
+    const key = `ship${++seq}`;
+    const [category] = await database.insert(schema.categories).values({ slug: "proteinas", name: "Proteínas" }).onConflictDoNothing().returning();
+    const categoryId = category?.id ?? (await database.select().from(schema.categories).where(eq(schema.categories.slug, "proteinas")))[0].id;
+    const [product] = await database.insert(schema.products).values({ slug: key, name: "Proteína test", status: "active", categoryId }).returning();
+    const [variant] = await database.insert(schema.productVariants).values({ productId: product.id, sku: key.toUpperCase(), priceArs: 1000, stock: null }).returning();
+    const [cart] = await database.insert(schema.carts).values({}).returning();
+    const [row] = await database.insert(schema.orders).values({ cartId: cart.id, checkoutKey: randomUUID(), status, paymentMethod: "mercadopago", paymentChoice: "mercadopago",
+      name: "Cliente", email: "cliente@example.com", phone: "1144444444", delivery,
+      address: delivery === "shipping" ? { street: "Mitre", number: "100", apartment: "", postalCode: "5000", city: "Córdoba", province: "Córdoba" } : null,
+      subtotalArs: 2000, discountArs: 0, shippingArs: 4500, totalArs: 6500, consentAt: new Date() }).returning();
+    await database.insert(schema.orderItems).values({ orderId: row.id, variantId: variant.id, sku: variant.sku, name: "Proteína test", slug: key, quantity: 2, unitPriceArs: 1000, stockReserved: false });
+    await database.insert(schema.payments).values({ orderId: row.id, status });
+    await database.insert(schema.shipments).values({ orderId: row.id, label: "Envío", estimate: "3 a 5 días" });
+    return row.id;
+  }
+  beforeEach(() => { process.env.SHIPPING_CARRIER = "mock"; });
+  afterAll(() => { delete process.env.SHIPPING_CARRIER; });
+
+  it("genera el envío una sola vez, guarda la referencia y lo pasa a «Enviado»", async () => {
+    const id = await shippingOrder();
+    expect(await createCarrierShipment(id)).toMatchObject({ ok: true, message: expect.stringContaining("Seguimiento: SIM") });
+    const [shipment] = await database.select().from(schema.shipments).where(eq(schema.shipments.orderId, id));
+    expect(shipment.status).toBe("shipped");
+    expect(shipment.trackingCode).toMatch(/^SIM/);
+    expect(await database.select().from(schema.shipmentTracking)).toEqual([expect.objectContaining({ shipmentId: shipment.id, carrier: "mock", carrierShipmentId: shipment.trackingCode })]);
+    expect(await events(id)).toEqual(["shipped"]);
+    expect(await createCarrierShipment(id)).toEqual({ ok: true, message: "El envío ya estaba generado." });
+  });
+
+  it("no lo genera sin admin, sin transportista, sin pago o para retiros", async () => {
+    const id = await shippingOrder();
+    mocks.admin.mockResolvedValueOnce(null);
+    expect(await createCarrierShipment(id)).toMatchObject({ ok: false });
+    delete process.env.SHIPPING_CARRIER;
+    expect(await createCarrierShipment(id)).toMatchObject({ ok: false, error: expect.stringContaining("transportista") });
+    process.env.SHIPPING_CARRIER = "mock";
+    expect(await createCarrierShipment(await shippingOrder({ status: "pending" }))).toMatchObject({ ok: false, error: expect.stringContaining("pagado") });
+    expect(await createCarrierShipment(await shippingOrder({ delivery: "pickup" }))).toMatchObject({ ok: false, error: expect.stringContaining("domicilio") });
+    expect((await database.select().from(schema.shipments).where(eq(schema.shipments.orderId, id)))[0].status).toBe("pending");
   });
 });

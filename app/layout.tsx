@@ -16,6 +16,7 @@ import "./styles/auth.css";
 import "./styles/compare.css";
 import "./styles/legal.css";
 import "./styles/payments.css";
+import "./styles/delivery.css";
 
 // Inter autoalojada por next/font: sin pedidos a Google y sin depender de las fuentes del sistema.
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });

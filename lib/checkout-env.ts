@@ -1,6 +1,8 @@
 import type { CheckoutConfig, ShippingRate } from "./checkout-types";
 import { readEmailConfig } from "./email-config";
 import { readInvoicingConfig } from "./invoicing-config";
+import { STORE_COORDINATES } from "./store-location";
+import type { CorreoArgentinoConfig } from "./carriers/correo-argentino";
 
 /**
  * Lectura pura de las variables de entorno del checkout. No importa `server-only`
@@ -19,6 +21,77 @@ export type CheckoutEnvReport = {
   emailsEnabled: boolean;
   cronEnabled: boolean;
 };
+
+export const DEFAULT_LOCAL_DELIVERY_RADIUS_KM = 5;
+
+/** STORE_LAT/STORE_LNG con default en el local de Quilmes. Inválidas → issue y se usa el default. */
+export function readStoreCoordinates(env: Env, issues: string[] = []) {
+  const rawLat = value(env, "STORE_LAT");
+  const rawLng = value(env, "STORE_LNG");
+  if (!rawLat && !rawLng) return { lat: STORE_COORDINATES.lat, lng: STORE_COORDINATES.lng };
+  const lat = Number(rawLat); const lng = Number(rawLng);
+  if (!rawLat || !rawLng || !Number.isFinite(lat) || !Number.isFinite(lng) || lat < -56 || lat > -21 || lng < -74 || lng > -53) {
+    issues.push("STORE_LAT y STORE_LNG van juntas y deben ser coordenadas de Argentina en grados decimales (p. ej. -34.72, -58.26). Se usa la ubicación del local por defecto.");
+    return { lat: STORE_COORDINATES.lat, lng: STORE_COORDINATES.lng };
+  }
+  return { lat, lng };
+}
+
+/** Entrega propia: apagada salvo LOCAL_DELIVERY_ENABLED=true. Efectivo al entregar solo con LOCAL_DELIVERY_CASH=true. */
+export function readLocalDelivery(env: Env, issues: string[] = []) {
+  const flag = value(env, "LOCAL_DELIVERY_ENABLED");
+  if (flag && flag !== "true" && flag !== "false") issues.push('LOCAL_DELIVERY_ENABLED solo acepta "true" o "false".');
+  const cashFlag = value(env, "LOCAL_DELIVERY_CASH");
+  if (cashFlag && cashFlag !== "true" && cashFlag !== "false") issues.push('LOCAL_DELIVERY_CASH solo acepta "true" o "false".');
+  const rawRadius = value(env, "LOCAL_DELIVERY_RADIUS_KM");
+  const radius = rawRadius ? Number(rawRadius.replace(",", ".")) : DEFAULT_LOCAL_DELIVERY_RADIUS_KM;
+  const validRadius = Number.isFinite(radius) && radius > 0 && radius <= 30;
+  if (rawRadius && !validRadius) issues.push("LOCAL_DELIVERY_RADIUS_KM debe ser un número de kilómetros entre 0 y 30. La entrega propia queda apagada.");
+  if (flag !== "true" || !validRadius) return null;
+  return { radiusKm: radius, cash: cashFlag === "true" };
+}
+
+export type CarrierEnvConfig =
+  | { code: "correo_argentino"; label: string; correoArgentino: CorreoArgentinoConfig }
+  | { code: "mock"; label: string };
+
+/**
+ * SHIPPING_CARRIER: vacío = sin transportista (tarifa fija). `correo_argentino` exige CORREO_AR_USER,
+ * CORREO_AR_PASSWORD, CORREO_AR_CUSTOMER_ID y CORREO_AR_ORIGIN_POSTAL_CODE; si falta alguna, queda apagado.
+ * `mock` (simulado) solo fuera de producción.
+ */
+export function readCarrierConfig(env: Env, issues: string[] = [], warnings: string[] = []): { carrier: CarrierEnvConfig | null } {
+  const code = value(env, "SHIPPING_CARRIER");
+  if (!code) return { carrier: null };
+  if (code === "mock") {
+    if (env.NODE_ENV === "production" || value(env, "VERCEL_ENV") === "production") {
+      issues.push("SHIPPING_CARRIER=mock no se permite en producción.");
+      return { carrier: null };
+    }
+    return { carrier: { code: "mock", label: "Transportista simulado" } };
+  }
+  if (code !== "correo_argentino") {
+    issues.push('SHIPPING_CARRIER solo acepta "correo_argentino" (o vacío para usar SHIPPING_RATES_JSON).');
+    return { carrier: null };
+  }
+  const keys = ["CORREO_AR_USER", "CORREO_AR_PASSWORD", "CORREO_AR_CUSTOMER_ID", "CORREO_AR_ORIGIN_POSTAL_CODE"] as const;
+  const missing = keys.filter((key) => !value(env, key));
+  const rawEnv = value(env, "CORREO_AR_ENV") ?? "test";
+  if (rawEnv !== "test" && rawEnv !== "prod") issues.push('CORREO_AR_ENV solo acepta "test" o "prod".');
+  const origin = value(env, "CORREO_AR_ORIGIN_POSTAL_CODE");
+  if (origin && !/^(\d{4}|[A-Z]\d{4}[A-Z]{3})$/i.test(origin)) issues.push("CORREO_AR_ORIGIN_POSTAL_CODE debe ser un código postal argentino (1878 o B1878ABC).");
+  if (missing.length) {
+    issues.push(`Correo Argentino incompleto: falta ${missing.join(", ")}. Se usa la tarifa fija de SHIPPING_RATES_JSON.`);
+    return { carrier: null };
+  }
+  if ((rawEnv !== "test" && rawEnv !== "prod") || (origin && !/^(\d{4}|[A-Z]\d{4}[A-Z]{3})$/i.test(origin))) return { carrier: null };
+  if (rawEnv === "test") warnings.push("CORREO_AR_ENV=test: las cotizaciones y altas van al ambiente de prueba de Correo Argentino.");
+  return { carrier: { code: "correo_argentino", label: "Correo Argentino", correoArgentino: {
+    user: value(env, "CORREO_AR_USER")!, password: value(env, "CORREO_AR_PASSWORD")!, customerId: value(env, "CORREO_AR_CUSTOMER_ID")!,
+    originPostalCode: origin!.toUpperCase(), env: rawEnv,
+    sender: { name: "QuilGym", address: value(env, "PICKUP_ADDRESS") },
+  } } };
+}
 
 export const DEFAULT_PENDING_ORDER_TTL_HOURS = 72;
 export const MIN_ORDER_ACCESS_SECRET_LENGTH = 32;
@@ -161,11 +234,14 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
       pickup: { address: "QuilGym · Quilmes", hours: "Horario de 7 AM a 5 PM" },
       shippingRates: [{ id: "demo", label: "Envío simulado", postalCodes: ["*"], priceArs: 4200, estimate: "Plazo de prueba: 3 a 5 días hábiles" }],
       payments: { mercadopago: true, transfer: true, cash: true },
+      // En la simulación la entrega propia está habilitada (efectivo solo con retiro, igual que por defecto).
+      localDelivery: { radiusKm: readLocalDelivery({ ...env, LOCAL_DELIVERY_ENABLED: "true" })?.radiusKm ?? DEFAULT_LOCAL_DELIVERY_RADIUS_KM, cash: false },
+      store: readStoreCoordinates(env),
+      carrier: publicCarrier(readCarrierConfig(env).carrier),
     } };
   }
 
   const shippingRates = readShippingRates(env, issues);
-  if (!value(env, "SHIPPING_RATES_JSON")) warnings.push("Falta SHIPPING_RATES_JSON: el envío a domicilio no está disponible.");
 
   const address = value(env, "PICKUP_ADDRESS");
   const hours = value(env, "PICKUP_HOURS");
@@ -193,6 +269,14 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
   const notificationUrl = readPaymentNotificationUrl(env);
   if (mpPresent.length === mpKeys.length && site && !notificationUrl) issues.push("Preview necesita VERCEL_AUTOMATION_BYPASS_SECRET para que Mercado Pago pueda notificar un pago sin iniciar sesión en Vercel.");
 
+  const store = readStoreCoordinates(env, issues);
+  const localDelivery = readLocalDelivery(env, issues);
+  if (!localDelivery && !value(env, "LOCAL_DELIVERY_ENABLED")) warnings.push(`Entrega propia apagada (LOCAL_DELIVERY_ENABLED=true para ofrecerla hasta ${DEFAULT_LOCAL_DELIVERY_RADIUS_KM} km del local; requiere la migración 0010).`);
+  const carrier = readCarrierConfig(env, issues, warnings).carrier;
+  if (!value(env, "SHIPPING_RATES_JSON")) warnings.push(carrier
+    ? "Falta SHIPPING_RATES_JSON: si el transportista no responde, el envío a domicilio no se puede cotizar."
+    : "Falta SHIPPING_RATES_JSON: el envío a domicilio no está disponible.");
+
   const bank = readBankDetails(env);
   const bankPresent = ["TRANSFER_ACCOUNT", "TRANSFER_HOLDER", "TRANSFER_TAX_ID"].filter((key) => value(env, key));
   if (bankPresent.length && !bank) issues.push("Transferencia incompleta: TRANSFER_ACCOUNT, TRANSFER_HOLDER y TRANSFER_TAX_ID van juntos.");
@@ -204,6 +288,7 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
 
   return { ...report, config: {
     demo: false, pickup, shippingRates, taxIdThresholdArs: invoicing.identificationThresholdArs,
+    localDelivery, store, carrier: publicCarrier(carrier),
     payments: {
       mercadopago: Boolean(accessToken && publicKey && value(env, "MP_WEBHOOK_SECRET") && notificationUrl
         && accessToken.startsWith("TEST-") === publicKey.startsWith("TEST-")
@@ -215,4 +300,9 @@ export function parseCheckoutEnv(env: Env): CheckoutEnvReport {
       cash: Boolean(pickup && cashFlag !== "false"),
     },
   } };
+}
+
+/** Datos del transportista que pueden viajar al navegador: nunca credenciales. */
+function publicCarrier(carrier: CarrierEnvConfig | null) {
+  return carrier ? { code: carrier.code, label: carrier.label } : null;
 }
