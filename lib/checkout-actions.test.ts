@@ -19,6 +19,9 @@ vi.mock("./order-service", () => ({
 vi.mock("./order-email", () => ({ deliverOrderEmails: mocks.deliverOrderEmails }));
 vi.mock("./auth", () => ({ currentUser: mocks.currentUser }));
 vi.mock("./rate-limit", () => ({ consumeRateLimit: mocks.consumeRateLimit }));
+vi.mock("./db", () => ({ db: {} }));
+vi.mock("./shipping-parcel", () => ({ parcelForLines: vi.fn() }));
+vi.mock("./carriers", () => ({ getCarrier: () => null }));
 
 import { getCheckoutQuote, submitCheckout } from "./checkout-actions";
 
@@ -46,10 +49,16 @@ describe("límites del checkout", () => {
 
   it("limita la cotización por carrito antes de leer el carrito", async () => {
     mocks.consumeRateLimit.mockResolvedValue(false);
-    const result = await getCheckoutQuote("shipping", "1878");
+    const result = await getCheckoutQuote({ delivery: "address", address: { street: "San Martín", streetNumber: "492", postalCode: "1878", city: "Quilmes", province: "Buenos Aires" } });
     expect(result).toMatchObject({ ok: false, error: expect.stringContaining("muchas consultas") });
     expect(mocks.consumeRateLimit).toHaveBeenCalledWith(`checkout:quote:${cartId}`, 30, 60_000);
     expect(mocks.getCart).not.toHaveBeenCalled();
+  });
+
+  it("rechaza pedidos de cotización mal formados sin consultar el carrito", async () => {
+    expect(await getCheckoutQuote({ delivery: "address", address: { street: "", streetNumber: "1", postalCode: "1878", city: "Quilmes", province: "Bs As" } })).toMatchObject({ ok: false });
+    expect(await getCheckoutQuote({ delivery: "local" })).toMatchObject({ ok: false });
+    expect(mocks.readCartId).not.toHaveBeenCalled();
   });
 
   it("limita creación por carrito antes de crear una orden", async () => {

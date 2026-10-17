@@ -1,13 +1,14 @@
 import "server-only";
 import { and, asc, eq, isNull, lt } from "drizzle-orm";
 import { db } from "./db";
-import { invoices, orderEmails, orderItems, orders, shipments } from "./db/schema";
-import { orderPageUrl, siteUrl } from "./checkout-config";
+import { invoices, orderEmails, orderItems, orders, shipments, shipmentTracking } from "./db/schema";
+import { tableExists } from "./db/table-exists";
+import { orderPageUrl, orderTrackingUrl, siteUrl } from "./checkout-config";
 import { readEmailConfig, sendWithResend } from "./email-config";
 import { orderEmailContent, type OrderEmailEvent } from "./email-templates";
 import { invoicesAvailable, processPendingInvoices } from "./invoicing";
 
-const KNOWN_EVENTS = new Set<OrderEmailEvent>(["created", "approved", "payment_rejected", "rejected", "cancelled", "expired", "refunded", "ready_for_pickup", "shipped", "invoice_issued"]);
+const KNOWN_EVENTS = new Set<OrderEmailEvent>(["created", "approved", "payment_rejected", "rejected", "cancelled", "expired", "refunded", "ready_for_pickup", "shipped", "out_for_delivery", "delivered", "invoice_issued"]);
 
 /**
  * Outbox persistente de avisos al cliente. Antes de enviar intenta emitir las facturas pendientes (proveedor con
@@ -34,7 +35,11 @@ export async function deliverOrderEmails(orderId?: string) {
       .map((line) => ({ name: [line.name, line.variantLabel].filter(Boolean).join(" · "), quantity: line.quantity, totalArs: line.quantity * line.unitPriceArs })) : undefined;
     const [invoice] = kind === "invoice_issued" && invoicesReady ? await db.select().from(invoices).where(eq(invoices.orderId, order.id)).limit(1) : [];
     if (kind === "invoice_issued" && invoice?.status !== "issued") continue;
-    const content = orderEmailContent(kind, { order, link: orderPageUrl(order.id), siteUrl: site, shipment, lines, invoice });
+    // Ventana de llegada y transportista (migración 0010) para «En camino» / «En distribución».
+    const [tracking] = kind === "out_for_delivery" && shipment && await tableExists(db, "shipment_tracking")
+      ? await db.select({ carrier: shipmentTracking.carrier, etaFrom: shipmentTracking.etaFrom, etaTo: shipmentTracking.etaTo }).from(shipmentTracking).where(eq(shipmentTracking.shipmentId, shipment.id)).limit(1)
+      : [];
+    const content = orderEmailContent(kind, { order, link: orderPageUrl(order.id), trackingLink: orderTrackingUrl(order.id), siteUrl: site, shipment, tracking: tracking ?? null, lines, invoice });
     const pdf = invoice?.pdfUrl?.startsWith("https://") ? invoice.pdfUrl : null;
     const result = await sendWithResend(process.env, {
       to: order.email, ...content, tag: `order_${kind}`,

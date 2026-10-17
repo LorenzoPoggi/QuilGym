@@ -10,19 +10,28 @@ export const paymentChoiceLabels: Record<string, string> = {
 export const paymentMethodLabels: Record<PaymentMethod, string> = { mercadopago: "Mercado Pago", transfer: "Transferencia", cash: "Efectivo" };
 
 /** `shipments.status` es texto libre en la base: estos son los únicos valores que escribe el panel. */
-export const SHIPMENT_STATUSES = ["pending", "preparing", "ready_for_pickup", "shipped", "delivered"] as const;
+export const SHIPMENT_STATUSES = ["pending", "preparing", "ready_for_pickup", "shipped", "out_for_delivery", "delivered"] as const;
 export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number];
 export const shipmentStatusLabels: Record<ShipmentStatus, string> = {
-  pending: "Sin preparar", preparing: "En preparación", ready_for_pickup: "Listo para retirar", shipped: "Enviado", delivered: "Entregado",
+  pending: "Sin preparar", preparing: "En preparación", ready_for_pickup: "Listo para retirar", shipped: "Enviado", out_for_delivery: "En camino", delivered: "Entregado",
 };
 export const isShipmentStatus = (value: unknown): value is ShipmentStatus => typeof value === "string" && (SHIPMENT_STATUSES as readonly string[]).includes(value);
 export const shipmentLabel = (value: string) => isShipmentStatus(value) ? shipmentStatusLabels[value] : value;
+export const deliveryLabels: Record<DeliveryMethod, string> = { pickup: "Retiro", shipping: "Envío", local: "Entrega propia" };
 
-/** Estados de envío válidos según la entrega y el pago. El efectivo se cobra al retirar: se puede preparar estando pendiente. */
+/**
+ * Estados de envío válidos según la entrega y el pago. El efectivo se cobra al retirar (o al entregar, en la
+ * entrega propia con LOCAL_DELIVERY_CASH): se puede preparar y salir a entregar estando pendiente, y se marca
+ * entregado recién después de confirmar el cobro.
+ */
 export function allowedShipmentStatuses(order: { status: OrderStatus; delivery: DeliveryMethod; paymentMethod: PaymentMethod }): ShipmentStatus[] {
-  const byDelivery: ShipmentStatus[] = order.delivery === "pickup" ? ["pending", "preparing", "ready_for_pickup", "delivered"] : ["pending", "preparing", "shipped", "delivered"];
-  if (order.status === "approved") return byDelivery;
-  if (order.status === "pending" && order.paymentMethod === "cash") return ["pending", "preparing", "ready_for_pickup"];
+  const byDelivery: Record<DeliveryMethod, ShipmentStatus[]> = {
+    pickup: ["pending", "preparing", "ready_for_pickup", "delivered"],
+    shipping: ["pending", "preparing", "shipped", "out_for_delivery", "delivered"],
+    local: ["pending", "preparing", "out_for_delivery", "delivered"],
+  };
+  if (order.status === "approved") return byDelivery[order.delivery];
+  if (order.status === "pending" && order.paymentMethod === "cash") return order.delivery === "local" ? ["pending", "preparing", "out_for_delivery"] : ["pending", "preparing", "ready_for_pickup"];
   return [];
 }
 

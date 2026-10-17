@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { formatArs } from "@/lib/commerce";
 import type { AdminOrderList } from "@/lib/admin-orders";
-import { ADMIN_ORDERS_PAGE_SIZE, adminOrdersHref, adminOrderStatusLabels, isPaidOnClosedOrder, ORDER_STATUSES, orderCode, paymentChoiceLabels, paymentLabel, shipmentLabel, type AdminOrderFilters } from "@/lib/admin-orders-types";
+import { ADMIN_ORDERS_PAGE_SIZE, adminOrdersHref, deliveryLabels, adminOrderStatusLabels, isPaidOnClosedOrder, ORDER_STATUSES, orderCode, paymentChoiceLabels, paymentLabel, shipmentLabel, type AdminOrderFilters } from "@/lib/admin-orders-types";
 
 const dateFormat = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
 export const formatAdminDate = (value: Date | string) => dateFormat.format(new Date(value));
@@ -38,7 +38,7 @@ export function AdminOrdersView({ data, filters }: { data: AdminOrderList; filte
         <td data-label="Cliente"><strong>{row.name}</strong><small>{row.email}</small></td>
         <td data-label="Pago">{paymentLabel(row)}{row.providerId && <small>MP #{row.providerId}</small>}</td>
         <td data-label="Estado"><span className="admin-order-badges"><AdminOrderStatus status={row.status}/>{row.isDemo && <span className="admin-status admin-order-demo">Prueba</span>}{alert && <span className="admin-status admin-order-status--alert"><AlertTriangle size={12} aria-hidden="true"/> Pago aprobado</span>}</span></td>
-        <td data-label="Entrega">{row.delivery === "pickup" ? "Retiro" : "Envío"}<small>{shipmentLabel(row.shipmentStatus ?? "pending")}{row.trackingCode ? ` · ${row.trackingCode}` : ""}</small></td>
+        <td data-label="Entrega">{deliveryLabels[row.delivery]}<small>{shipmentLabel(row.shipmentStatus ?? "pending")}{row.trackingCode ? ` · ${row.trackingCode}` : ""}</small></td>
         <td data-label="Total"><strong>{formatArs(row.totalArs)}</strong><small>{row.units} u.</small></td>
         <td><Link href={`/admin/pedidos/${row.id}`} aria-label={`Ver pedido ${orderCode(row.id)}`}>Ver</Link></td>
       </tr>; })}</tbody>

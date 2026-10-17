@@ -1,7 +1,9 @@
 import "server-only";
 import { and, asc, count, desc, eq, gte, ilike, inArray, lt, or, sql, type SQL } from "drizzle-orm";
 import { db } from "./db";
-import { orderEmails, orderItems, orders, payments, shipments } from "./db/schema";
+import { orderDelivery, orderEmails, orderItems, orders, payments, shipments, shipmentTracking } from "./db/schema";
+import { tableExists } from "./db/table-exists";
+import { readCarrierConfig } from "./checkout-env";
 import { ADMIN_ORDERS_PAGE_SIZE, type AdminOrderFilters } from "./admin-orders-types";
 import { getOrderInvoice, invoiceDraftFor, invoicingConfig } from "./invoicing";
 
@@ -66,7 +68,23 @@ export async function getAdminOrder(id: string) {
     db.select().from(shipments).where(eq(shipments.orderId, id)).limit(1),
     db.select().from(orderEmails).where(eq(orderEmails.orderId, id)).orderBy(asc(orderEmails.createdAt)),
   ]);
-  return { order, items, payment: payment[0] ?? null, shipment: shipment[0] ?? null, emails, billing: await adminOrderBilling(order) };
+  return { order, items, payment: payment[0] ?? null, shipment: shipment[0] ?? null, emails, billing: await adminOrderBilling(order),
+    delivery: await adminOrderDelivery(order.id, shipment[0]?.id ?? null) };
+}
+
+/**
+ * Entrega propia y transportista (migración 0010): punto geocodificado, distancia y referencia del envío.
+ * Sin la migración devuelve `available: false` y el panel muestra solo los datos de siempre.
+ */
+async function adminOrderDelivery(orderId: string, shipmentId: string | null) {
+  const carrierConfig = readCarrierConfig(process.env).carrier;
+  const carrier = carrierConfig ? { code: carrierConfig.code, label: carrierConfig.label } : null;
+  if (!await tableExists(db, "order_delivery")) return { available: false as const, carrier, option: null, tracking: null };
+  const [option, tracking] = await Promise.all([
+    db.select().from(orderDelivery).where(eq(orderDelivery.orderId, orderId)).limit(1),
+    shipmentId && await tableExists(db, "shipment_tracking") ? db.select().from(shipmentTracking).where(eq(shipmentTracking.shipmentId, shipmentId)).limit(1) : Promise.resolve([]),
+  ]);
+  return { available: true as const, carrier, option: option[0] ?? null, tracking: tracking[0] ?? null };
 }
 
 /** Factura del pedido y datos para emitirla a mano. Sin la migración 0008 informa que no está disponible. */

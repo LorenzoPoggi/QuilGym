@@ -28,6 +28,7 @@ export default function PrivacyPage() {
         <li><strong>Pagos:</strong> los datos de tarjeta los recibe y procesa Mercado Pago. QuilGym solo recibe el resultado del pago, su número de operación y el medio usado; nunca el número completo ni el código de seguridad.</li>
         <li><strong>Cuenta (opcional):</strong> nombre, email, contraseña guardada cifrada (no la podemos leer), foto de perfil si entrás con Google, favoritos, historial de búsquedas y tu preferencia de recibir novedades.</li>
         <li><strong>Asesor virtual:</strong> los mensajes que escribís se envían a Google (Gemini) para generar la respuesta. No escribas datos de salud ni datos personales que no quieras compartir.</li>
+        <li><strong>Entrega propia y seguimiento:</strong> para saber si llegamos con la entrega propia ubicamos tu dirección en el mapa (con la API pública Georef del Estado argentino). Si tocás «Usar mi ubicación», el navegador nos la envía solo para ubicar tu dirección y no la guardamos. Mientras QuilGym lleva tu pedido, compartimos con vos la ubicación del repartidor: se registra solo durante el reparto y se borra al entregar el pedido (o a las 4 horas, como máximo).</li>
         <li><strong>Datos técnicos:</strong> dirección IP y datos del navegador que se usan para seguridad y para limitar abusos (por ejemplo, intentos de ingreso).</li>
       </ul>
     </LegalSection>
@@ -48,6 +49,7 @@ export default function PrivacyPage() {
         <li><strong>Vercel</strong> (alojamiento del sitio) y <strong>Neon</strong> (base de datos).</li>
         <li><strong>Resend</strong>: envío de emails del pedido y de la cuenta.</li>
         <li><strong>Google</strong>: ingreso con Google (si lo elegís), asesor virtual, mapa del local y reseñas públicas.</li>
+        <li><strong>OpenStreetMap</strong>: el mapa del seguimiento del pedido se dibuja con sus teselas, que tu navegador descarga directamente de sus servidores (reciben tu IP, como cualquier sitio web).</li>
         <li>El servicio de facturación electrónica y la empresa de envíos que corresponda a tu pedido.</li>
         <li>Autoridades, cuando una ley o una orden judicial lo exija.</li>
       </ul>

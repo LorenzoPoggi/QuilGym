@@ -1,0 +1,52 @@
+/* Entrega propia y opciones de envío cotizadas (checkout, paso 2) y datos de entrega en el panel de pedidos. */
+
+.delivery-quote-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 4px; }
+.delivery-quote-actions > .button { min-height: 44px; }
+.delivery-locate { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; color: var(--ink); font-size: .86rem; font-weight: 600; background: #fff; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; transition: border-color .15s, background-color .15s; }
+.delivery-locate:not(:disabled):hover { border-color: #9aa0a3; background: var(--soft); }
+.delivery-locate:focus-visible { outline: 2px solid #34393c; outline-offset: 3px; }
+.delivery-locate:disabled { cursor: progress; opacity: .7; }
+.delivery-locate__help { flex: 1 1 240px; min-width: 0; color: var(--muted); font-size: .76rem; line-height: 1.4; }
+.delivery-locate__status { margin: 10px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.45; }
+
+.delivery-options { display: grid; gap: 10px; min-width: 0; margin: 18px 0 0; padding: 0; border: 0; }
+.delivery-options legend { margin-bottom: 10px; padding: 0; color: var(--ink); font-size: .92rem; font-weight: 700; }
+.delivery-option { display: flex; align-items: flex-start; gap: 12px; min-height: 72px; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.delivery-option:not(.is-active):hover { border-color: #9aa0a3; }
+.delivery-option.is-active { border-color: #34393c; box-shadow: inset 0 0 0 1px #34393c; }
+.delivery-option:has(input:disabled) { cursor: not-allowed; opacity: .6; }
+.delivery-option input { flex: none; width: 20px; height: 20px; margin: 9px 0 0; appearance: none; background: #fff; border: 1.5px solid #9aa0a3; border-radius: 50%; cursor: pointer; }
+.delivery-option input:checked { background: #34393c; border-color: #34393c; box-shadow: inset 0 0 0 3px #fff; }
+.delivery-option input:focus-visible { outline: 2px solid #34393c; outline-offset: 3px; }
+.delivery-option > b { flex: none; display: grid; place-items: center; width: 38px; height: 38px; color: var(--ink); background: var(--soft); border-radius: 10px; }
+.delivery-option.is-active > b { background: #fff; box-shadow: inset 0 0 0 1px var(--line); }
+.delivery-option__body { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.delivery-option__body strong { color: var(--ink); font-size: .92rem; font-weight: 700; line-height: 1.3; }
+.delivery-option__body small { color: #5f676b; font-size: .78rem; line-height: 1.4; }
+.delivery-option__distance { font-weight: 600; }
+.delivery-option__note { display: flex; align-items: flex-start; gap: 6px; margin-top: 4px; padding: 8px 10px; color: var(--ink) !important; background: #f6f3e8; border-radius: 10px; }
+.delivery-option__note svg { flex: none; margin-top: 2px; }
+.delivery-option__price { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding-top: 2px; color: var(--ink); font-size: .95rem; font-weight: 800; text-align: right; white-space: nowrap; }
+.delivery-option__price small { color: var(--muted); font-size: .72rem; font-weight: 600; }
+
+.delivery-notice { display: flex; align-items: flex-start; gap: 8px; margin: 14px 0 0; padding: 12px 14px; color: var(--ink); font-size: .82rem; line-height: 1.45; background: var(--soft); border-radius: 12px; }
+.delivery-notice svg { flex: none; margin-top: 2px; }
+
+@media (max-width: 520px) {
+  .delivery-option { flex-wrap: wrap; padding: 14px; }
+  .delivery-option > b { display: none; }
+  .delivery-option__body { flex-basis: calc(100% - 32px); }
+  /* En mobile el precio va debajo del texto, alineado con él, para no apretar la etiqueta. */
+  .delivery-option__price { flex-direction: row; align-items: baseline; gap: 8px; margin-left: 32px; padding-top: 0; }
+  .delivery-quote-actions > .button, .delivery-locate { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delivery-option, .delivery-locate { transition: none; }
+}
+
+/* Panel de pedidos: link al mapa y alta en el transportista. */
+.admin-order-map-link { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; font-weight: 600; }
+.admin-order-carrier { display: grid; gap: 6px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.admin-order-carrier .admin-primary { width: 100%; }
+.admin-order-carrier .admin-help { margin: 0; }

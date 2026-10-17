@@ -4,13 +4,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, Check, ChevronDown, CreditCard, Lock, Store, Truck, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, CreditCard, Info, LocateFixed, Lock, MapPin, Store, Truck, UserRound } from "lucide-react";
 import type { Cart } from "@/lib/cart-types";
-import type { CheckoutConfig, CheckoutInput, CheckoutQuote, DeliveryMethod, PaymentMethod } from "@/lib/checkout-types";
+import type { CheckoutConfig, CheckoutInput, CheckoutQuote, CheckoutQuoteRequest, DeliveryMethod, PaymentMethod } from "@/lib/checkout-types";
 import { getCheckoutQuote, submitCheckout } from "@/lib/checkout-actions";
 import { preparePayment } from "@/lib/payment-actions";
 import { validateCheckout } from "@/lib/checkout-validation";
-import { initialCheckoutChoice, usablePayments, whatsappOrderMessage } from "@/lib/checkout-whatsapp";
+import { addressDeliveryAvailable, initialCheckoutChoice, usablePayments, whatsappOrderMessage } from "@/lib/checkout-whatsapp";
 import { formatArs, whatsappUrl } from "@/lib/commerce";
 import { useCart } from "./cart-provider";
 import { ProductImage } from "./product-image";
@@ -18,9 +18,12 @@ import { WhatsAppGlyph } from "./icons";
 import { AcceptedCards } from "./accepted-cards";
 import { InstallmentsLine } from "./product-installments";
 import { quilgymMapsUrl } from "@/lib/review-types";
+import { storeMapEmbedUrl } from "@/lib/store-location";
+import { formatDistance } from "@/lib/delivery-labels";
 
 const flowSteps = [[1, "Datos", UserRound], [2, "Entrega", Truck], [3, "Pago", CreditCard]] as const;
-const mapEmbedUrl = "https://maps.google.com/maps?q=-34.7212393,-58.2603596&z=16&output=embed";
+const mapEmbedUrl = storeMapEmbedUrl();
+const addressFieldNames = ["street", "streetNumber", "postalCode", "city", "province"] as const;
 const checkoutDraftKey = "qg_checkout_draft_v1";
 const checkoutFieldNames = ["name", "email", "phone", "street", "streetNumber", "apartment", "postalCode", "city", "province", "notes"] as const;
 const checkoutPaymentOptions = ["Mercado Pago", "Mercado Crédito", "Tarjeta de débito", "Tarjeta de crédito", "Efectivo"] as const;
@@ -34,7 +37,11 @@ type CheckoutDraft = {
   payment: PaymentMethod;
   paymentOption: (typeof checkoutPaymentOptions)[number];
   accepted: boolean;
+  /** Opción de entrega cotizada que había elegido (local, tarifa o transportista); se vuelve a cotizar al restaurar. */
+  optionId?: string;
 };
+
+type QuoteState = { options: CheckoutQuote[]; notice: string };
 
 export function CheckoutForm({ initialCart, config, whatsappOnly = false, initialCustomer = { name: "", email: "" } }: { initialCart: Cart; config: CheckoutConfig; whatsappOnly?: boolean; initialCustomer?: { name: string; email: string } }) {
   const router = useRouter();
@@ -52,6 +59,12 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
   const [values, setValues] = useState<Record<string, string>>({ name: initialCustomer.name, email: initialCustomer.email });
   const [accepted, setAccepted] = useState(false);
   const [quote, setQuote] = useState<CheckoutQuote | null>(null);
+  // Opciones cotizadas para la dirección (entrega propia, envío) y aviso del servidor si la entrega propia no aplica.
+  const [quoted, setQuoted] = useState<QuoteState>({ options: [], notice: "" });
+  // Pista opcional del navegador: solo ayuda al servidor a elegir entre direcciones homónimas; nunca decide.
+  const [locationHint, setLocationHint] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationMessage, setLocationMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [quoting, setQuoting] = useState(false);
   const [error, setError] = useState("");
@@ -68,11 +81,13 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
     coupon: cart.coupon?.code ?? null,
     customer: initialCustomer.email.trim().toLowerCase(),
   });
-  const deliveryEnabled = whatsappOnly ? { shipping: true, pickup: true } : { shipping: config.shippingRates.length > 0, pickup: !!config.pickup };
+  const deliveryEnabled = whatsappOnly ? { shipping: true, pickup: true } : { shipping: addressDeliveryAvailable(config), pickup: !!config.pickup };
+  // «A domicilio» abarca el envío y la entrega propia; la opción concreta sale de la cotización.
+  const deliveryMode: "shipping" | "pickup" = delivery === "pickup" ? "pickup" : "shipping";
   const payments: PaymentMethod[] = whatsappOnly
     ? ["mercadopago", ...(delivery === "pickup" ? ["cash" as const] : [])]
     : usablePayments(config, delivery).filter((method) => method !== "transfer");
-  const allowed = deliveryEnabled[delivery] && payments.includes(payment);
+  const allowed = deliveryEnabled[deliveryMode] && payments.includes(payment);
   const cartReady = cart.lines.length > 0 && !cart.hasBlockingIssues && !cart.hasPriceChanges;
   // Dejá enviar el intento sin marcar el consentimiento para poder explicar el error junto al checkbox.
   const canSubmit = whatsappOnly
@@ -90,7 +105,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
           const parsed = JSON.parse(stored) as Partial<CheckoutDraft>;
           if (parsed.version === 1 && parsed.cartSignature === cartSignature
             && (parsed.step === 1 || parsed.step === 2 || parsed.step === 3)
-            && (parsed.delivery === "pickup" || parsed.delivery === "shipping")
+            && (parsed.delivery === "pickup" || parsed.delivery === "shipping" || parsed.delivery === "local")
             && (parsed.payment === "cash" || parsed.payment === "mercadopago" || parsed.payment === "transfer")
             && checkoutPaymentOptions.includes(parsed.paymentOption as CheckoutDraft["paymentOption"])
             && parsed.values && typeof parsed.values === "object") {
@@ -102,7 +117,8 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
       if (draft) {
         const restoredValues = Object.fromEntries(checkoutFieldNames.map((name) => [name, typeof draft?.values[name] === "string" ? draft.values[name] : ""]));
         setValues({ name: initialCustomer.name, email: initialCustomer.email, ...restoredValues });
-        setDelivery(draft.delivery);
+        // La entrega propia solo vale con una cotización vigente: fuera del paso 3 se vuelve a «a domicilio».
+        setDelivery(draft.step === 3 || draft.delivery !== "local" ? draft.delivery : "shipping");
         setPayment(draft.payment);
         setPaymentOption(draft.paymentOption);
         setAccepted(draft.accepted === true);
@@ -110,10 +126,14 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
 
         if (draft.step === 3 && !whatsappOnly) {
           setQuoting(true);
-          getCheckoutQuote(draft.delivery, restoredValues.postalCode ?? "").then((result) => {
+          const savedOption = draft.optionId;
+          getCheckoutQuote(quoteRequest(draft.delivery, restoredValues, null)).then((result) => {
             if (!active) return;
-            if (result.ok) setQuote(result.quote);
-            else { setStep(2); setError(result.error + " Revisá la entrega para continuar."); }
+            if (!result.ok) { setStep(2); if (draft.delivery === "local") setDelivery("shipping"); setError(result.error + " Revisá la entrega para continuar."); return; }
+            setQuoted({ options: result.options, notice: result.notice ?? "" });
+            const restored = result.options.find((option) => option.optionId === savedOption) ?? (result.options.length === 1 ? result.options[0] : null);
+            if (restored && (restored.delivery ?? draft.delivery) === draft.delivery) setQuote(restored);
+            else { setStep(2); if (draft.delivery === "local") setDelivery("shipping"); setError("Volvé a elegir cómo recibir tu pedido para continuar."); }
           }).catch(() => {
             if (!active) return;
             setStep(2);
@@ -129,10 +149,10 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
 
   useEffect(() => {
     if (!draftReady) return;
-    const draft: CheckoutDraft = { version: 1, cartSignature, step, values, delivery, payment, paymentOption, accepted };
+    const draft: CheckoutDraft = { version: 1, cartSignature, step, values, delivery, payment, paymentOption, accepted, optionId: quote?.optionId };
     try { sessionStorage.setItem(checkoutDraftKey, JSON.stringify(draft)); }
     catch { /* El almacenamiento de sesión es opcional. */ }
-  }, [accepted, cartSignature, delivery, draftReady, payment, paymentOption, step, values]);
+  }, [accepted, cartSignature, delivery, draftReady, payment, paymentOption, quote?.optionId, step, values]);
 
   function goTo(next: 1 | 2 | 3) {
     setDirection(next > step ? "forward" : "backward");
@@ -159,7 +179,44 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
     });
   }
 
-  function invalidateQuote() { quoteVersion.current += 1; setQuote(null); }
+  function invalidateQuote() {
+    quoteVersion.current += 1;
+    setQuote(null);
+    setQuoted({ options: [], notice: "" });
+    // La entrega propia depende de la dirección: si cambia, vuelve a «a domicilio» hasta recotizar.
+    setDelivery((current) => current === "local" ? "shipping" : current);
+  }
+
+  /** Ajusta el medio de pago si el elegido no se puede usar con la nueva entrega (p. ej. efectivo). */
+  function syncPayment(nextDelivery: DeliveryMethod) {
+    const next: PaymentMethod[] = whatsappOnly
+      ? ["mercadopago", ...(nextDelivery === "pickup" ? ["cash" as const] : [])]
+      : usablePayments(config, nextDelivery).filter((method) => method !== "transfer");
+    if (!next.includes(payment) && next[0]) { setPayment(next[0]); setPaymentOption(next[0] === "cash" ? "Efectivo" : "Mercado Pago"); }
+  }
+
+  function selectOption(option: CheckoutQuote) {
+    const nextDelivery = option.delivery ?? (delivery === "pickup" ? "pickup" : "shipping");
+    setQuote(option);
+    setDelivery(nextDelivery);
+    syncPayment(nextDelivery);
+    setError("");
+  }
+
+  function useMyLocation() {
+    if (locating) return;
+    if (!("geolocation" in navigator)) { setLocationMessage("Tu navegador no permite compartir la ubicación. Completá la dirección y calculá el envío."); return; }
+    setLocating(true); setLocationMessage("");
+    navigator.geolocation.getCurrentPosition((position) => {
+      setLocating(false);
+      setLocationHint({ lat: position.coords.latitude, lng: position.coords.longitude });
+      invalidateQuote();
+      setLocationMessage("Listo. Usamos tu ubicación solo para ubicar tu dirección en el mapa: no la guardamos. Tocá «Calcular envío».");
+    }, () => {
+      setLocating(false);
+      setLocationMessage("No pudimos obtener tu ubicación. Podés seguir con la dirección escrita.");
+    }, { enableHighAccuracy: false, timeout: 10_000, maximumAge: 5 * 60_000 });
+  }
   function openWhatsAppInNewTab(message: string) {
     const tab = window.open(whatsappUrl(message), "_blank");
     if (tab) tab.opener = null;
@@ -182,25 +239,30 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
     openWhatsAppInNewTab(message);
   }
 
-  function changeDelivery(value: DeliveryMethod) {
-    setDelivery(value);
+  function changeDelivery(value: "shipping" | "pickup") {
     invalidateQuote();
-    const next: PaymentMethod[] = whatsappOnly
-      ? ["mercadopago", ...(value === "pickup" ? ["cash" as const] : [])]
-      : usablePayments(config, value).filter((method) => method !== "transfer");
-    if (!next.includes(payment) && next[0]) { setPayment(next[0]); setPaymentOption(next[0] === "cash" ? "Efectivo" : "Mercado Pago"); }
+    setDelivery(value);
+    syncPayment(value);
   }
 
-  async function calculate() {
+  /** Cotiza y devuelve la opción elegida (sola si hay una) y cuántas hay; false si falló. El estado se actualiza aparte. */
+  async function calculate(): Promise<false | { chosen: CheckoutQuote | null; count: number }> {
     if (!formRef.current || quoting) return false;
     setQuoting(true); setError("");
     const version = ++quoteVersion.current;
-    const data = new FormData(formRef.current);
+    const data = Object.fromEntries(new FormData(formRef.current)) as Record<string, string>;
     try {
-      const result = await getCheckoutQuote(delivery, String(data.get("postalCode") ?? ""));
+      const result = await getCheckoutQuote(quoteRequest(deliveryMode, data, locationHint));
       if (version !== quoteVersion.current) return false;
-      if (result.ok) { setQuote(result.quote); return true; }
-      setQuote(null); setError(result.error); return false;
+      if (!result.ok) { setQuote(null); setQuoted({ options: [], notice: result.notice ?? "" }); setError(result.error); return false; }
+      setQuoted({ options: result.options, notice: result.notice ?? "" });
+      // Con una sola opción se elige sola; con varias, el cliente decide (la entrega propia tiene costo a convenir).
+      const keep = result.options.find((option) => option.optionId && option.optionId === quote?.optionId);
+      const chosen = keep ?? (result.options.length === 1 ? result.options[0] : null);
+      if (chosen) { selectOption(chosen); return { chosen, count: result.options.length }; }
+      setQuote(null);
+      if (delivery === "local") setDelivery("shipping");
+      return { chosen: null, count: result.options.length };
     } catch { setError("No pudimos conectar. Volvé a calcular la entrega."); return false; }
     finally { setQuoting(false); }
   }
@@ -225,12 +287,20 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
   }
 
   async function continueToPayment() {
-    if (!deliveryEnabled[delivery]) { setError("Elegí una forma de entrega para continuar."); return; }
-    const deliveryFields = delivery === "shipping" ? ["street", "streetNumber", "postalCode", "city", "province"] : [];
+    if (!deliveryEnabled[deliveryMode]) { setError("Elegí una forma de entrega para continuar."); return; }
+    const deliveryFields = deliveryMode === "shipping" ? [...addressFieldNames] : [];
     if (!validateVisibleFields(deliveryFields)) return;
-    const canQuote = delivery === "shipping" ? config.shippingRates.length > 0 : !!config.pickup;
+    const canQuote = deliveryMode === "shipping" ? addressDeliveryAvailable(config) : !!config.pickup;
     if (!whatsappOnly || canQuote) {
-      if (!await calculate()) return;
+      // Si ya hay opciones para esta dirección no se recotiza: se usa la elegida.
+      let chosen = quote;
+      let count = quoted.options.length;
+      if (!chosen && !count) {
+        const result = await calculate();
+        if (!result) return;
+        ({ chosen, count } = result);
+      }
+      if (!chosen) { if (count > 1) setError("Elegí cómo querés recibir tu pedido para continuar."); return; }
     } else setQuote(null);
     goTo(3);
   }
@@ -300,7 +370,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
         onChange={(event) => {
           setValues((current) => ({ ...current, [name]: event.target.value }));
           if (fields[name]) setFields((current) => { const next = { ...current }; delete next[name]; return next; });
-          if (name === "postalCode") invalidateQuote();
+          if ((addressFieldNames as readonly string[]).includes(name) && (quote || quoted.options.length)) invalidateQuote();
         }}/>
       {fields[name] ? <small className="form-error" id={`error-${name}`}>{fields[name]}</small> : null}
     </label>;
@@ -314,7 +384,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
   const summaryItems = cart.lines.map((line) => <article key={line.variantId}><div className="checkout-line-thumb"><ProductImage product={line} sizes="64px" decorative/><span aria-hidden="true">{line.quantity}</span></div><div><strong>{line.name}</strong><small>{line.quantity} × {formatArs(line.unitPriceArs)}</small></div><b>{line.available ? formatArs(line.lineTotalArs) : "Sin stock"}</b></article>);
   const summaryTotals = <><p><span>Subtotal</span><strong>{formatArs(cart.subtotalArs)}</strong></p>
     {cart.coupon ? <p><span>Cupón {cart.coupon.code}</span><strong>− {formatArs(cart.discountArs)}</strong></p> : null}
-    <p><span>Entrega</span><strong className={quote ? undefined : "is-muted"}>{quote ? formatArs(quote.shippingArs) : whatsappOnly ? "A coordinar" : "A confirmar"}</strong></p>
+    <p><span>Entrega</span><strong className={quote ? undefined : "is-muted"}>{quote ? quote.delivery === "local" ? "A convenir" : formatArs(quote.shippingArs) : whatsappOnly ? "A coordinar" : "A confirmar"}</strong></p>
     <div><span>Total</span><strong>{total}</strong></div></>;
 
   return <>
@@ -340,11 +410,11 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
         </section>
         <section className="checkout-card checkout-step-panel" data-direction={direction} hidden={step !== 2}><header><span>2</span><h2>¿Te lo enviamos o retirás?</h2></header>
           <div className="checkout-choices">
-            <label className={delivery === "shipping" && deliveryEnabled.shipping ? "is-active" : ""}><input type="radio" name="delivery" value="shipping" checked={delivery === "shipping" && deliveryEnabled.shipping} disabled={!deliveryEnabled.shipping || busy} onChange={() => changeDelivery("shipping")}/><b aria-hidden="true"><Truck size={18}/></b><span><strong>Envío a domicilio</strong><small>{config.shippingRates.length ? "Calculá el costo con tu código postal." : whatsappOnly ? "El costo se confirma por WhatsApp." : "Envíos aún no disponibles."}</small></span></label>
-            <label className={delivery === "pickup" && deliveryEnabled.pickup ? "is-active" : ""}><input type="radio" name="delivery" value="pickup" checked={delivery === "pickup" && deliveryEnabled.pickup} disabled={!deliveryEnabled.pickup || busy} onChange={() => changeDelivery("pickup")}/><b aria-hidden="true"><Store size={18}/></b><span><strong>Retiro en Quilmes</strong><small>{config.pickup ? "Sin costo de entrega." : whatsappOnly ? "Dirección y horario a coordinar por WhatsApp." : "Retiro aún no disponible."}</small></span></label>
+            <label className={deliveryMode === "shipping" && deliveryEnabled.shipping ? "is-active" : ""}><input type="radio" name="delivery-mode" value="shipping" checked={deliveryMode === "shipping" && deliveryEnabled.shipping} disabled={!deliveryEnabled.shipping || busy} onChange={() => changeDelivery("shipping")}/><b aria-hidden="true"><Truck size={18}/></b><span><strong>Envío a domicilio</strong><small>{addressDeliveryAvailable(config) ? config.localDelivery ? `Calculá el costo con tu dirección. Cerca del local (hasta ${config.localDelivery.radiusKm.toLocaleString("es-AR")} km) te lo llevamos nosotros.` : "Calculá el costo con tu dirección." : whatsappOnly ? "El costo se confirma por WhatsApp." : "Envíos aún no disponibles."}</small></span></label>
+            <label className={delivery === "pickup" && deliveryEnabled.pickup ? "is-active" : ""}><input type="radio" name="delivery-mode" value="pickup" checked={delivery === "pickup" && deliveryEnabled.pickup} disabled={!deliveryEnabled.pickup || busy} onChange={() => changeDelivery("pickup")}/><b aria-hidden="true"><Store size={18}/></b><span><strong>Retiro en Quilmes</strong><small>{config.pickup ? "Sin costo de entrega." : whatsappOnly ? "Dirección y horario a coordinar por WhatsApp." : "Retiro aún no disponible."}</small></span></label>
           </div>
           <div className="checkout-pickup-map" hidden={delivery !== "pickup"}><div className="checkout-pickup-map__frame"><iframe title="Ubicación de QuilGym en Google Maps" src={mapEmbedUrl} loading="lazy" referrerPolicy="no-referrer-when-downgrade"/><div className="checkout-pickup-map__details"><strong>{config.pickup?.address ?? "QuilGym · Quilmes"}</strong><span>{config.pickup?.hours ?? "Horario a coordinar"}</span><span>Esperá el aviso de preparación antes de acercarte.</span></div><a className="checkout-pickup-map__link" href={quilgymMapsUrl} target="_blank" rel="noopener noreferrer">Abrir en Google Maps<span className="sr-only"> (se abre en una pestaña nueva)</span></a></div></div>
-          <div hidden={delivery === "pickup"}><h3>Dirección de entrega</h3><div className="form-grid">
+          <div hidden={deliveryMode === "pickup"}><h3>Dirección de entrega</h3><div className="form-grid">
             {field("street", "Calle", { required: true, autoComplete: "address-line1", maxLength: 160, className: "span-2" })}
             {field("streetNumber", "Número", { required: true, maxLength: 12 })}
             {field("apartment", "Piso / Depto.", { autoComplete: "address-line2", maxLength: 60 })}
@@ -353,10 +423,27 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
             {field("province", "Provincia", { required: true, autoComplete: "address-level1", maxLength: 100 })}
           </div></div>
           <div className="form-grid">{field("notes", "Indicaciones (opcional)", { maxLength: 400, className: "span-4" })}</div>
-          {delivery === "shipping" && config.shippingRates.length > 0 ? <button type="button" className="button button--outline" disabled={quoting || busy} onClick={() => { void calculate(); }}>{quoting ? "Calculando…" : "Calcular envío"}</button> : null}
-          {delivery === "shipping" && whatsappOnly && config.shippingRates.length === 0 ? <button type="button" className="button button--outline" disabled={busy} onClick={askShippingCost}>Consultar costo por WhatsApp</button> : null}
+          {deliveryMode === "shipping" && addressDeliveryAvailable(config) ? <div className="delivery-quote-actions">
+            <button type="button" className="button button--outline" disabled={quoting || busy} onClick={() => { if (validateVisibleFields([...addressFieldNames])) void calculate(); }}>{quoting ? "Calculando…" : quoted.options.length ? "Volver a calcular" : "Calcular envío"}</button>
+            {config.localDelivery ? <button type="button" className="delivery-locate" disabled={locating || busy} onClick={useMyLocation} aria-describedby="delivery-locate-help"><LocateFixed aria-hidden="true" size={17}/>{locating ? "Buscando tu ubicación…" : locationHint ? "Ubicación compartida" : "Usar mi ubicación"}</button> : null}
+            {config.localDelivery ? <small id="delivery-locate-help" className="delivery-locate__help">Opcional: ayuda a ubicar tu dirección si hay calles con el mismo nombre. Decidimos con la dirección que escribiste.</small> : null}
+          </div> : null}
+          {locationMessage ? <p className="delivery-locate__status" role="status">{locationMessage}</p> : null}
+          {deliveryMode === "shipping" && whatsappOnly && !addressDeliveryAvailable(config) ? <button type="button" className="button button--outline" disabled={busy} onClick={askShippingCost}>Consultar costo por WhatsApp</button> : null}
           {delivery === "pickup" && config.pickup ? <button type="button" className="button button--outline" disabled={quoting || busy} onClick={() => { void calculate(); }}>{quoting ? "Calculando…" : "Confirmar retiro gratis"}</button> : null}
-          {quote ? <p className="checkout-quote" role="status"><strong>{quote.label} · {quote.shippingArs === 0 ? "Sin costo" : formatArs(quote.shippingArs)}</strong><br/>{quote.estimate}</p> : null}
+          {deliveryMode === "shipping" && quoted.options.length ? <fieldset className="delivery-options"><legend>¿Cómo querés recibirlo?</legend>
+            {quoted.options.map((option) => { const local = option.delivery === "local"; const checked = quote?.token === option.token; return <label key={option.optionId ?? option.token} className={`delivery-option${checked ? " is-active" : ""}${local ? " delivery-option--local" : ""}`}>
+              <input type="radio" name="delivery-option" value={option.optionId ?? ""} checked={checked} disabled={busy} onChange={() => selectOption(option)} aria-describedby={local ? `delivery-note-${option.optionId}` : undefined}/>
+              <b aria-hidden="true">{local ? <MapPin size={18}/> : <Truck size={18}/>}</b>
+              <span className="delivery-option__body"><strong>{option.label}</strong><small>{option.estimate}</small>
+                {local && typeof option.distanceMeters === "number" ? <small className="delivery-option__distance">A {formatDistance(option.distanceMeters)} del local, aproximadamente</small> : null}
+                {local && option.note ? <small className="delivery-option__note" id={`delivery-note-${option.optionId}`}><Info aria-hidden="true" size={14}/>{option.note}.</small> : null}
+              </span>
+              <span className="delivery-option__price">{local ? <>$0<small>Costo a convenir</small></> : formatArs(option.shippingArs)}</span>
+            </label>; })}
+          </fieldset> : null}
+          {deliveryMode === "shipping" && quoted.notice ? <p className="delivery-notice" role="status"><Info aria-hidden="true" size={16}/>{quoted.notice}</p> : null}
+          {delivery === "pickup" && quote ? <p className="checkout-quote" role="status"><strong>{quote.label} · {quote.shippingArs === 0 ? "Sin costo" : formatArs(quote.shippingArs)}</strong><br/>{quote.estimate}</p> : null}
           <div className="checkout-step-actions"><button type="button" className="button button--outline" onClick={() => goTo(1)}><ArrowLeft aria-hidden="true" size={18}/>Volver</button><button type="button" className="button button--dark" disabled={quoting || busy} onClick={() => { void continueToPayment(); }}>{quoting ? "Calculando…" : "Seguir con pago"}<ArrowRight aria-hidden="true" size={18}/></button></div>
         </section>
         <section className="checkout-card checkout-step-panel" data-direction={direction} hidden={step !== 3}><header><span>3</span><h2>Elegí cómo pagar</h2></header>
@@ -376,7 +463,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
           <input type="hidden" name="payment" value={payment}/>
           <p className="checkout-payment-note">{whatsappOnly ? "Indicá tu preferencia: QuilGym te confirmará disponibilidad y los pasos para pagar por WhatsApp. Todavía no se realiza ningún cobro." : payment === "mercadopago" && (paymentOption === "Tarjeta de débito" || paymentOption === "Tarjeta de crédito") ? config.demo ? "En la simulación no se piden datos de tarjeta. En producción, al tocar «Ir a pagar», se abre el formulario seguro de Mercado Pago para completar número, vencimiento, código de seguridad, titular y DNI." : paymentOption === "Tarjeta de débito" ? "Al tocar «Ir a pagar» guardamos el pedido y se abre el formulario seguro de Mercado Pago para tu tarjeta de débito (un solo pago)." : "Al tocar «Ir a pagar» guardamos el pedido y se abre el formulario seguro de Mercado Pago, donde elegís las cuotas de tu tarjeta de crédito." : payment === "mercadopago" && paymentOption === "Mercado Crédito" ? config.demo ? "Simulación local: no se realiza ningún cobro. En producción, Mercado Pago abrirá el pago con Mercado Crédito y el importe de tu compra." : "Mercado Pago abrirá el importe de la compra con Mercado Crédito preseleccionado, si está habilitado para la cuenta y disponible para vos." : payment === "mercadopago" ? config.demo ? "Simulación local: no se realiza ningún cobro. En producción, Mercado Pago abrirá el pago con el importe de tu compra." : "Mercado Pago abrirá el checkout seguro con el importe de tu compra." : "El pago en efectivo se coordina al retirar en el local."}</p>
           {needsTaxId ? <fieldset className="checkout-tax-id"><legend>Datos para la factura</legend><p>Por el importe de la compra, ARCA exige identificar al comprador en la factura.</p>
-            <div className="form-grid"><label>Tipo<select name="taxIdType" value={values.taxIdType ?? "DNI"} onChange={(event) => setValues((current) => ({ ...current, taxIdType: event.target.value }))}><option value="DNI">DNI</option><option value="CUIT">CUIT/CUIL</option></select></label>
+            <div className="form-grid"><label>Tipo<select className="select-field" name="taxIdType" value={values.taxIdType ?? "DNI"} onChange={(event) => setValues((current) => ({ ...current, taxIdType: event.target.value }))}><option value="DNI">DNI</option><option value="CUIT">CUIT/CUIL</option></select></label>
               {field("taxIdNumber", "Número", { required: true, maxLength: 13, className: "span-2", inputMode: "numeric" })}</div></fieldset> : null}
           <label className={`terms${fields.accepted ? " is-invalid" : ""}`}><input type="checkbox" name="accepted" checked={accepted} aria-invalid={fields.accepted ? true : undefined} aria-describedby={fields.accepted ? "error-accepted" : undefined} onChange={(event) => { setAccepted(event.target.checked); if (fields.accepted) setFields((current) => { const next = { ...current }; delete next.accepted; return next; }); }}/>{whatsappOnly ? "Revisé mis datos y quiero enviar esta solicitud por WhatsApp." : "Confirmo que los datos, productos y forma de entrega son correctos."}</label>
           {fields.accepted ? <small className="form-error checkout-checkbox-error" id="error-accepted">{fields.accepted}</small> : null}
@@ -396,4 +483,11 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
       </aside>
     </form>
   </>;
+}
+
+/** Pedido de cotización a partir de los campos del formulario. La ubicación del navegador viaja solo como pista. */
+function quoteRequest(delivery: DeliveryMethod | "shipping", values: Record<string, string | undefined>, hint: { lat: number; lng: number } | null): CheckoutQuoteRequest {
+  if (delivery === "pickup") return { delivery: "pickup" };
+  const value = (name: string) => String(values[name] ?? "").trim();
+  return { delivery: "address", hint, address: { street: value("street"), streetNumber: value("streetNumber"), postalCode: value("postalCode"), city: value("city"), province: value("province") } };
 }

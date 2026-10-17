@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Ban, CheckCircle2, RotateCcw, Truck, Undo2 } from "lucide-react";
-import { cancelAdminOrder, confirmOrderPayment, markOrderRefunded, reactivatePaidOrder, updateOrderShipment, type AdminOrderActionResult } from "@/lib/admin-orders-actions";
+import { useRouter } from "next/navigation";
+import { Ban, CheckCircle2, Navigation, PackagePlus, RotateCcw, Truck, Undo2 } from "lucide-react";
+import { cancelAdminOrder, confirmOrderPayment, createCarrierShipment, markOrderRefunded, reactivatePaidOrder, startLocalDelivery, updateOrderShipment, type AdminOrderActionResult } from "@/lib/admin-orders-actions";
+import type { DeliveryMethod } from "@/lib/checkout-types";
 import { shipmentStatusLabels, type ShipmentStatus } from "@/lib/admin-orders-types";
 
 type ActionKey = "confirm" | "cancel" | "refund" | "reactivate";
@@ -34,14 +36,63 @@ export function AdminOrderActions({ orderId, available, cancelWarning }: { order
   </div>;
 }
 
-export function AdminShipmentForm({ orderId, allowed, status, trackingCode, delivery }: { orderId: string; allowed: ShipmentStatus[]; status: string; trackingCode: string | null; delivery: "pickup" | "shipping" }) {
+/** Alta del envío en el transportista configurado: guarda la referencia y pasa el envío a «Enviado». */
+export function AdminCarrierShipment({ orderId, carrierLabel }: { orderId: string; carrierLabel: string }) {
   const [result, setResult] = useState<AdminOrderActionResult | null>(null);
   const [pending, start] = useTransition();
-  if (!allowed.length) return <p className="admin-help">El envío se gestiona cuando el pedido esté pagado{delivery === "pickup" ? " o sea en efectivo al retirar" : ""}.</p>;
+  return <div className="admin-order-carrier">
+    <button type="button" className="admin-primary" disabled={pending || result?.ok === true} onClick={() => start(async () => setResult(await createCarrierShipment(orderId)))}><PackagePlus size={17} aria-hidden="true"/> {pending ? "Generando…" : `Generar envío en ${carrierLabel}`}</button>
+    <p className="admin-help">Da de alta el envío con la dirección y el peso del pedido, guarda la referencia y le avisa al cliente que lo despachaste.</p>
+    <Feedback result={result}/>
+  </div>;
+}
+
+const etaPresets = [["5h", "Próximas 5 h"], ["12h", "Próximas 12 h"], ["24h", "Próximas 24 h"], ["custom", "Personalizada"]] as const;
+
+/**
+ * Entrega propia: elige la ventana de llegada, pasa el pedido a «En camino» y abre la vista de reparto,
+ * que comparte la ubicación del celular mientras está abierta.
+ */
+export function AdminStartDelivery({ orderId }: { orderId: string }) {
+  const router = useRouter();
+  const [kind, setKind] = useState<(typeof etaPresets)[number][0]>("5h");
+  const [result, setResult] = useState<AdminOrderActionResult | null>(null);
+  const [pending, start] = useTransition();
+  return <form className="admin-start-delivery" onSubmit={(event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const toIso = (name: string) => { const value = String(data.get(name) ?? ""); const date = new Date(value); return value && !Number.isNaN(date.getTime()) ? date.toISOString() : ""; };
+    const choice = kind === "custom" ? { kind, from: toIso("etaFrom"), to: toIso("etaTo") } : { kind };
+    start(async () => {
+      const next = await startLocalDelivery(orderId, choice);
+      setResult(next);
+      if (next.ok) router.push(`/admin/pedidos/${orderId}/reparto`);
+    });
+  }}>
+    <fieldset><legend>¿Cuándo llega?</legend>
+      <div className="admin-start-delivery__options">{etaPresets.map(([value, label]) => <label key={value} className={kind === value ? "is-active" : undefined}><input type="radio" name="etaKind" value={value} checked={kind === value} onChange={() => setKind(value)}/>{label}</label>)}</div>
+    </fieldset>
+    {kind === "custom" ? <div className="admin-start-delivery__custom"><label>Desde<input type="datetime-local" name="etaFrom" required/></label><label>Hasta<input type="datetime-local" name="etaTo" required/></label></div> : null}
+    <button type="submit" className="admin-primary" disabled={pending}><Navigation size={17} aria-hidden="true"/> {pending ? "Saliendo…" : "Salir a entregar"}</button>
+    <p className="admin-help">Le muestra al cliente la ventana de llegada y tu ubicación en el mapa mientras la vista de reparto esté abierta.</p>
+    <Feedback result={result}/>
+  </form>;
+}
+
+const shipmentHelp: Record<DeliveryMethod, string> = {
+  pickup: "«Listo para retirar» le avisa al cliente por email una sola vez.",
+  shipping: "«Enviado» le avisa al cliente por email una sola vez, con el seguimiento si lo cargaste.",
+  local: "Entrega propia: pasalo a «En camino» cuando salgas a entregar y a «Entregado» al dejarlo. El costo se arregla con el cliente al entregar.",
+};
+
+export function AdminShipmentForm({ orderId, allowed, status, trackingCode, delivery }: { orderId: string; allowed: ShipmentStatus[]; status: string; trackingCode: string | null; delivery: DeliveryMethod }) {
+  const [result, setResult] = useState<AdminOrderActionResult | null>(null);
+  const [pending, start] = useTransition();
+  if (!allowed.length) return <p className="admin-help">El envío se gestiona cuando el pedido esté pagado{delivery === "pickup" ? " o sea en efectivo al retirar" : delivery === "local" ? " o sea en efectivo al entregar" : ""}.</p>;
   return <form className="admin-order-shipment" onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); start(async () => setResult(await updateOrderShipment(orderId, { status: data.get("status"), trackingCode: data.get("trackingCode") ?? "" }))); }}>
     <label>Estado del envío<select className="select-field" name="status" defaultValue={allowed.includes(status as ShipmentStatus) ? status : allowed[0]}>{allowed.map((value) => <option key={value} value={value}>{shipmentStatusLabels[value]}</option>)}</select></label>
     {delivery === "shipping" && <label>Código de seguimiento<input name="trackingCode" defaultValue={trackingCode ?? ""} maxLength={80} autoComplete="off" placeholder="Opcional"/></label>}
-    <p className="admin-help">{delivery === "pickup" ? "«Listo para retirar» le avisa al cliente por email una sola vez." : "«Enviado» le avisa al cliente por email una sola vez, con el seguimiento si lo cargaste."}</p>
+    <p className="admin-help">{shipmentHelp[delivery]}</p>
     <button type="submit" className="admin-primary" disabled={pending}><Truck size={17} aria-hidden="true"/> {pending ? "Guardando…" : "Guardar envío"}</button>
     <Feedback result={result}/>
   </form>;

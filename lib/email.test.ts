@@ -68,3 +68,54 @@ describe("plantillas de emails", () => {
     expect(authEmailTemplate("verify-email", null, "https://quilgym.test/v?token=1", null).text).toContain("Confirmar email: https://quilgym.test/v?token=1");
   });
 });
+
+describe("emails de entrega (Fase 6)", () => {
+  const link = "https://quilgym.test/checkout/confirmacion/1?t=x";
+  const trackingLink = "https://quilgym.test/pedido/1?t=x";
+  const local: OrderEmailOrder = { ...order, status: "approved", delivery: "local", pickupDetails: null,
+    address: { street: "Rivadavia", number: "500", apartment: "", postalCode: "1878", city: "Quilmes", province: "Buenos Aires" } };
+  const from = new Date("2026-10-17T15:00:00-03:00");
+
+  it("entrega propia recién despachada: «en las próximas X horas» y botón de seguimiento", () => {
+    const email = orderEmailContent("out_for_delivery", { order: local, link, trackingLink, siteUrl: null, now: new Date(from.getTime() + 60_000),
+      tracking: { carrier: "own", etaFrom: from, etaTo: new Date(from.getTime() + 5 * 3_600_000) } });
+    expect(email.subject).toBe("Tu pedido llega en las próximas 5 horas · pedido QG-1A2B3C4D");
+    expect(email.text).toContain(`Seguir mi pedido: ${trackingLink}`);
+    expect(email.text).toContain("El costo de la entrega se arregla con QuilGym al llevar tu pedido");
+  });
+
+  it("si el aviso sale más tarde, muestra la ventana exacta en hora argentina", () => {
+    const email = orderEmailContent("out_for_delivery", { order: local, link, trackingLink, siteUrl: null, now: new Date("2026-10-17T17:30:00-03:00"),
+      tracking: { carrier: "own", etaFrom: from, etaTo: new Date("2026-10-17T20:00:00-03:00") } });
+    expect(email.subject).toContain("Tu pedido llega hoy entre las 15:00 y las 20:00");
+  });
+
+  it("Correo Argentino: «En distribución» con fecha estimada si existe", () => {
+    const shipping = { ...local, delivery: "shipping" };
+    const withDate = orderEmailContent("out_for_delivery", { order: shipping, link, trackingLink, siteUrl: null, shipment: { label: "Correo Argentino a domicilio", trackingCode: "CP123" },
+      tracking: { carrier: "correo_argentino", etaFrom: null, etaTo: new Date("2026-10-20T12:00:00-03:00") } });
+    expect(withDate.subject).toBe("Tu pedido QG-1A2B3C4D está en distribución");
+    expect(withDate.text).toContain("En distribución");
+    expect(withDate.text).toContain("Fecha estimada de entrega: martes, 20 de octubre.");
+    expect(withDate.text).toContain("Seguimiento: CP123");
+    expect(orderEmailContent("out_for_delivery", { order: shipping, link, siteUrl: null }).text).not.toContain("Fecha estimada");
+  });
+
+  it("entregado: título, link a la compra y seguimiento como enlace secundario", () => {
+    const email = orderEmailContent("delivered", { order: local, link, trackingLink, siteUrl: null });
+    expect(email.subject).toBe("¡Tu pedido QG-1A2B3C4D fue entregado!");
+    expect(email.text).toContain("¡Tu pedido fue entregado!");
+    expect(email.text).toContain(`Ver mi pedido: ${link}`);
+    expect(email.text).toContain(`Seguir mi pedido: ${trackingLink}`);
+  });
+
+  it("todos los emails de pedido muestran el número y el seguimiento", () => {
+    const events = ["created", "approved", "payment_rejected", "rejected", "cancelled", "expired", "refunded", "ready_for_pickup", "shipped", "out_for_delivery", "delivered", "invoice_issued"] as const;
+    for (const event of events) {
+      const email = orderEmailContent(event, { order: local, link, trackingLink, siteUrl: "https://quilgym.test" });
+      expect(email.text, event).toContain("Pedido: QG-1A2B3C4D");
+      expect(email.text, event).toContain(`Seguir mi pedido: ${trackingLink}`);
+      expect(email.html, event).toContain(trackingLink);
+    }
+  });
+});

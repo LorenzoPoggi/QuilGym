@@ -32,3 +32,9 @@ export function verifyMercadoPagoSignature(signature: string | null, requestId: 
   const manifest = `id:${dataId.toLowerCase()};request-id:${requestId};ts:${parts.ts};`;
   return timingSafeEqual(createHmac("sha256", secret).update(manifest).digest(), Buffer.from(parts.v1, "hex"));
 }
+
+/** Huella de la dirección: una cotización firmada solo vale para la dirección con la que se pidió. */
+export function addressFingerprint(address: { street: string; streetNumber: string; postalCode: string; city: string; province: string }) {
+  const normalize = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  return createHash("sha256").update(JSON.stringify([address.street, address.streetNumber, address.postalCode.toUpperCase().replace(/\s/g, ""), address.city, address.province].map(normalize))).digest("hex").slice(0, 32);
+}
