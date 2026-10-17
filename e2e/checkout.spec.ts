@@ -5,7 +5,8 @@ async function checkout(page: Page) {
   await page.goto("/productos");
   await page.getByRole("button", { name: /^Agregar .* al carrito$/ }).first().click();
   await page.getByRole("link", { name: /Iniciar compra/ }).click();
-  await expect(page.getByText("La compra online se habilita pronto", { exact: true })).toBeVisible();
+  // El checkout puede estar online o en modo WhatsApp según el entorno: los dos empiezan por los datos de contacto.
+  await expect(page.getByLabel("Nombre y apellido")).toBeVisible();
   await page.getByLabel("Nombre y apellido").fill("Cliente QA QuilGym");
   await page.getByLabel("Email", { exact: true }).fill("quilgym-qa@example.com");
   await page.getByLabel("Teléfono").fill("1144444444");
@@ -14,6 +15,8 @@ async function checkout(page: Page) {
 }
 
 test("checkout: mapa móvil libre y validación del consentimiento accesible", async ({ page }) => {
+  // Agregar al carrito escribe en la base: solo con una base aislada (ver e2e/database-safety.ts).
+  test.skip(!databaseWritesEnabled, databaseWriteSkipReason);
   await checkout(page);
   await page.getByRole("radio", { name: /Retiro en Quilmes/ }).check();
   const map = page.locator(".checkout-pickup-map");
