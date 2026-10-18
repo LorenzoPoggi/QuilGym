@@ -81,6 +81,14 @@
 .metrics-empty h2{margin:0}
 .metrics-empty p{margin:0;max-width:52ch;color:var(--m-muted)}
 .metrics-footnote a{color:inherit;font-weight:700}
+.metrics-tabs{display:inline-flex;gap:4px;padding:4px;border-radius:14px;background:var(--m-soft);justify-self:start;max-width:100%}
+.metrics-tabs a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 20px;border-radius:10px;color:#465155;text-decoration:none;font-weight:700}
+.metrics-tabs a:hover{color:var(--m-ink)}
+.metrics-tabs a[aria-current=page]{background:#fff;color:var(--m-ink);box-shadow:0 1px 3px rgba(31,35,37,.14)}
+.metrics-tabs a:focus-visible{outline:2px solid var(--m-ink);outline-offset:2px}
+.traffic-funnel ol{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:16px}
+.traffic-funnel li{display:grid;gap:6px}
+.traffic-funnel small{color:var(--m-muted)}
 .costs-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px}
 .costs-search{display:flex;align-items:center;gap:8px;flex:1;min-width:220px;min-height:44px;padding:0 12px;border:1px solid #d6dadd;border-radius:10px;background:#fff}
 .costs-search:focus-within{outline:2px solid var(--m-ink);outline-offset:2px}
@@ -104,5 +112,5 @@
 .costs-savebar .admin-error{flex-basis:100%;margin:0}
 @media(max-width:1100px){.metrics-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.metrics-custom{margin-left:0}}
 @media(max-width:768px){.metrics-hero{grid-template-columns:minmax(0,1fr);padding:22px 20px}.metrics-hero__side{gap:20px}.metrics-split{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:520px){.metrics-tiles{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.metrics-tile{padding:14px}.metrics-tile__value{font-size:1.2rem}.metrics-delta__vs{display:none}.metrics-periods>a{min-height:44px}.metrics-custom{width:100%}.metrics-custom label{flex:1}.metrics-custom input{width:100%}.costs-savebar{justify-content:space-between}}
+@media(max-width:520px){.metrics-tiles{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.metrics-tile{padding:14px}.metrics-tile__value{font-size:1.2rem}.metrics-delta__vs{display:none}.metrics-periods>a{min-height:44px}.metrics-tabs{width:100%}.metrics-tabs a{flex:1;padding:8px 12px}.metrics-custom{width:100%}.metrics-custom label{flex:1}.metrics-custom input{width:100%}.costs-savebar{justify-content:space-between}}
 @media(prefers-reduced-motion:reduce){.metrics-bar{transition:none}}

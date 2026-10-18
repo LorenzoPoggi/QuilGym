@@ -4,13 +4,14 @@ import type { MetricsData } from "@/lib/admin-metrics";
 import { byCategory, byPayment, change, daily, presetLabels, summarize, topProducts, type BreakdownRow, type MetricsPreset, type MetricsRange } from "@/lib/admin-metrics-core";
 import { metricsConfig } from "@/lib/metrics-config";
 import { SalesProfitChart } from "./admin-metrics-chart";
+import { MetricsTabs } from "./admin-metrics-tabs";
 
 const ars = (value: number) => `$${Math.round(value).toLocaleString("es-AR")}`;
 const pct = (value: number | null, digits = 1) => value === null ? "—" : `${(value * 100).toLocaleString("es-AR", { maximumFractionDigits: digits, minimumFractionDigits: 0 })}%`;
 const presets: MetricsPreset[] = ["hoy", "7d", "30d", "mes", "mes-anterior"];
 
 /** Variación contra el período anterior. `tone` neutral para costos: subir no es «bueno» ni «malo». */
-function Delta({ value, tone = "good-up" }: { value: number | null; tone?: "good-up" | "neutral" }) {
+export function Delta({ value, tone = "good-up" }: { value: number | null; tone?: "good-up" | "neutral" }) {
   if (value === null) return <span className="metrics-delta metrics-delta--none">Sin datos del período anterior</span>;
   const rounded = Math.round(value * 1000) / 10;
   const Icon = rounded > 0 ? ArrowUpRight : rounded < 0 ? ArrowDownRight : Minus;
@@ -52,6 +53,8 @@ export function MetricsDashboard({ range, data }: { range: MetricsRange; data: M
 
   return <div className="admin-content metrics-page">
     <header className="admin-page-head"><div><p className="admin-eyebrow">NEGOCIO</p><h1>Métricas</h1><p>Ventas y rentabilidad de los pedidos pagados. {presetLabels[range.preset]}: {range.label}.</p></div></header>
+
+    <MetricsTabs active="ventas"/>
 
     <nav className="metrics-periods" aria-label="Período">
       {presets.map((preset) => <Link key={preset} href={`/admin/metricas?p=${preset}`} aria-current={range.preset === preset ? "page" : undefined}>{presetLabels[preset]}</Link>)}
