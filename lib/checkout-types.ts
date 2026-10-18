@@ -57,7 +57,7 @@ export type CheckoutQuoteRequest =
 export type CheckoutQuoteResponse =
   | { ok: true; quote: CheckoutQuote; options: CheckoutQuote[]; notice?: string }
   | { ok: false; error: string; notice?: string };
-export type CheckoutResult = { ok: true; orderId: string } | { ok: false; error: string; fields?: Record<string, string> };
+export type CheckoutResult = { ok: true; orderId: string; redirectUrl?: string } | { ok: false; error: string; fields?: Record<string, string> };
 export const orderStatusLabels: Record<OrderStatus, string> = {
   pending: "Pendiente de pago", approved: "Pago aprobado", rejected: "Pago rechazado",
   cancelled: "Pedido cancelado", refunded: "Pago reembolsado",

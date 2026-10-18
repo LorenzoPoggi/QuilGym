@@ -8,7 +8,6 @@ import { ArrowLeft, ArrowRight, Check, ChevronDown, CreditCard, Info, LocateFixe
 import type { Cart } from "@/lib/cart-types";
 import type { CheckoutConfig, CheckoutInput, CheckoutQuote, CheckoutQuoteRequest, DeliveryMethod, PaymentMethod } from "@/lib/checkout-types";
 import { getCheckoutQuote, submitCheckout } from "@/lib/checkout-actions";
-import { preparePayment } from "@/lib/payment-actions";
 import { validateCheckout } from "@/lib/checkout-validation";
 import { addressDeliveryAvailable, initialCheckoutChoice, usablePayments, whatsappOrderMessage } from "@/lib/checkout-whatsapp";
 import { formatArs, whatsappUrl } from "@/lib/commerce";
@@ -66,6 +65,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
   const [locating, setLocating] = useState(false);
   const [locationMessage, setLocationMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [quoting, setQuoting] = useState(false);
   const [error, setError] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -337,20 +337,20 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
       setBusy(false); submitting.current = false;
       return;
     }
+    // Al salir hacia Mercado Pago el botón queda deshabilitado hasta que cambie la página.
+    let leaving = false;
     try {
       const result = await submitCheckout(parsed.value);
       if (result.ok) {
         try { sessionStorage.removeItem(checkoutDraftKey); } catch { /* Storage opcional. */ }
         try { sessionStorage.removeItem("qg_checkout_key"); } catch { /* Storage opcional. */ }
+        // Directo a Mercado Pago: el carrito vacío recién se ve al volver.
+        if (!config.demo && result.redirectUrl) { leaving = true; setRedirecting(true); window.location.assign(result.redirectUrl); return; }
         await refreshCart();
         // Tarjeta: el formulario seguro tiene su propia pantalla; el pedido queda para seguimiento.
         if (!config.demo && ["debit_card", "credit_card"].includes(parsed.value.paymentChoice)) {
           router.push(`/checkout/pago/${result.orderId}`);
           return;
-        }
-        if (!config.demo && ["mercadopago", "mercado_credito"].includes(parsed.value.paymentChoice)) {
-          const destination = await preparePayment(result.orderId);
-          if (destination.ok && destination.data.initPoint) { window.location.assign(destination.data.initPoint); return; }
         }
         router.push(`/checkout/confirmacion/${result.orderId}`);
         router.refresh();
@@ -360,7 +360,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
         invalidateQuote();
       }
     } catch { setError("No pudimos recibir la respuesta. Reintentá: conservamos la clave para evitar duplicar el pedido."); }
-    finally { setBusy(false); submitting.current = false; }
+    finally { if (!leaving) { setBusy(false); submitting.current = false; } }
   }
 
   function field(name: string, label: string, options: { required?: boolean; type?: string; autoComplete?: string; maxLength?: number; className?: string; defaultValue?: string; inputMode?: "numeric" } = {}) {
@@ -379,7 +379,7 @@ export function CheckoutForm({ initialCart, config, whatsappOnly = false, initia
   const total = formatArs(quote?.totalArs ?? cart.totalArs);
   // Facturación: desde el umbral configurado (INVOICE_ID_THRESHOLD_ARS) se pide DNI/CUIT; null = nunca.
   const needsTaxId = !whatsappOnly && !config.demo && typeof config.taxIdThresholdArs === "number" && (quote?.totalArs ?? cart.totalArs) >= config.taxIdThresholdArs;
-  const checkoutActionLabel = busy ? payment === "cash" ? "Preparando pedido…" : "Abriendo pago…" : payment === "cash" ? `Preparar pedido · ${total}` : `Ir a pagar · ${total}`;
+  const checkoutActionLabel = redirecting ? "Abriendo Mercado Pago…" : busy ? payment === "cash" ? "Preparando pedido…" : "Abriendo pago…" : payment === "cash" ? `Preparar pedido · ${total}` : `Ir a pagar · ${total}`;
   // Líneas y totales compartidos por el resumen lateral y el desplegable mobile.
   const summaryItems = cart.lines.map((line) => <article key={line.variantId}><div className="checkout-line-thumb"><ProductImage product={line} sizes="64px" decorative/><span aria-hidden="true">{line.quantity}</span></div><div><strong>{line.name}</strong><small>{line.quantity} × {formatArs(line.unitPriceArs)}</small></div><b>{line.available ? formatArs(line.lineTotalArs) : "Sin stock"}</b></article>);
   const summaryTotals = <><p><span>Subtotal</span><strong>{formatArs(cart.subtotalArs)}</strong></p>

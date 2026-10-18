@@ -203,7 +203,7 @@ export function MercadoPagoRedirect({ orderId, accessToken, returnedPaymentId, l
       window.location.assign(result.data.initPoint);
     } catch { setBusy(false); setError("No pudimos abrir Mercado Pago. Intentá nuevamente."); }
   }
-  return <section className="checkout-card demo-payment" id="pago"><h2>{returnedPaymentId ? "Verificamos tu pago" : lastAttemptFailed ? "Reintentá el pago" : "Continuá el pago"}</h2><p>{returnedPaymentId ? "Mercado Pago registró una operación. No vuelvas a pagar mientras comprobamos su estado." : lastAttemptFailed ? "Tu último intento de pago fue rechazado y no se cobró nada. Podés volver a Mercado Pago y probar con otro medio." : "Mercado Pago todavía no confirmó el pago. Podés volver al checkout seguro para completarlo."}</p>
+  return <section className="checkout-card payment-prompt" id="pago"><h2>{returnedPaymentId ? "Verificamos tu pago" : lastAttemptFailed ? "Reintentá el pago" : "Continuá el pago"}</h2><p>{returnedPaymentId ? "Mercado Pago registró una operación. No vuelvas a pagar mientras comprobamos su estado." : lastAttemptFailed ? "Tu último intento de pago fue rechazado y no se cobró nada. Podés volver a Mercado Pago y probar con otro medio." : "Mercado Pago todavía no confirmó el pago. Podés volver al checkout seguro para completarlo."}</p>
     {returnedPaymentId ? <button className="button button--outline" type="button" disabled={verifying} onClick={() => { void checkPayment(); }}>{verifying ? "Verificando pago…" : "Verificar pago otra vez"}</button>
       : <button className="button button--dark" type="button" disabled={busy} onClick={() => { void redirect(); }}>{busy ? "Abriendo Mercado Pago…" : "Ir a pagar"}</button>}
     {error ? <p role="alert" className="form-error">{error}</p> : null}
