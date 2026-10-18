@@ -283,6 +283,13 @@
 .demo-payment p { color: #525a5e; font-size: .85rem; }
 .demo-payment-actions { margin: 14px 0; }
 
+/* Avisos de pago del pedido («Continuá el pago», «Verificamos tu pago», tarjeta pendiente). */
+.payment-prompt { display: grid; justify-items: start; margin-top: 24px; }
+.payment-prompt h2 { margin: 0 0 8px; font-size: 1.15rem; font-weight: 800; }
+.payment-prompt p { max-width: 62ch; margin: 0 0 20px; color: #525a5e; font-size: .9rem; line-height: 1.55; }
+.payment-prompt .form-error { margin: 14px 0 0; color: #9b3030; font-size: .8rem; font-weight: 600; }
+.payment-prompt button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
 @media (max-width: 1100px) {
   .checkout-summary-mobile { display: block; background: #fff; border: 1px solid var(--line); border-radius: 16px; }
   .checkout-layout > .checkout-summary { display: none; }

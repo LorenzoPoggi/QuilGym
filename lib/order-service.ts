@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "./db";
 import { cartItems, carts, coupons, orderDelivery, orderEmails, orderItemCosts, orderItems, orders, payments, productCosts, products, productVariants, shipments, shipmentTracking } from "./db/schema";
 import { tableExists } from "./db/table-exists";
@@ -35,6 +35,19 @@ export async function findOwnedOrder(id: string, accessToken?: string | null) {
   const ownsAccountOrder = user && order.userId === user.id;
   const ownsGuestOrder = !order.userId && cartId && order.cartId === cartId;
   if (!ownsAccountOrder && !ownsGuestOrder) return null;
+  return order ?? null;
+}
+
+/**
+ * Pedido pendiente que este carrito acaba de crear. Al confirmar, el carrito se vacía y `/checkout` puede volver a
+ * renderizarse antes de que el navegador salga hacia el pago: así lo seguimos en vez de mostrar el carrito vacío.
+ */
+export async function recentCheckoutOrder(windowMs = 3 * 60_000) {
+  const cartId = await readCartId();
+  if (!cartId) return null;
+  const [order] = await db.select({ id: orders.id, paymentChoice: orders.paymentChoice, isDemo: orders.isDemo }).from(orders)
+    .where(and(eq(orders.cartId, cartId), eq(orders.status, "pending"), gt(orders.createdAt, new Date(Date.now() - windowMs))))
+    .orderBy(desc(orders.createdAt)).limit(1);
   return order ?? null;
 }
 

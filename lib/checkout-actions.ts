@@ -22,6 +22,7 @@ import { currentUser } from "./auth";
 import { consumeRateLimit } from "./rate-limit";
 import { rememberOrder } from "./order-cookie-server";
 import { linkOrderToVisit } from "./analytics";
+import { paymentSetup } from "./mercadopago";
 
 /**
  * Cotiza el retiro o todas las opciones para una dirección (entrega propia, transportista o tarifa fija).
@@ -64,11 +65,26 @@ export async function submitCheckout(raw: unknown): Promise<CheckoutResult> {
     // Invitados: el aviso de pedido en curso los encuentra por esta cookie firmada (las cuentas, por la sesión).
     if (!user) await rememberOrder(orderId);
     await linkOrderToVisit(orderId);
-    revalidatePath("/carrito");
     after(() => deliverOrderEmails(orderId));
-    return { ok: true, orderId };
+    // Mercado Pago y Crédito: la preferencia se crea acá para redirigir sin pasar por el checkout ya vacío.
+    // Si falla, el pedido queda creado y la confirmación ofrece «Ir a pagar».
+    const redirectUrl = ["mercadopago", "mercado_credito"].includes(parsed.value.paymentChoice) ? await checkoutProUrl(orderId) : null;
+    return { ok: true, orderId, ...(redirectUrl ? { redirectUrl } : {}) };
   } catch (error) {
     return { ok: false, error: error instanceof CheckoutError ? error.message : "No pudimos guardar el pedido. Podés reintentar sin duplicarlo." };
+  }
+}
+
+async function checkoutProUrl(orderId: string): Promise<string | null> {
+  try {
+    const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    if (!order || order.isDemo || order.status !== "pending") return null;
+    if (!await consumeRateLimit(`payment:prepare:${order.id}`, 12, 10 * 60_000)) return null;
+    const setup = await paymentSetup(order);
+    return setup.initPoint ?? null;
+  } catch (error) {
+    console.error("[Checkout] No se pudo crear la preferencia al confirmar", { name: error instanceof Error ? error.name : "UnknownError" });
+    return null;
   }
 }
 

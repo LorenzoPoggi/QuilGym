@@ -8,6 +8,7 @@ import { getCheckoutConfig, orderAccessSecret } from "@/lib/checkout-config";
 import { getAllProducts } from "@/lib/catalog";
 import { formatArs } from "@/lib/commerce";
 import { verifyOrderAccess } from "@/lib/order-access";
+import { trackingSteps } from "@/lib/tracking-core";
 import { DemoPayment, MercadoPagoRedirect, RefreshOrder } from "@/components/order-payment";
 import { ProductImage } from "@/components/product-image";
 import { Logo } from "@/components/logo";
@@ -25,7 +26,8 @@ export default async function ConfirmationPage({ params, searchParams }: { param
   const { t, payment_id, collection_id } = await searchParams;
   // Link firmado del email o de la vuelta desde Mercado Pago; sin él, autoriza la cookie del carrito.
   const accessToken = typeof t === "string" ? t : null;
-  const returnedPaymentId = typeof payment_id === "string" ? payment_id : typeof collection_id === "string" ? collection_id : null;
+  // Al salir de Mercado Pago sin pagar la vuelta trae `payment_id=null`: solo cuenta un ID numérico.
+  const returnedPaymentId = [payment_id, collection_id].find((value): value is string => typeof value === "string" && /^\d{1,30}$/.test(value)) ?? null;
   const details = await orderDetails(orderId, accessToken);
   if (!details) {
     console.warn("[Order confirmation] Pedido no disponible", {
@@ -60,33 +62,24 @@ export default async function ConfirmationPage({ params, searchParams }: { param
   const paymentInReview = !order.isDemo && pending && order.paymentMethod === "mercadopago" && !!payment?.providerId && payment.status === "pending";
   const cardChoice = order.paymentChoice === "debit_card" || order.paymentChoice === "credit_card" ? order.paymentChoice : null;
 
-  const steps: Step[] | null = pending || order.status === "approved"
-    ? cashPickup
-      ? [
-        { number: 1, title: "Pedido recibido", copy: `Guardamos tu pedido ${code}.`, state: "done" },
-        { number: 2, title: "Preparación", copy: "Armamos tu pedido y te avisamos cuando esté listo.", state: order.status === "approved" ? "done" : "current" },
-        { number: 3, title: "Pago y Retiro en el local", copy: "Cuando te avisemos, abonás en el local y te llevás el pedido.", state: order.status === "approved" ? "done" : "todo" },
-      ]
-      : [
-        { number: 1, title: "Pedido recibido", copy: `Guardamos tu pedido ${code}.`, state: "done" },
-        { number: 2, title: order.status === "approved" ? "Pago aprobado" : "Pago", copy: order.status === "approved" ? order.isDemo ? "Pago simulado: no se cobró dinero." : "Acreditamos el pago de tu compra." : order.paymentMethod === "transfer" ? "Transferí el total. Lo confirmamos al verificar la acreditación." : "Completá el pago para que podamos preparar tu pedido.", state: order.status === "approved" ? "done" : "current" },
-        { number: 3, title: "Preparación", copy: "Armamos y controlamos tu pedido.", state: order.status === "approved" ? "current" : "todo" },
-        pickup
-          ? { number: 4, title: "Retiro en el local", copy: "Te avisamos cuando esté listo para retirar.", state: "todo" }
-          : localDelivery
-          ? { number: 4, title: "Entrega en Quilmes", copy: "Te contactamos para coordinar la entrega. El costo se arregla con QuilGym al llevar tu pedido.", state: "todo" }
-          : { number: 4, title: "Envío", copy: shipment?.trackingCode ? `Seguimiento: ${shipment.trackingCode}` : "Te enviamos el código de seguimiento al despacharlo.", state: "todo" },
-      ]
-    : null;
+  // Mismos pasos que el seguimiento: avanzan con el estado de entrega que carga QuilGym desde el panel.
+  const copyOverrides: Record<string, string | undefined> = {
+    received: `Guardamos tu pedido ${code}.`,
+    payment: order.status === "approved" && order.isDemo ? "Pago simulado: no se cobró dinero." : pending && order.paymentMethod === "transfer" ? "Transferí el total. Lo confirmamos al verificar la acreditación." : undefined,
+    out_for_delivery: localDelivery ? "Salimos a llevarte el pedido. El costo de la entrega se arregla con QuilGym al recibirlo." : undefined,
+    shipped: shipment?.trackingCode ? `Seguimiento: ${shipment.trackingCode}` : undefined,
+  };
+  const steps: Step[] | null = trackingSteps({ delivery: order.delivery, orderStatus: order.status, paymentMethod: order.paymentMethod, shipmentStatus: shipment?.status ?? "pending" })
+    ?.map((step, index) => ({ number: index + 1, title: step.title, copy: copyOverrides[step.key] ?? step.copy, state: step.state })) ?? null;
 
   return <><header className="checkout-header"><div className="container"><Link href="/" className="wordmark" aria-label="QuilGym, inicio"><Logo/></Link></div></header>
     <main className="confirmation-page"><div className="container">
       {order.isDemo ? <div className="checkout-demo-banner"><strong>Pedido de prueba</strong><span>No representa una compra real. No se cobró dinero ni se envió ningún email.</span></div> : null}
       <section className={`confirmation-hero is-${order.status}`}><span aria-hidden="true"><StatusIcon strokeWidth={2}/></span><div><p className="eyebrow">{cashPickup && pending ? "En preparación" : orderStatusLabels[order.status]}</p><h1>{cashPickup && pending ? "Recibimos tu pedido" : titles[order.status]}</h1><p>{order.name}, podés consultar los detalles y el estado desde esta página.</p></div><div><small>{order.status === "approved" ? "NÚMERO DE COMPRA" : "NÚMERO DE PEDIDO"}</small><strong className="order-id">{code}</strong><small className="order-uuid" title="Identificador completo del pedido">{order.id}</small></div></section>
-      {cardChoice && canPay ? <section className="checkout-card demo-payment" id="pago"><h2>{lastAttemptFailed ? "Reintentá el pago con tarjeta" : "Completá el pago con tarjeta"}</h2><p>{lastAttemptFailed ? "Tu último intento fue rechazado y no se cobró nada. Podés probar con otra tarjeta." : "Tu pedido ya está registrado. Completá el pago en el formulario seguro de Mercado Pago."}</p><Link className="button button--dark" href={`/checkout/pago/${order.id}${accessToken ? `?t=${encodeURIComponent(accessToken)}` : ""}`}>{lastAttemptFailed ? "Reintentar pago" : "Ir a pagar"}</Link></section> : null}
+      {cardChoice && canPay ? <section className="checkout-card payment-prompt" id="pago"><h2>{lastAttemptFailed ? "Reintentá el pago con tarjeta" : "Completá el pago con tarjeta"}</h2><p>{lastAttemptFailed ? "Tu último intento fue rechazado y no se cobró nada. Podés probar con otra tarjeta." : "Tu pedido ya está registrado. Completá el pago en el formulario seguro de Mercado Pago."}</p><Link className="button button--dark" href={`/checkout/pago/${order.id}${accessToken ? `?t=${encodeURIComponent(accessToken)}` : ""}`}>{lastAttemptFailed ? "Reintentar pago" : "Ir a pagar"}</Link></section> : null}
       {canPay && !cardChoice && ["mercadopago", "mercado_credito"].includes(order.paymentChoice) ? <MercadoPagoRedirect orderId={order.id} accessToken={accessToken} returnedPaymentId={returnedPaymentId && returnedPaymentId !== payment?.providerId ? returnedPaymentId : null} lastAttemptFailed={lastAttemptFailed}/> : null}
       {paymentInReview ? <section className="checkout-card card-payment" role="status"><h2>Estamos verificando tu pago</h2><p>Mercado Pago está procesando la operación. Te avisamos por email cuando se acredite. No vuelvas a pagar este pedido.</p></section> : null}
-      <div className="confirmation-actions"><RefreshOrder pending={pending}/>{order.status === "approved" || (pending && order.paymentMethod === "cash") ? <Link className="button button--dark" href={`/pedido/${order.id}${accessToken ? `?t=${encodeURIComponent(accessToken)}` : ""}`}>Seguir mi pedido</Link> : null}<Link className="button button--outline" href="/productos">Seguir comprando</Link><span>{pending ? "Pedido realizado" : "Compra realizada"} el {createdAt}</span></div>
+      <div className="confirmation-actions"><RefreshOrder pending={pending || (order.status === "approved" && shipment?.status !== "delivered")}/>{order.status === "approved" || (pending && order.paymentMethod === "cash") ? <Link className="button button--dark" href={`/pedido/${order.id}${accessToken ? `?t=${encodeURIComponent(accessToken)}` : ""}`}>Seguir mi pedido</Link> : null}<Link className="button button--outline" href="/productos">Seguir comprando</Link><span>{pending ? "Pedido realizado" : "Compra realizada"} el {createdAt}</span></div>
       <section className="confirmation-cards">
         <article><header><span aria-hidden="true">{pickup ? <Store size={18}/> : <Truck size={18}/>}</span><h2>{pickup ? "Retiro" : "Entrega"}</h2></header>
           {shipment?.label ? <strong>{shipment.label}</strong> : null}

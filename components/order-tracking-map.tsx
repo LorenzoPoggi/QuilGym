@@ -35,8 +35,11 @@ export default function OrderTrackingMap({ store, destination, courier, label }:
   useEffect(() => {
     if (!container.current || map.current) return;
     const instance = L.map(container.current, { scrollWheelZoom: false, attributionControl: true });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    // La página usa `no-referrer` para no filtrar el link firmado, pero OSM rechaza teselas sin Referer (403):
+    // a las teselas se les envía solo el origen del sitio, nunca la ruta con el token.
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
+      referrerPolicy: "strict-origin-when-cross-origin",
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
     }).addTo(instance);
     const origin = { lat: storeLat, lng: storeLng };
