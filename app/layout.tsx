@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Archivo, Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { CartDialog } from "@/components/cart-drawer";
 import { CartProvider } from "@/components/cart-provider";
 import { AccountProvider } from "@/components/account-provider";
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" data-scroll-behavior="smooth" className={`${inter.variable} ${archivo.variable}`}>
-      <body><AccountProvider><CartProvider><InstallmentsRoot>{children}</InstallmentsRoot><AdvisorLauncher/><ActiveOrderToast/><AnalyticsBeacon/><CartDialog/></CartProvider></AccountProvider></body>
+      <body><AccountProvider><CartProvider><InstallmentsRoot>{children}</InstallmentsRoot><AdvisorLauncher/><ActiveOrderToast/><AnalyticsBeacon/><CartDialog/></CartProvider></AccountProvider><Analytics /></body>
     </html>
   );
 }
