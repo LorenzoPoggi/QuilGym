@@ -10,11 +10,15 @@ import { neon } from "@neondatabase/serverless";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import catalog from "../data/tiendanube-catalog.json";
+import { assertDatabaseWriteAllowed } from "../lib/db/preview-safety";
 import { products } from "../lib/db/schema";
 
 loadEnvConfig(process.cwd());
-const db = drizzle(neon(process.env.DATABASE_URL!));
 const dryRun = process.argv.includes("--dry-run");
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error("Falta DATABASE_URL.");
+if (!dryRun) assertDatabaseWriteAllowed(databaseUrl, process.env);
+const db = drizzle(neon(databaseUrl));
 
 async function main() {
   const current = new Map((await db.select({ slug: products.slug, name: products.name }).from(products)).map((row) => [row.slug, row.name]));

@@ -45,7 +45,7 @@ npm run dev
 
 Abrir [http://localhost:3000](http://localhost:3000).
 
-No sobrescribir `.env.local`. El catálogo ya está cargado en la base compartida: **no ejecutar `db:seed`**, ya que reemplaza datos comerciales. Para una base nueva, usarlo una sola vez después de migrar.
+El desarrollo local debe apuntar a `quilgym_preview` (preferentemente desde `.env.development.local`). El catálogo ya está cargado en producción: **no ejecutar `db:seed`** allí, ya que reemplaza datos comerciales. Los scripts permiten escribir en Preview normalmente; cualquier otra base exige una confirmación efímera, por ejemplo `CONFIRM_DATABASE_WRITE=neondb npm run db:migrate`. Nunca guardar esa confirmación en archivos de entorno ni en Vercel.
 
 Si faltan módulos después de actualizar el repositorio, ejecutar `npm ci`. Se detectaron copias repetidas del caché generado con nombres como `.next/dev/types/routes.d 2.ts`: TypeScript excluye esos archivos con espacios, únicamente dentro de `.next`, manteniendo las definiciones originales y el chequeo del código fuente.
 

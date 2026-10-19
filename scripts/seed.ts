@@ -13,11 +13,15 @@ import { drizzle } from "drizzle-orm/neon-http";
 import catalog from "../data/tiendanube-catalog.json";
 import content from "../data/product-content.json";
 import images from "../data/product-images.json";
+import { assertDatabaseWriteAllowed } from "../lib/db/preview-safety";
 import { brands, categories, productImages, products, productVariants } from "../lib/db/schema";
 import { slugify } from "../lib/slugify";
 
 loadEnvConfig(process.cwd());
-const db = drizzle(neon(process.env.DATABASE_URL!));
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error("Falta DATABASE_URL.");
+assertDatabaseWriteAllowed(databaseUrl, process.env);
+const db = drizzle(neon(databaseUrl));
 
 const categoryOrder = ["Proteínas", "Creatinas", "Pre-entrenos", "Aminoácidos", "Ganadores de peso", "Vitaminas y minerales", "Colágeno", "Snacks", "Combos", "Accesorios", "Otros"];
 
