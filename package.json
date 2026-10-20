@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:csp": "playwright test --config=playwright.csp.config.ts",
     "checkout:check": "tsx scripts/check-checkout-config.ts",
     "email:check": "tsx scripts/check-email-config.ts",
     "operations:check": "tsx scripts/check-operations.ts",
