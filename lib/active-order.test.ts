@@ -13,6 +13,7 @@ vi.mock("./auth", () => ({ currentUser: mocks.user }));
 vi.mock("./order-cookie-server", () => ({ readRememberedOrders: mocks.remembered }));
 vi.mock("./checkout-config", () => ({ orderAccessSecret: () => "secreto-de-pedidos-con-mas-de-32-caracteres", getCheckoutConfig: () => ({ demo: mocks.demo.value }) }));
 import { getActiveOrder } from "./active-order";
+import { verifyOrderAccess } from "./order-access";
 import { GET as activeRoute } from "../app/api/orders/active/route";
 
 const pg = new PGlite();
@@ -53,7 +54,9 @@ describe("pedido en curso", () => {
     mocks.remembered.mockResolvedValue([older, newer]);
     const active = await getActiveOrder();
     expect(active).toMatchObject({ id: newer, status: "out_for_delivery", title: expect.stringContaining("está en camino") });
-    expect(active?.href).toMatch(new RegExp(`^/pedido/${newer}\\?t=[A-Za-z0-9_-]{43}$`));
+    const href = new URL(active!.href, "https://quilgym.test");
+    expect(href.pathname).toBe(`/pedido/${newer}`);
+    expect(verifyOrderAccess(newer, href.searchParams.get("t"), "secreto-de-pedidos-con-mas-de-32-caracteres")).toBe(true);
     expect(active?.detail).toMatch(/^llega/);
   });
 
