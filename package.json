@@ -19,6 +19,7 @@
     "test:e2e": "playwright test",
     "checkout:check": "tsx scripts/check-checkout-config.ts",
     "email:check": "tsx scripts/check-email-config.ts",
+    "operations:check": "tsx scripts/check-operations.ts",
     "images:check": "node scripts/check-product-gallery.mjs",
     "images:fetch": "node scripts/fetch-product-images.mjs",
     "images:build": "node scripts/build-product-images.mjs",
