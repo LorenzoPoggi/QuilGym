@@ -18,7 +18,12 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "No pudimos subir la imagen.";
-    return NextResponse.json({ error: message }, { status: message === "No autorizado." ? 403 : 400 });
+    if (error instanceof Error && error.message === "No autorizado.") {
+      return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+    }
+    // Los errores de Blob pueden contener detalles del proveedor o de la configuración.
+    // Se registran solo por tipo y el navegador recibe un mensaje estable.
+    console.warn("[admin] No se pudo subir la imagen", { reason: error instanceof Error ? error.name : "UnknownError" });
+    return NextResponse.json({ error: "No pudimos subir la imagen. Revisá el formato y el tamaño e intentá nuevamente." }, { status: 400 });
   }
 }

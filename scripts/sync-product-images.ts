@@ -14,12 +14,14 @@ import { neon } from "@neondatabase/serverless";
 import { asc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import images from "../data/product-images.json";
+import { assertDatabaseWriteAllowed } from "../lib/db/preview-safety";
 import { productImages, products } from "../lib/db/schema";
 import { describeImageSync, planImageSync, type ManifestImage, type StoredImage } from "../lib/product-image-sync";
 
 loadEnvConfig(process.cwd());
 const apply = process.argv.includes("--apply") && !process.argv.includes("--dry-run");
 if (!process.env.DATABASE_URL) { console.error("Falta DATABASE_URL."); process.exit(1); }
+if (apply) assertDatabaseWriteAllowed(process.env.DATABASE_URL, process.env);
 const target = (() => { try { const url = new URL(process.env.DATABASE_URL!); return `${url.hostname.split(".")[0]}…/${url.pathname.slice(1)}`; } catch { return "(URL ilegible)"; } })();
 const db = drizzle(neon(process.env.DATABASE_URL));
 const manifest = images as Record<string, ManifestImage[]>;

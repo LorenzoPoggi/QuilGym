@@ -17,7 +17,7 @@ import { parcelForOrder } from "./shipping-parcel";
 import { consumeRateLimit } from "./rate-limit";
 import { applyShipmentStatus } from "./shipment-status";
 import { trackingTablesReady } from "./tracking";
-import { COURIER_REPORT_MIN_INTERVAL_MS, etaWindowFromChoice } from "./tracking-core";
+import { COURIER_REPORT_MIN_INTERVAL_MS, etaWindowFromChoice, safeExternalHttpsUrl } from "./tracking-core";
 import { isValidCoordinates } from "./geo";
 import { InvoiceActionError, parseManualInvoice, prepareInvoice, queueInvoice, registerManualInvoice, retryFailedInvoice } from "./invoicing";
 
@@ -166,7 +166,7 @@ export async function createCarrierShipment(id: string): Promise<AdminOrderActio
   return run(id, async (locked, tx) => {
     const [current] = await tx.select().from(shipments).where(eq(shipments.id, shipment.id)).for("update");
     if (!current) throw new AdminOrderError("El pedido no tiene un envío asociado.");
-    const values = { carrier: carrier.code, carrierShipmentId: created.carrierShipmentId, trackingUrl: created.trackingUrl };
+    const values = { carrier: carrier.code, carrierShipmentId: created.carrierShipmentId, trackingUrl: safeExternalHttpsUrl(created.trackingUrl) };
     await tx.insert(shipmentTracking).values({ shipmentId: current.id, ...values }).onConflictDoUpdate({ target: shipmentTracking.shipmentId, set: values });
     const trackingCode = created.trackingCode && TRACKING_PATTERN.test(created.trackingCode) ? created.trackingCode : current.trackingCode;
     await applyShipmentStatus(tx, locked, current, "shipped", { trackingCode }, `Despachamos tu pedido con ${carrier.label}`);

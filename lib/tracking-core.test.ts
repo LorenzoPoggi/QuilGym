@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTimeline, carrierTrackingPage, etaWindowFromChoice, formatEtaWindow, isCourierPositionFresh, needsTrackingSync, trackingSteps } from "./tracking-core";
+import { buildTimeline, carrierTrackingPage, etaWindowFromChoice, formatEtaWindow, isCourierPositionFresh, needsTrackingSync, safeExternalHttpsUrl, trackingSteps } from "./tracking-core";
 
 const at = (iso: string) => new Date(iso);
 const event = (iso: string, description: string, source = "admin") => ({ occurredAt: at(iso), status: "x", description, location: null, source });
@@ -81,5 +81,12 @@ describe("frescura", () => {
     expect(carrierTrackingPage("correo_argentino", "https://example.com/x")).toBe("https://example.com/x");
     expect(carrierTrackingPage("correo_argentino", "javascript:alert(1)")).toMatch(/^https:\/\/www\.correoargentino\.com\.ar\//);
     expect(carrierTrackingPage("own", null)).toBeNull();
+  });
+  it("rechaza credenciales, protocolos inseguros y URLs excesivas", () => {
+    expect(safeExternalHttpsUrl("https://tracking.example/path?q=1")).toBe("https://tracking.example/path?q=1");
+    expect(safeExternalHttpsUrl("https://user:secret@tracking.example/path")).toBeNull();
+    expect(safeExternalHttpsUrl("http://tracking.example/path")).toBeNull();
+    expect(safeExternalHttpsUrl("https://tracking.example/" + "a".repeat(2048))).toBeNull();
+    expect(safeExternalHttpsUrl("not a url")).toBeNull();
   });
 });

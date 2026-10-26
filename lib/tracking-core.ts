@@ -115,9 +115,20 @@ export function etaWindowFromChoice(choice: unknown, now = new Date()): { from: 
 export const needsTrackingSync = (checkedAt: Date | null | undefined, now = Date.now()) => !checkedAt || now - checkedAt.getTime() >= TRACKING_SYNC_INTERVAL_MS;
 export const isCourierPositionFresh = (updatedAt: Date | null | undefined, now = Date.now()) => !!updatedAt && now - updatedAt.getTime() <= COURIER_POSITION_TTL_MS;
 
+/** URL externa HTTPS sin credenciales ni formatos ambiguos, apta para usar en un enlace. */
+export function safeExternalHttpsUrl(value: string | null | undefined) {
+  if (!value || value.length > 2048) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password) return null;
+    return url.href;
+  } catch { return null; }
+}
+
 /** Página pública de seguimiento del transportista. TODO(correo): confirmar si acepta el número por URL. */
 export function carrierTrackingPage(carrier: string | null | undefined, trackingUrl?: string | null) {
-  if (trackingUrl?.startsWith("https://")) return trackingUrl;
+  const safeTrackingUrl = safeExternalHttpsUrl(trackingUrl);
+  if (safeTrackingUrl) return safeTrackingUrl;
   if (carrier === "correo_argentino") return "https://www.correoargentino.com.ar/formularios/e-commerce";
   return null;
 }

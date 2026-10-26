@@ -45,7 +45,7 @@ npm run dev
 
 Abrir [http://localhost:3000](http://localhost:3000).
 
-No sobrescribir `.env.local`. El catálogo ya está cargado en la base compartida: **no ejecutar `db:seed`**, ya que reemplaza datos comerciales. Para una base nueva, usarlo una sola vez después de migrar.
+El desarrollo local debe apuntar a `quilgym_preview` (preferentemente desde `.env.development.local`). El catálogo ya está cargado en producción: **no ejecutar `db:seed`** allí, ya que reemplaza datos comerciales. Los scripts permiten escribir en Preview normalmente; cualquier otra base exige una confirmación efímera, por ejemplo `CONFIRM_DATABASE_WRITE=neondb npm run db:migrate`. Nunca guardar esa confirmación en archivos de entorno ni en Vercel.
 
 Si faltan módulos después de actualizar el repositorio, ejecutar `npm ci`. Se detectaron copias repetidas del caché generado con nombres como `.next/dev/types/routes.d 2.ts`: TypeScript excluye esos archivos con espacios, únicamente dentro de `.next`, manteniendo las definiciones originales y el chequeo del código fuente.
 
@@ -117,6 +117,7 @@ La consulta pública desde este entorno devuelve una vista limitada sin los text
 | `npm test` | Tests unitarios (Vitest) |
 | `npm run test:e2e` | Navegador en 1440 y 390 px: checkout, cuentas, favoritos, asesor y carrito |
 | `npm run checkout:check` | Diagnóstico del checkout sin exponer secretos |
+| `npm run operations:check` | Diagnóstico estático de variables y crons, sin conectar ni escribir en la base |
 | `npm run db:generate` | Genera una migración a partir de `lib/db/schema.ts` |
 | `npm run db:migrate` | Aplica las migraciones pendientes |
 | `npm run db:seed` | Carga o actualiza el catálogo desde `data/tiendanube-catalog.json` |
@@ -190,6 +191,8 @@ La consulta pública desde este entorno devuelve una vista limitada sin los text
 - Las preferencias ya creadas conservan sus URLs antiguas: desplegar código nuevo no las modifica. No volver a cobrar un pedido ya aprobado para probar un retorno. Primero abrir su enlace firmado en el despliegue donde se creó y revisar la recepción/conciliación del webhook.
 - Diagnóstico del 08/10/2026: los logs mostraron creación y retorno en despliegues distintos; el mismo enlace firmado abrió correctamente al usar el despliegue creador. También se verificó un HTTP 401 de **Vercel Authentication**, anterior al handler del webhook. La corrección local de URLs no elimina ese bloqueo de infraestructura.
 4. Verificación de email, recuperación de contraseña, legales, accesibilidad, seguridad y observabilidad antes del lanzamiento.
+
+La revisión diaria, respuesta a incidentes, rotación coordinada de credenciales y restauración aislada de Neon están documentadas en [`docs/operations-and-recovery.md`](docs/operations-and-recovery.md).
 
 ## Reglas de contribución
 

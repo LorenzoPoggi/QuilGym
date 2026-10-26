@@ -9,6 +9,7 @@ import { AdminCarrierShipment, AdminOrderActions, AdminShipmentForm, AdminStartD
 import { formatDistance } from "@/lib/delivery-labels";
 import { googleMapsSearchUrl } from "@/lib/store-location";
 import { AdminOrderInvoice } from "./admin-orders-invoice";
+import { safeExternalHttpsUrl } from "@/lib/tracking-core";
 
 const emailLabels: Record<string, string> = { ...orderStatusLabels, created: "Pedido recibido", ready_for_pickup: "Listo para retirar", shipped: "Pedido despachado", out_for_delivery: "En camino / en distribución", delivered: "Pedido entregado",
   payment_rejected: "Pago rechazado (puede reintentar)", expired: "Pedido vencido", invoice_issued: "Factura" };
@@ -35,6 +36,7 @@ export function AdminOrderDetailView({ detail }: { detail: AdminOrderDetail }) {
   const canStartDelivery = local && delivery.available && allowedShipmentStatuses(order).includes("out_for_delivery") && shipmentStatus !== "out_for_delivery" && shipmentStatus !== "delivered";
   const onRoute = local && shipmentStatus === "out_for_delivery";
   const carrierName = (code: string) => code === "correo_argentino" ? "Correo Argentino" : code === "mock" ? "Simulado" : code;
+  const carrierTrackingUrl = safeExternalHttpsUrl(delivery.tracking?.trackingUrl);
   return <div className="admin-content admin-orders admin-order-detail">
     <Link className="admin-back" href="/admin/pedidos"><ArrowLeft size={17} aria-hidden="true"/> Pedidos</Link>
     <header className="admin-page-head"><div><p className="admin-eyebrow">PEDIDO {order.isDemo ? "DE PRUEBA" : ""}</p><h1>{orderCode(order.id)}</h1><p className="admin-order-meta"><AdminOrderStatus status={order.status}/>{order.isDemo && <span className="admin-status admin-order-demo">Prueba · sin cobro</span>}<span>Creado el {formatAdminDate(order.createdAt)}</span></p></div><strong className="admin-order-total">{formatArs(order.totalArs)}</strong></header>
@@ -54,7 +56,7 @@ export function AdminOrderDetailView({ detail }: { detail: AdminOrderDetail }) {
             {local && <Row label="Costo de la entrega">A convenir con el cliente al entregar</Row>}
             {order.delivery !== "pickup" && mapsUrl && <Row label="Mapa"><a className="admin-order-map-link" href={mapsUrl} target="_blank" rel="noreferrer"><MapPin size={14} aria-hidden="true"/> Ver la dirección en Google Maps<span className="sr-only"> (se abre en otra pestaña)</span></a></Row>}
             {shipment && <><Row label={local ? "Modalidad" : "Tarifa"}>{shipment.label}</Row><Row label="Estimación">{shipment.estimate}</Row><Row label="Estado">{shipmentLabel(shipment.status)}</Row>{shipment.trackingCode && <Row label="Seguimiento">{shipment.trackingCode}</Row>}</>}
-            {delivery.tracking && delivery.tracking.carrier !== "own" && <><Row label="Transportista">{carrierName(delivery.tracking.carrier)}</Row>{delivery.tracking.carrierShipmentId && <Row label="Referencia del envío">{delivery.tracking.carrierShipmentId}</Row>}{delivery.tracking.trackingUrl && <Row label="Seguimiento web"><a href={delivery.tracking.trackingUrl} target="_blank" rel="noreferrer">Abrir</a></Row>}</>}
+            {delivery.tracking && delivery.tracking.carrier !== "own" && <><Row label="Transportista">{carrierName(delivery.tracking.carrier)}</Row>{delivery.tracking.carrierShipmentId && <Row label="Referencia del envío">{delivery.tracking.carrierShipmentId}</Row>}{carrierTrackingUrl && <Row label="Seguimiento web"><a href={carrierTrackingUrl} target="_blank" rel="noopener noreferrer">Abrir</a></Row>}</>}
           </dl></section>
         </div>
         <AdminOrderInvoice orderId={order.id} orderStatus={order.status} billing={billing}/>

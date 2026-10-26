@@ -10,12 +10,14 @@ import { neon } from "@neondatabase/serverless";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import content from "../data/product-content.json";
+import { assertDatabaseWriteAllowed } from "../lib/db/preview-safety";
 import { products } from "../lib/db/schema";
 import { describeDescriptionSync, planDescriptionSync } from "../lib/product-description-sync";
 
 loadEnvConfig(process.cwd());
 const apply = process.argv.includes("--apply") && !process.argv.includes("--dry-run");
 if (!process.env.DATABASE_URL) { console.error("Falta DATABASE_URL."); process.exit(1); }
+if (apply) assertDatabaseWriteAllowed(process.env.DATABASE_URL, process.env);
 const target = (() => { try { const url = new URL(process.env.DATABASE_URL!); return `${url.hostname.split(".")[0]}…/${url.pathname.slice(1)}`; } catch { return "(URL ilegible)"; } })();
 const db = drizzle(neon(process.env.DATABASE_URL));
 
