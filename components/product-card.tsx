@@ -22,6 +22,8 @@ export function ProductCard({ product, compact = false, priority = false, classN
   // `?? []`: las respuestas del asesor pueden traer productos sin el campo (cachés o mocks viejos).
   const photos = product.photoUrls ?? [];
   const combo = comboParts(product.slug);
+  // Con varios sabores la tarjeta no puede agregar «a ciegas»: lleva a la ficha para elegir.
+  const multiFlavor = (product.flavorCount ?? 0) > 1;
 
   return (
     <article className={`product-card ${compact ? "product-card--compact" : ""} ${className}`}>
@@ -36,6 +38,7 @@ export function ProductCard({ product, compact = false, priority = false, classN
       </div>
       <p className="eyebrow product-brand">{product.brand?.name ?? product.category.name}</p>
       <h3><Link href={href}>{product.name}</Link></h3>
+      {multiFlavor ? <p className="product-card__flavors">{product.flavorCount} sabores</p> : null}
       <div className="product-card__footer">
         <div className="product-card__meta">
           <p className="price">{formatArs(product.priceArs)} {product.compareAtPriceArs ? <del>{formatArs(product.compareAtPriceArs)}</del> : null}</p>
@@ -44,7 +47,9 @@ export function ProductCard({ product, compact = false, priority = false, classN
         <InstallmentsLine price={product.priceArs} onlyInterestFree/>
         {commerce.transferDiscountPercent > 0 ? <p className="installments">{highlights}</p> : null}
         <div className="product-card__actions">
-          <AddToCartButton variantId={product.variantId} name={product.name} inStock={product.inStock} className="button button--dark product-card__add"/>
+          {multiFlavor
+            ? <Link className="button button--dark product-card__add" href={href} aria-label={`Elegir sabor de ${product.name}`}>Elegir sabor</Link>
+            : <AddToCartButton variantId={product.variantId} name={product.name} inStock={product.inStock} className="button button--dark product-card__add"/>}
           <Link className="button button--outline product-card__link" href={href} aria-label={`Ver ${product.name}`}><ArrowUpRight aria-hidden="true"/></Link>
         </div>
       </div>

@@ -220,3 +220,5 @@
   .search-page-input { height: 52px; }
   .suggestion-chip { min-height: 44px; }
 }
+
+.product-card__flavors { margin: -2px 0 6px; color: #656c71; font-size: .72rem; font-weight: 600; }

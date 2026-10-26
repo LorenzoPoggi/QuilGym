@@ -8,6 +8,7 @@ import { formatArs } from "@/lib/commerce";
 import { useCart } from "./cart-provider";
 import { BagIcon } from "./icons";
 import { ProductStickyBuy } from "./product-sticky-buy";
+import { useProductVariant } from "./product-variant-provider";
 
 export function CartPill() {
   const { cart, loaded, openCart, countBouncing } = useCart();
@@ -45,12 +46,16 @@ export function AddToCartButton({ variantId, name, inStock, className = "button 
 export function ProductPurchase({ product }: { product: Pick<ProductDetail, "name" | "variantId" | "variants"> }) {
   const router = useRouter();
   const { add } = useCart();
-  const [variantId, setVariantId] = useState(product.variantId);
+  const shared = useProductVariant();
+  const [localVariantId, setLocalVariantId] = useState(product.variantId);
+  const variantId = shared ? shared.variant.id : localVariantId;
+  const setVariantId = shared ? shared.select : setLocalVariantId;
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState<"add" | "buy" | null>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0];
   const max = variant.maxQuantity;
+  const pricesDiffer = new Set(product.variants.map((item) => item.priceArs)).size > 1;
 
   // Sin `disabled` durante la espera: el botón conserva el foco y el diálogo lo restaura al cerrar.
   async function submit(mode: "add" | "buy", source: HTMLElement | null = null) {
@@ -67,9 +72,13 @@ export function ProductPurchase({ product }: { product: Pick<ProductDetail, "nam
   return (
     <>
       {product.variants.length > 1 ? (
-        <div className="option-group" role="radiogroup" aria-label="Variante">
-          <span>Variante: {variant.label ?? variant.sku}</span>
-          <div>{product.variants.map((item) => <button type="button" role="radio" aria-checked={item.id === variant.id} className={item.id === variant.id ? "is-active" : ""} disabled={!item.inStock} onClick={() => { setVariantId(item.id); setQuantity(1); }} key={item.id}>{item.label ?? item.sku} · {item.inStock ? formatArs(item.priceArs) : "Sin stock"}</button>)}</div>
+        <div className="option-group option-group--flavors" role="radiogroup" aria-label="Sabor">
+          <span>Sabor: <strong>{variant.label ?? variant.sku}</strong>{variant.inStock ? "" : " · sin stock"}</span>
+          <div>{product.variants.map((item) => (
+            <button type="button" role="radio" aria-checked={item.id === variant.id} className={`${item.id === variant.id ? "is-active" : ""} ${item.inStock ? "" : "is-out"}`} onClick={() => { setVariantId(item.id); setQuantity(1); }} key={item.id}>
+              {item.label ?? item.sku}{item.inStock ? (pricesDiffer ? ` · ${formatArs(item.priceArs)}` : "") : <small> Sin stock</small>}
+            </button>
+          ))}</div>
         </div>
       ) : null}
       <div className="buy-actions" ref={actionsRef}>

@@ -91,22 +91,22 @@ export async function trimmed(buffer) {
 }
 
 /** Producto sobre blanco: recorte al ras y lienzo cuadrado con margen uniforme. Fotos ambientadas: solo redimensionar. */
-export async function renderProduct(buffer) {
+export async function renderProduct(buffer, { size = 1400, maxSide = MAX_SIDE, quality = 88 } = {}) {
   if (!(await hasPlainBackground(buffer))) {
-    return sharp(buffer).flatten({ background: WHITE }).resize(MAX_SIDE, MAX_SIDE, { fit: "inside", withoutEnlargement: true }).webp({ quality: 86 }).toBuffer({ resolveWithObject: true });
+    return sharp(buffer).flatten({ background: WHITE }).resize(maxSide, maxSide, { fit: "inside", withoutEnlargement: true }).webp({ quality: Math.min(quality, 86) }).toBuffer({ resolveWithObject: true });
   }
   const { data, info } = await trimmed(buffer);
   const side = Math.round(Math.max(info.width, info.height) * 1.12);
   const left = Math.round((side - info.width) / 2), top = Math.round((side - info.height) / 2);
   const square = await sharp(data).extend({ left, right: side - info.width - left, top, bottom: side - info.height - top, background: WHITE }).toBuffer();
-  return sharp(square).resize(1400, 1400, { fit: "inside", withoutEnlargement: true }).webp({ quality: 88 }).toBuffer({ resolveWithObject: true });
+  return sharp(square).resize(size, size, { fit: "inside", withoutEnlargement: true }).webp({ quality }).toBuffer({ resolveWithObject: true });
 }
 
 /** Rótulo nutricional: se prioriza la legibilidad del texto. */
-export async function renderNutrition(buffer) {
+export async function renderNutrition(buffer, { maxSide = MAX_SIDE, quality = 92 } = {}) {
   const { data, info } = await trimmed(buffer);
   const pad = Math.round(Math.max(info.width, info.height) * 0.04);
-  return sharp(data).extend({ top: pad, bottom: pad, left: pad, right: pad, background: WHITE }).resize(MAX_SIDE, MAX_SIDE, { fit: "inside", withoutEnlargement: true }).webp({ quality: 92 }).toBuffer({ resolveWithObject: true });
+  return sharp(data).extend({ top: pad, bottom: pad, left: pad, right: pad, background: WHITE }).resize(maxSide, maxSide, { fit: "inside", withoutEnlargement: true }).webp({ quality }).toBuffer({ resolveWithObject: true });
 }
 
 /** Valida un original oficial: devuelve { width, height, trimmedWidth, trimmedHeight, problems, warnings }. */

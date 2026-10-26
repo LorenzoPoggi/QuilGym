@@ -6,17 +6,18 @@ import { compareHref } from "@/lib/compare";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ProductCard } from "@/components/product-card";
-import { ProductGallery } from "@/components/product-gallery";
+import { VariantGallery } from "@/components/product-gallery";
+import { ProductVariantProvider, VariantPriceBlock } from "@/components/product-variant-provider";
 import { ComboGallery } from "@/components/combo-showcase";
 import { RichText } from "@/components/rich-text";
 import { TrustStrip } from "@/components/trust-strip";
-import { InstallmentsBlock } from "@/components/product-installments";
 import { ProductPurchase } from "@/components/cart-buttons";
 import { FavoriteButton } from "@/components/account-controls";
 import { AdminEditProduct } from "@/components/admin-edit-product";
 import { getAllProducts, getProduct, getProductsByCategory } from "@/lib/catalog";
 import { comboParts } from "@/lib/combo-contents";
-import { commerce, formatArs, transferPrice } from "@/lib/commerce";
+import { commerce } from "@/lib/commerce";
+import { flavorKey } from "@/lib/flavors";
 
 type ProductPageProps = { params: Promise<{ slug: string }> };
 
@@ -48,27 +49,28 @@ export default async function ProductPage({ params }: ProductPageProps) {
     category: product.category.name,
     ...(product.brand ? { brand: { "@type": "Brand", name: product.brand.name } } : {}),
     ...(product.description ? { description: product.description.replace(/^(## |- )/gm, "").replace(/\s+/g, " ").trim() } : {}),
-    offers: { "@type": "Offer", priceCurrency: "ARS", price: product.priceArs, availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" },
+    offers: product.variants.map((variant) => ({
+      "@type": "Offer", priceCurrency: "ARS", price: variant.priceArs, sku: variant.sku,
+      ...(variant.label ? { name: variant.label, url: `/productos/${product.slug}?sabor=${flavorKey(variant.label)}` } : {}),
+      availability: variant.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+    })),
   };
 
   return <><Header/><main className="product-page"><div className="container">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/>
     <p className="breadcrumb"><Link href="/">Inicio</Link> / <Link href={categoryHref}>{product.category.name}</Link>{product.brand ? <> / <Link href={`${categoryHref}&marca=${product.brand.slug}`}>{product.brand.name}</Link></> : null} / {product.name}</p>
-    <section className="product-hero" id="galeria-producto">
-      {combo && activeSlugs ? <ComboGallery name={product.name} parts={combo} activeSlugs={activeSlugs}/> : <ProductGallery product={product}/>}
+    <ProductVariantProvider product={product}><section className="product-hero" id="galeria-producto">
+      {combo && activeSlugs ? <ComboGallery name={product.name} parts={combo} activeSlugs={activeSlugs}/> : <VariantGallery product={product}/>}
       <div className="product-buybox">
         <div className="buybox-brand">{product.brand?.name ?? product.category.name}</div>
         <div className="product-title-row"><h1>{product.name}</h1><AdminEditProduct productId={product.id} name={product.name} currentSlug={product.slug}/><FavoriteButton productId={product.id} name={product.name}/></div>
-        <p className="buybox-price">{formatArs(product.priceArs)} {product.compareAtPriceArs ? <del>{formatArs(product.compareAtPriceArs)}</del> : null}</p>
-        <InstallmentsBlock price={product.priceArs}/>
-        {commerce.transferDiscountPercent > 0 ? <p className="transfer-price">{formatArs(transferPrice(product.priceArs))} con transferencia bancaria</p> : null}
-        <p className={`stock ${product.inStock ? "" : "stock--out"}`}><span/> {product.inStock ? "En stock" : "Sin stock por el momento"}</p>
+        <VariantPriceBlock fallback={product}/>
         <ProductPurchase product={product}/>
         <div className="shipping-calculator"><strong>Entrega</strong><p><Truck aria-hidden="true"/> Envíos a todo el país.</p><p><Store aria-hidden="true"/> Retiro en nuestro local de {commerce.pickupLocation}.</p></div>
         {product.category.slug !== "combos" ? <Link className="product-compare-link" href={compareHref({ slugs: [product.slug], categoria: product.category.slug })}><Scale aria-hidden="true"/>Comparar con otras {product.category.name.toLowerCase()}<ArrowRight aria-hidden="true"/></Link> : null}
         <TrustStrip/>
       </div>
-    </section>
+    </section></ProductVariantProvider>
     <section className="product-info-section">
       <div className="section-heading"><div><h2>Información del producto</h2><p>Información clara para entender el producto y decidir según tu rutina.</p></div></div>
       <div>

@@ -210,3 +210,12 @@ html:has(.lightbox[open]) { overflow: hidden; }
 @media (max-width: 380px) {
   .buy-actions > div:last-child .button { font-size: .82rem; gap: 6px; }
 }
+
+/* Selector de sabor de la ficha */
+.option-group--flavors > span strong { color: var(--ink); font-weight: 700; }
+.option-group--flavors > div { gap: 8px; }
+.option-group--flavors button { min-height: 44px; padding: 8px 14px; font-weight: 600; }
+.option-group--flavors button.is-out { color: #656c71; border-style: dashed; text-decoration: none; }
+.option-group--flavors button.is-out small { font-size: .62rem; font-weight: 600; }
+.option-group--flavors button:focus-visible { outline: 3px solid #1d2022; outline-offset: 2px; }
+.option-group--flavors button.is-out.is-active { color: #fff; border-style: solid; }

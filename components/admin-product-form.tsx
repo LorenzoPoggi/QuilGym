@@ -12,10 +12,11 @@ import { defaultParcelFor } from "@/lib/shipping-defaults";
 
 type Entry = NonNullable<Awaited<ReturnType<typeof getAdminProduct>>>;
 type Taxonomy = Awaited<ReturnType<typeof getAdminTaxonomy>>;
-type VariantDraft = { key: string; id?: number; sku: string; label: string; price: string; comparePrice: string; trackStock: boolean; stock: string; hasOrders: boolean; weight: string; length: string; width: string; height: string };
+type VariantDraft = { key: string; id?: number; sku: string; label: string; price: string; comparePrice: string; trackStock: boolean; stock: string; hasOrders: boolean; weight: string; length: string; width: string; height: string; images: AdminImageInput[] };
 export type AdminNotice = "creado" | "guardado" | "archivado" | null;
 
 const MAX_VARIANTS = 30;
+const MAX_VARIANT_IMAGES = 8;
 // Mismos límites que valida el servidor (lib/admin-catalog.ts).
 const shippingInputs = [
   { field: "weightGrams", draft: "weight", label: "Peso (g)", max: 100_000, default: "weightGrams" },
@@ -58,8 +59,10 @@ export function AdminProductEditor({ entry, taxonomy, shippingAvailable: shippin
   const product = entry?.product;
   // Sin la migración 0010 la sección se muestra deshabilitada y no se envía nada.
   const shippingAvailable = shippingFlag ?? entry?.shippingAvailable ?? false;
-  const initialVariants: VariantDraft[] = entry?.variants.length ? entry.variants.map((variant) => ({ key: `v${variant.id}`, id: variant.id, sku: variant.sku, label: variant.label ?? "", price: String(variant.priceArs), comparePrice: variant.compareAtPriceArs?.toString() ?? "", trackStock: variant.stock !== null, stock: variant.stock?.toString() ?? "0", hasOrders: variant.hasOrders, weight: variant.shipping?.weightGrams?.toString() ?? "", length: variant.shipping?.lengthCm?.toString() ?? "", width: variant.shipping?.widthCm?.toString() ?? "", height: variant.shipping?.heightCm?.toString() ?? "" }))
-    : [{ key: "nueva-0", sku: "", label: "", price: "", comparePrice: "", trackStock: false, stock: "0", hasOrders: false, weight: "", length: "", width: "", height: "" }];
+  // Fotos por sabor (migración 0012): en un producto nuevo se ofrece y el servidor avisa si falta la tabla.
+  const galleryAvailable = entry ? entry.variantImagesAvailable : true;
+  const initialVariants: VariantDraft[] = entry?.variants.length ? entry.variants.map((variant) => ({ key: `v${variant.id}`, id: variant.id, sku: variant.sku, label: variant.label ?? "", price: String(variant.priceArs), comparePrice: variant.compareAtPriceArs?.toString() ?? "", trackStock: variant.stock !== null, stock: variant.stock?.toString() ?? "0", hasOrders: variant.hasOrders, weight: variant.shipping?.weightGrams?.toString() ?? "", length: variant.shipping?.lengthCm?.toString() ?? "", width: variant.shipping?.widthCm?.toString() ?? "", height: variant.shipping?.heightCm?.toString() ?? "", images: variant.images.map((item) => ({ url: item.url, kind: item.kind, width: item.width, height: item.height })) }))
+    : [{ key: "nueva-0", sku: "", label: "", price: "", comparePrice: "", trackStock: false, stock: "0", hasOrders: false, weight: "", length: "", width: "", height: "", images: [] }];
   const [name, setName] = useState(product?.name ?? "");
   const [brandId, setBrandId] = useState(product?.brandId?.toString() ?? "");
   const [categoryId, setCategoryId] = useState(product?.categoryId?.toString() ?? "");
@@ -118,13 +121,53 @@ export function AdminProductEditor({ entry, taxonomy, shippingAvailable: shippin
   function addVariant() {
     if (variants.length >= MAX_VARIANTS) return;
     const base = variants[variants.length - 1];
-    setVariants((current) => [...current, { key: `nueva-${++nextKey.current}`, sku: "", label: "", price: base?.price ?? "", comparePrice: "", trackStock: base?.trackStock ?? false, stock: "0", hasOrders: false, weight: "", length: "", width: "", height: "" }]);
+    setVariants((current) => [...current, { key: `nueva-${++nextKey.current}`, sku: "", label: "", price: base?.price ?? "", comparePrice: "", trackStock: base?.trackStock ?? false, stock: "0", hasOrders: false, weight: "", length: "", width: "", height: "", images: [] }]);
   }
   function removeVariant(variant: VariantDraft) {
     if (variants.length === 1 || variant.key === defaultKey || variant.hasOrders) return;
     if (variant.id !== undefined) setRemoved((current) => [...current, variant.id!]);
     setVariants((current) => current.filter((item) => item.key !== variant.key));
     setErrors({});
+  }
+
+  /** Sube las fotos a Blob (optimizadas a WebP) y devuelve las que se pudieron subir; las registra como «sin guardar». */
+  async function uploadFiles(files: FileList, onDone: (added: AdminImageInput[]) => void) {
+    setUploading(true); setFormError("");
+    const added: AdminImageInput[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/") || file.size > 20 * 1024 * 1024) throw new Error("Elegí imágenes de hasta 20 MB en JPG, PNG o WebP.");
+        const prepared = await prepareImage(file);
+        const blob = await upload(`quilgym/products/${crypto.randomUUID()}.webp`, prepared.file, { access: "public", handleUploadUrl: "/api/admin/upload" });
+        added.push({ url: blob.url, kind: "product", width: prepared.width, height: prepared.height });
+      }
+    } catch (cause) { setFormError(cause instanceof Error ? cause.message : "No pudimos subir la imagen."); }
+    finally {
+      if (added.length) { onDone(added); setPendingUploads((current) => [...current, ...added.map((image) => image.url)]); }
+      setUploading(false);
+    }
+  }
+  function addVariantImages(variantKey: string, files: FileList | null, current: number) {
+    if (!files?.length) return;
+    if (current + files.length > MAX_VARIANT_IMAGES) { setFormError(`Cada sabor admite hasta ${MAX_VARIANT_IMAGES} fotos.`); return; }
+    void uploadFiles(files, (added) => setVariants((list) => list.map((variant) => variant.key === variantKey ? { ...variant, images: [...variant.images, ...added] } : variant)));
+  }
+  function removeVariantImage(variantKey: string, index: number) {
+    const image = variants.find((variant) => variant.key === variantKey)?.images[index];
+    setVariants((list) => list.map((variant) => variant.key === variantKey ? { ...variant, images: variant.images.filter((_, i) => i !== index) } : variant));
+    if (image && pendingUploads.includes(image.url)) { setPendingUploads((current) => current.filter((url) => url !== image.url)); void discardAdminUploads([image.url]); }
+  }
+  function moveVariantImage(variantKey: string, index: number, direction: -1 | 1) {
+    setVariants((list) => list.map((variant) => {
+      if (variant.key !== variantKey) return variant;
+      const next = [...variant.images]; const target = index + direction;
+      if (target < 0 || target >= next.length) return variant;
+      [next[index], next[target]] = [next[target], next[index]];
+      return { ...variant, images: next };
+    }));
+  }
+  function setVariantImageKind(variantKey: string, index: number, kind: AdminImageInput["kind"]) {
+    setVariants((list) => list.map((variant) => variant.key === variantKey ? { ...variant, images: variant.images.map((image, i) => i === index ? { ...image, kind } : image) } : variant));
   }
 
   async function addImages(files: FileList | null) {
@@ -188,7 +231,8 @@ export function AdminProductEditor({ entry, taxonomy, shippingAvailable: shippin
     try {
       const result = await saveAdminProduct({ id: product?.id, name, brandId: brandId ? Number(brandId) : null, categoryId: Number(categoryId), description, status, isFeatured, images,
         variants: variants.map((variant) => ({ id: variant.id, sku: variant.sku, label: variant.label, priceArs: Number(variant.price), compareAtPriceArs: variant.comparePrice ? Number(variant.comparePrice) : null, stock: variant.trackStock ? Number(variant.stock) : null,
-          ...(shippingAvailable ? { shipping: { weightGrams: optionalInt(variant.weight), lengthCm: optionalInt(variant.length), widthCm: optionalInt(variant.width), heightCm: optionalInt(variant.height) } } : {}) })),
+          ...(shippingAvailable ? { shipping: { weightGrams: optionalInt(variant.weight), lengthCm: optionalInt(variant.length), widthCm: optionalInt(variant.width), heightCm: optionalInt(variant.height) } } : {}),
+          ...(galleryAvailable ? { images: variant.images } : {}) })),
         defaultIndex, removedVariantIds: removed });
       if (!result.ok) { setErrors(result.fields ?? {}); setFormError(result.error); return; }
       leaving.current = true; setPendingUploads([]);
@@ -213,12 +257,15 @@ export function AdminProductEditor({ entry, taxonomy, shippingAvailable: shippin
             <label className="admin-upload-tile"><ImagePlus size={28}/><span>{uploading ? "Subiendo…" : "Agregar fotos"}</span><input type="file" accept="image/png,image/jpeg,image/webp" multiple disabled={uploading || images.length >= 12} onChange={(e) => { void addImages(e.target.files); e.target.value = ""; }}/></label></div>
           <small className="admin-help">Las imágenes se optimizan a WebP antes de subirse. Hasta 12 por producto. Las fotos subidas que quites se borran del almacenamiento al guardar.</small></section>
         <section className="admin-card"><div className="admin-card-head"><h2>Variantes, precio e inventario</h2><button type="button" className="admin-secondary" onClick={addVariant} disabled={variants.length >= MAX_VARIANTS}><Plus size={16}/> Agregar variante</button></div>
-          <p className="admin-help">La variante principal define el precio de la tarjeta. Con más de una variante, la ficha muestra un selector con cada presentación.</p><FieldMessage id="error-variants" message={fieldError("variants")}/>
+          <p className="admin-help">La variante principal define el precio de la tarjeta. Con más de una variante, la ficha muestra un selector de sabor y cambia las fotos según el sabor elegido (si un sabor no tiene fotos propias, se usan las del producto).</p><FieldMessage id="error-variants" message={fieldError("variants")}/>
           <div className="admin-variants">{variants.map((variant, index) => { const f = (field: string) => `variants.${index}.${field}`; const isDefault = variant.key === defaultKey; return <fieldset className={`admin-variant${isDefault ? " is-default" : ""}`} key={variant.key}>
             <legend>{variant.label || variant.sku || `Variante ${index + 1}`}{isDefault && <span className="admin-status admin-status--active">Principal</span>}{!variant.id && <span className="admin-status admin-status--draft">Nueva</span>}</legend>
-            <div className="admin-form-row"><label>SKU<input value={variant.sku} onChange={(e) => updateVariant(variant.key, { sku: e.target.value })} required maxLength={80} placeholder="Código único" {...invalid(f("sku"))}/><FieldMessage id={`error-variants-${index}-sku`} message={fieldError(f("sku"))}/></label><label>Presentación<input value={variant.label} onChange={(e) => updateVariant(variant.key, { label: e.target.value })} maxLength={120} placeholder="Ej. 300 g · Frutilla" {...invalid(f("label"))}/><FieldMessage id={`error-variants-${index}-label`} message={fieldError(f("label"))}/></label></div>
+            <div className="admin-form-row"><label>SKU<input value={variant.sku} onChange={(e) => updateVariant(variant.key, { sku: e.target.value })} required maxLength={80} placeholder="Código único" {...invalid(f("sku"))}/><FieldMessage id={`error-variants-${index}-sku`} message={fieldError(f("sku"))}/></label><label>Sabor<input value={variant.label} onChange={(e) => updateVariant(variant.key, { label: e.target.value })} maxLength={120} placeholder="Ej. Frutilla (vacío si no tiene sabores)" {...invalid(f("label"))}/><FieldMessage id={`error-variants-${index}-label`} message={fieldError(f("label"))}/></label></div>
             <div className="admin-form-row"><label>Precio en pesos<input type="number" inputMode="numeric" min="0" step="1" value={variant.price} onChange={(e) => updateVariant(variant.key, { price: e.target.value })} required {...invalid(f("priceArs"))}/><FieldMessage id={`error-variants-${index}-priceArs`} message={fieldError(f("priceArs"))}/></label><label>Precio anterior (opcional)<input type="number" inputMode="numeric" min="0" step="1" value={variant.comparePrice} onChange={(e) => updateVariant(variant.key, { comparePrice: e.target.value })} placeholder="Solo con descuento real" {...invalid(f("compareAtPriceArs"))}/><FieldMessage id={`error-variants-${index}-compareAtPriceArs`} message={fieldError(f("compareAtPriceArs"))}/></label></div>
             <div className="admin-variant-stock"><label className="admin-check"><input type="checkbox" checked={variant.trackStock} onChange={(e) => updateVariant(variant.key, { trackStock: e.target.checked })}/> Controlar stock</label>{variant.trackStock ? <label>Unidades disponibles<input type="number" inputMode="numeric" min="0" step="1" value={variant.stock} onChange={(e) => updateVariant(variant.key, { stock: e.target.value })} required {...invalid(f("stock"))}/><FieldMessage id={`error-variants-${index}-stock`} message={fieldError(f("stock"))}/></label> : <p className="admin-help">Sin control: se muestra disponible y no se descuentan unidades.</p>}</div>
+            {galleryAvailable && <div className="admin-variant-gallery"><h3>Fotos de este sabor</h3><p className="admin-help">Orden recomendado: frente, dorso y rótulo nutricional. Hasta {MAX_VARIANT_IMAGES}.</p><FieldMessage id={`error-variants-${index}-images`} message={fieldError(f("images"))}/>
+              <div className="admin-image-grid">{variant.images.map((image, imageIndex) => <div className="admin-image-tile" key={image.url}><Image src={image.url} alt={`Foto ${imageIndex + 1} de ${variant.label || "la variante"}`} width={120} height={120}/><span>{pendingUploads.includes(image.url) ? "sin guardar" : image.kind === "nutrition" ? "Rótulo" : imageIndex === 0 ? "Frente" : imageIndex === 1 ? "Dorso" : "Producto"}</span><button type="button" className="admin-image-remove" aria-label={`Quitar foto ${imageIndex + 1}`} onClick={() => removeVariantImage(variant.key, imageIndex)}><Trash2 size={17}/></button><div className="admin-image-tools"><select className="select-field select-field--compact" aria-label={`Tipo de la foto ${imageIndex + 1}`} value={image.kind} onChange={(e) => setVariantImageKind(variant.key, imageIndex, e.target.value as AdminImageInput["kind"])}><option value="product">Producto</option><option value="nutrition">Rótulo</option></select><button type="button" aria-label={`Mover foto ${imageIndex + 1} antes`} disabled={imageIndex === 0} onClick={() => moveVariantImage(variant.key, imageIndex, -1)}>←</button><button type="button" aria-label={`Mover foto ${imageIndex + 1} después`} disabled={imageIndex === variant.images.length - 1} onClick={() => moveVariantImage(variant.key, imageIndex, 1)}>→</button></div></div>)}
+                <label className="admin-upload-tile"><ImagePlus size={26}/><span>{uploading ? "Subiendo…" : "Agregar fotos"}</span><input type="file" accept="image/png,image/jpeg,image/webp" multiple disabled={uploading || variant.images.length >= MAX_VARIANT_IMAGES} onChange={(e) => { addVariantImages(variant.key, e.target.files, variant.images.length); e.target.value = ""; }}/></label></div></div>}
             <details className="admin-shipping" open={Boolean(variant.weight || variant.length || variant.width || variant.height || shippingInputs.some((input) => fieldError(f(input.field))))}>
               <summary>Datos para envío <span>(opcional)</span></summary>
               {shippingAvailable ? <>

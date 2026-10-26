@@ -1,0 +1,410 @@
+{
+  "_doc": "Fuentes oficiales de fotos por sabor. Formato y comandos: scripts/build-variant-images.mjs (npm run images:variants). Star Nutrition: la imagen de cada sabor sale de la variante del Shopify oficial (el sitio no publica dorso ni rótulo por sabor).",
+  "products": {
+    "proteina-star-2lb": {
+      "officialSites": [
+        "https://starnutrition.com.ar"
+      ],
+      "variants": {
+        "mango": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/WheyProteinMSF.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack"
+            }
+          ]
+        },
+        "pistacho": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/WheyProteinPistacho.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack"
+            }
+          ]
+        },
+        "vainilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/WP-2Lb-Vainilla.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack"
+            }
+          ]
+        },
+        "chocolate": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/WP-2Lb-Chocolate.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack"
+            }
+          ]
+        },
+        "cookies-cream": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/WP-2Lb-Cookies.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack"
+            }
+          ]
+        },
+        "frutilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/WP-2Lb-Strawberry.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack"
+            }
+          ]
+        },
+        "banana": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/WP-2Lb-Banana.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack"
+            }
+          ]
+        }
+      }
+    },
+    "proteina-star-platinum-2lb": {
+      "officialSites": [
+        "https://starnutrition.com.ar"
+      ],
+      "variants": {
+        "chocolate": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-2Lb-Chocolate.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/platinum-whey-protein-chocolate-x-2-lbs"
+            }
+          ]
+        },
+        "vainilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-2Lb-Vainilla.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/platinum-whey-protein-chocolate-x-2-lbs"
+            }
+          ]
+        },
+        "cookies-cream": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-2Lb-Cookies.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/platinum-whey-protein-chocolate-x-2-lbs"
+            }
+          ]
+        },
+        "frutilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-2Lb-Strawberry.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/platinum-whey-protein-chocolate-x-2-lbs"
+            }
+          ]
+        },
+        "banana": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-2Lb-Banana.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/platinum-whey-protein-chocolate-x-2-lbs"
+            }
+          ]
+        }
+      }
+    },
+    "proteina-star-platinum-3-kg": {
+      "officialSites": [
+        "https://starnutrition.com.ar"
+      ],
+      "variants": {
+        "chocolate": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-3Kg-Chocolate.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/premium-whey-protein-vainilla-x-3-kilos-zipper-pack"
+            }
+          ]
+        },
+        "vainilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-3Kg-Vainilla.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/premium-whey-protein-vainilla-x-3-kilos-zipper-pack"
+            }
+          ]
+        },
+        "cookies-cream": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-3KG-Cookies.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/premium-whey-protein-vainilla-x-3-kilos-zipper-pack"
+            }
+          ]
+        },
+        "frutilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-3Kg-Strawberry.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/premium-whey-protein-vainilla-x-3-kilos-zipper-pack"
+            }
+          ]
+        },
+        "banana": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PWP-3Kg-Banana.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/premium-whey-protein-vainilla-x-3-kilos-zipper-pack"
+            }
+          ]
+        }
+      }
+    },
+    "creatina-star-300gr-doypack": {
+      "officialSites": [
+        "https://starnutrition.com.ar"
+      ],
+      "variants": {
+        "sin-sabor": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/Creatine_300.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/creatina-monohidrato-300g-doypack-saborizada"
+            }
+          ]
+        },
+        "limon": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/Creatine300-LIMON-f.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/creatina-monohidrato-300g-doypack-saborizada"
+            }
+          ]
+        },
+        "uva": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/Creatine300-UVA-f.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/creatina-monohidrato-300g-doypack-saborizada"
+            }
+          ]
+        },
+        "frutos-rojos": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/CreatineMonohydrate300gDFR_SF.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/creatina-monohidrato-300g-doypack-saborizada"
+            }
+          ]
+        }
+      }
+    },
+    "pre-entreno-star-nutricion": {
+      "officialSites": [
+        "https://starnutrition.com.ar"
+      ],
+      "variants": {
+        "acai-power": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PumpV8-ACAI_0a4d191e-85bc-450f-9bed-63e0f4a9cb6a.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr"
+            }
+          ]
+        },
+        "lima-limon": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PumpV8-CIT_ef334398-bea3-4be4-bf17-3ede1b59dd79.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr"
+            }
+          ]
+        },
+        "grape-attack": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PumpV8-GRAPE_4ea8875d-bfe5-400d-b041-c17199de0a27.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr"
+            }
+          ]
+        },
+        "watermelon": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/PumpV8-WMEL_256a8bca-27cd-4ba8-8dc8-edffe507986d.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr"
+            }
+          ]
+        }
+      }
+    },
+    "bcaa-star-nutrition": {
+      "officialSites": [
+        "https://starnutrition.com.ar"
+      ],
+      "variants": {
+        "fruit-punch": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MtorBCAA-270g-_2.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mtor-bcaa-270g"
+            }
+          ]
+        },
+        "strawberry-lime": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/STANUT2022BCO_1.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mtor-bcaa-270g"
+            }
+          ]
+        },
+        "green-lemonade": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MtorBCAA-270g-_6_81557bd0-27ec-4c56-b79b-62afe1ec079d.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mtor-bcaa-270g"
+            }
+          ]
+        }
+      }
+    },
+    "colageno-hidrolizado-star-210g": {
+      "officialSites": [
+        "https://starnutrition.com.ar"
+      ],
+      "variants": {
+        "limon": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/STANUT2030BCL.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/collagen210gr"
+            }
+          ]
+        },
+        "frutos-rojos": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/Collagen210gFR_SG_SF_1.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/collagen210gr"
+            }
+          ]
+        }
+      }
+    },
+    "mutant-mass-1-5-kg": {
+      "officialSites": [
+        "https://starnutrition.com.ar"
+      ],
+      "variants": {
+        "frutilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MutantMass-1.5Kg-Frutilla.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-1-5kg"
+            }
+          ]
+        },
+        "chocolate": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MUTANT-MASS-1530-chocolate-suizo_2.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-1-5kg"
+            }
+          ]
+        },
+        "cookies-cream": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MutantMass-1.5Kg-Cookies.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-1-5kg"
+            }
+          ]
+        },
+        "vainilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MutantMass-1.5.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-1-5kg"
+            }
+          ]
+        }
+      }
+    },
+    "mutant-mass-5-kg": {
+      "officialSites": [
+        "https://starnutrition.com.ar"
+      ],
+      "variants": {
+        "vainilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MutantMass-5Kg-vainilla.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-5kg"
+            }
+          ]
+        },
+        "frutilla": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MutantMass-5Kg-Frutilla.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-5kg"
+            }
+          ]
+        },
+        "chocolate": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MutantMass-5Kg-Chocolate.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-5kg"
+            }
+          ]
+        },
+        "cookies-cream": {
+          "sources": [
+            {
+              "url": "https://cdn.shopify.com/s/files/1/0567/4716/3735/files/MutantMass-5Kg-Cookies.png",
+              "kind": "product",
+              "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-5kg"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

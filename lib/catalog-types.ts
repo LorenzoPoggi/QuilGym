@@ -17,14 +17,28 @@ export type ProductSummary = {
   imageUrl: string | null;
   /** Hasta 4 fotos de producto (sin rótulos) para el carrusel de la tarjeta; la primera es `imageUrl`. */
   photoUrls: string[];
+  /** Cantidad de variantes con nombre (sabores) de la ficha; solo viene si hay más de una. */
+  flavorCount?: number;
 };
 
 export type ProductImage = { url: string; kind: "product" | "nutrition"; width: number; height: number };
 
+export type ProductVariantDetail = {
+  id: number;
+  sku: string;
+  label: string | null;
+  priceArs: number;
+  compareAtPriceArs: number | null;
+  inStock: boolean;
+  maxQuantity: number;
+  /** Fotos propias de la variante (frente, dorso y rótulo); vacío = se usa la galería del producto. */
+  images: ProductImage[];
+};
+
 export type ProductDetail = ProductSummary & {
   description: string | null;
   images: ProductImage[];
-  variants: { id: number; sku: string; label: string | null; priceArs: number; inStock: boolean; maxQuantity: number }[];
+  variants: ProductVariantDetail[];
 };
 
 export type CatalogSort = "relevancia" | "menor-precio" | "mayor-precio" | "nombre";

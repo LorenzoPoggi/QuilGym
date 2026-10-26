@@ -7,6 +7,7 @@ import type { ProductDetail } from "@/lib/catalog-types";
 import { ProductImage } from "./product-image";
 import { reducedMotion } from "@/lib/motion";
 import { ProductLightbox, useSnapTrack } from "./product-lightbox";
+import { useProductVariant, variantImages } from "./product-variant-provider";
 
 type GalleryProduct = Pick<ProductDetail, "name" | "brand" | "category" | "imageUrl" | "images">;
 
@@ -90,4 +91,13 @@ export function ProductGallery({ product }: { product: GalleryProduct }) {
       <ProductLightbox images={product.images.map((image, index) => ({ ...image, alt: label(index) }))} index={lightbox} title={product.name} onClose={close}/>
     </div>
   );
+}
+
+/** Galería que sigue al sabor elegido: usa las fotos propias del sabor o, si no tiene, las comunes del producto. */
+export function VariantGallery({ product }: { product: GalleryProduct }) {
+  const selected = useProductVariant()?.variant;
+  const images = variantImages(product.images, selected);
+  const imageUrl = images.find((image) => image.kind === "product")?.url ?? product.imageUrl;
+  // `key` reinicia el carrusel (posición y zoom) al cambiar de sabor.
+  return <ProductGallery key={selected?.id ?? "base"} product={{ ...product, images, imageUrl }}/>;
 }
