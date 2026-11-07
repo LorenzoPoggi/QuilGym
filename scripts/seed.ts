@@ -13,8 +13,10 @@ import { drizzle } from "drizzle-orm/neon-http";
 import catalog from "../data/tiendanube-catalog.json";
 import content from "../data/product-content.json";
 import images from "../data/product-images.json";
+import variantData from "../data/product-variants.json";
 import { assertDatabaseWriteAllowed } from "../lib/db/preview-safety";
 import { brands, categories, productImages, products, productVariants } from "../lib/db/schema";
+import type { FlavorData } from "../lib/flavor-merge";
 import { slugify } from "../lib/slugify";
 
 loadEnvConfig(process.cwd());
@@ -28,8 +30,14 @@ const categoryOrder = ["Proteínas", "Creatinas", "Pre-entrenos", "Aminoácidos"
 // Selección inicial para la home; se reemplaza cuando haya datos de ventas.
 const featured = new Set(["proteina-star-2lb", "creatina-star-300gr-clasica", "creatina-gold-300-gr", "mutant-mass-1-5-kg"]);
 
+// Productos unidos en una ficha con sabores (data/product-variants.json): el seed no los vuelve a crear
+// ni pisa el precio/stock de sus variantes (eso lo administra el panel).
+const flavorGroups = (variantData as unknown as FlavorData).groups;
+const mergedAway = new Set(flavorGroups.flatMap((group) => group.mergeFrom ?? []));
+const groupedTargets = new Set(flavorGroups.map((group) => group.slug));
+
 async function main() {
-  const source = catalog.products;
+  const source = catalog.products.filter((item) => !mergedAway.has(item.siteSlug));
 
   const categoryRows = await db.insert(categories)
     .values([...new Set(source.map((p) => p.category))].map((name) => ({ name, slug: slugify(name), position: categoryOrder.indexOf(name) })))
@@ -61,6 +69,7 @@ async function main() {
     if (rows.length) await db.insert(productImages).values(rows);
     imageCount += rows.length;
 
+    if (groupedTargets.has(slug)) continue;
     await db.insert(productVariants)
       .values({ productId: product.id, sku: `QG-${String(product.id).padStart(4, "0")}`, priceArs: item.priceArs, stock: item.inStock ? null : 0, isDefault: true })
       .onConflictDoUpdate({ target: productVariants.sku, set: { priceArs: sql`excluded.price_ars`, stock: sql`excluded.stock` } });

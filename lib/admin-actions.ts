@@ -4,10 +4,10 @@ import { and, eq, inArray, ne } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { del } from "@vercel/blob";
 import { getAdminUser } from "./admin-auth";
-import { getAdminProduct, getAdminTaxonomy, ownedBlobUrl, slugPattern, stockHistoryAvailable, validateProductInput, variantShippingAvailable, validateTaxonomyInput, type AdminProductInput, type AdminTaxonomyInput, type FieldErrors } from "./admin-catalog";
+import { getAdminProduct, getAdminTaxonomy, ownedBlobUrl, slugPattern, stockHistoryAvailable, validateProductInput, variantImagesAvailable, variantShippingAvailable, validateTaxonomyInput, type AdminProductInput, type AdminTaxonomyInput, type FieldErrors } from "./admin-catalog";
 import { CATALOG_TAG } from "./catalog";
 import { db } from "./db";
-import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants, variantShipping } from "./db/schema";
+import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants, variantImages, variantShipping } from "./db/schema";
 import { withOrderTransaction } from "./db/transaction";
 import { slugify } from "./slugify";
 
@@ -35,6 +35,8 @@ async function removeOrphanBlobs(urls: string[]) {
   if (!candidates.length) return 0;
   try {
     const referenced = new Set((await db.select({ url: productImages.url }).from(productImages).where(inArray(productImages.url, candidates))).map((row) => row.url));
+    // Las fotos por sabor también cuentan como referencias (si la migración 0012 ya está aplicada).
+    if (await variantImagesAvailable()) for (const row of await db.select({ url: variantImages.url }).from(variantImages).where(inArray(variantImages.url, candidates))) referenced.add(row.url);
     const orphans = candidates.filter((url) => !referenced.has(url));
     if (orphans.length) await del(orphans);
     return orphans.length;
@@ -89,6 +91,9 @@ export async function saveAdminProduct(input: AdminProductInput): Promise<Action
       for (const row of taken) errors[`variants.${skus.indexOf(row.sku)}.sku`] = "Ese SKU ya lo usa otro producto.";
       if (Object.keys(errors).length) throw new FieldError(errors);
 
+      const galleryReady = input.variants.some((variant) => variant.images !== undefined) && await variantImagesAvailable(tx);
+      const removedGalleryUrls: string[] = [];
+      if (galleryReady && input.removedVariantIds.length) removedGalleryUrls.push(...(await tx.select({ url: variantImages.url }).from(variantImages).where(inArray(variantImages.variantId, input.removedVariantIds))).map((row) => row.url));
       if (input.removedVariantIds.length) await tx.delete(productVariants).where(and(eq(productVariants.productId, productId), inArray(productVariants.id, input.removedVariantIds)));
       await tx.update(productVariants).set({ isDefault: false }).where(and(eq(productVariants.productId, productId), eq(productVariants.isDefault, true)));
       const changes: { variantId: number; sku: string; previousStock: number | null; newStock: number | null }[] = [];
@@ -108,6 +113,15 @@ export async function saveAdminProduct(input: AdminProductInput): Promise<Action
           variantId = created.id;
           changes.push({ variantId: created.id, sku: data.sku, previousStock: null, newStock: variant.stock });
         }
+        if (variant.images !== undefined) {
+          if (!galleryReady) {
+            if (variant.images.length) throw new FieldError({ [`variants.${index}.images`]: "Para guardar fotos por sabor falta aplicar la migración 0012 en la base." });
+          } else {
+            removedGalleryUrls.push(...(await tx.select({ url: variantImages.url }).from(variantImages).where(eq(variantImages.variantId, variantId))).map((row) => row.url));
+            await tx.delete(variantImages).where(eq(variantImages.variantId, variantId));
+            if (variant.images.length) await tx.insert(variantImages).values(variant.images.map((image, position) => ({ variantId, url: image.url, kind: image.kind, width: image.width, height: image.height, position })));
+          }
+        }
         if (shippingReady && variant.shipping) {
           const { weightGrams, lengthCm, widthCm, heightCm } = variant.shipping;
           if (weightGrams === null && lengthCm === null && widthCm === null && heightCm === null) await tx.delete(variantShipping).where(eq(variantShipping.variantId, variantId));
@@ -120,8 +134,8 @@ export async function saveAdminProduct(input: AdminProductInput): Promise<Action
       const oldImages = await tx.select({ url: productImages.url }).from(productImages).where(eq(productImages.productId, productId));
       await tx.delete(productImages).where(eq(productImages.productId, productId));
       if (input.images.length) await tx.insert(productImages).values(input.images.map((image, position) => ({ productId, url: image.url, kind: image.kind, width: image.width, height: image.height, position })));
-      const keptUrls = new Set(input.images.map((image) => image.url));
-      return { id: productId, oldSlug, slug: newSlug ?? oldSlug, removedUrls: oldImages.map((image) => image.url).filter((url) => !keptUrls.has(url)) };
+      const keptUrls = new Set([...input.images.map((image) => image.url), ...input.variants.flatMap((variant) => (variant.images ?? []).map((image) => image.url))]);
+      return { id: productId, oldSlug, slug: newSlug ?? oldSlug, removedUrls: [...oldImages.map((image) => image.url), ...removedGalleryUrls].filter((url) => !keptUrls.has(url)) };
     });
     await removeOrphanBlobs(result.removedUrls);
     revalidateCatalog(result.oldSlug ? [`/productos/${result.oldSlug}`, `/admin/productos/${result.id}`] : []);

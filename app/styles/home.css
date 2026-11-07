@@ -202,3 +202,10 @@
   .objective { transition: none; }
   .objective:hover { transform: none; }
 }
+
+/* Página de objetivo: evidencia y productos por prioridad */
+.objective-page { padding-block: 8px 72px; }
+.objective-hero { max-width: 720px; margin: 8px 0 28px; }
+.objective-hero h1 { margin: 0 0 10px; font-size: clamp(2rem, 5vw, 3rem); }
+.objective-hero p:not(.eyebrow) { margin: 0; color: var(--muted); line-height: 1.6; }
+.objective-group { margin-bottom: 48px; }

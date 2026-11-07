@@ -1,0 +1,628 @@
+{
+  "_doc": "Sabores por producto. Generado a mano a partir de las fichas oficiales y de Tiendanube. sold=false => se crea con stock 0 hasta que el negocio lo habilite desde el panel. Ver docs en lib/flavor-merge.ts.",
+  "groups": [
+    {
+      "slug": "creatina-star-300gr-doypack",
+      "option": "Sabor",
+      "sourcePage": "https://starnutrition.com.ar/products/creatina-monohidrato-300g-doypack-saborizada",
+      "mergeFrom": [
+        "creatina-star-300-gr-frutos-rojos",
+        "creatina-star-300gr-uva",
+        "creatina-star-300gr-limon"
+      ],
+      "note": "El sitio oficial llama 'Grape' a la uva.",
+      "variants": [
+        {
+          "key": "sin-sabor",
+          "label": "Sin sabor",
+          "sold": true,
+          "fromSlug": "creatina-star-300gr-doypack"
+        },
+        {
+          "key": "frutos-rojos",
+          "label": "Frutos rojos",
+          "sold": true,
+          "fromSlug": "creatina-star-300-gr-frutos-rojos"
+        },
+        {
+          "key": "uva",
+          "label": "Uva",
+          "sold": true,
+          "fromSlug": "creatina-star-300gr-uva"
+        },
+        {
+          "key": "limon",
+          "label": "Limón",
+          "sold": true,
+          "fromSlug": "creatina-star-300gr-limon"
+        }
+      ]
+    },
+    {
+      "slug": "proteina-star-2lb",
+      "option": "Sabor",
+      "sourcePage": "https://starnutrition.com.ar/products/whey-protein-2lb-doypack",
+      "note": "Tiendanube listaba Cookies, Chocolate suizo, Vainilla, Frutilla y Banana. Mango y Pistacho solo en el sitio oficial.",
+      "variants": [
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": true,
+          "fromSlug": "proteina-star-2lb"
+        },
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": true
+        },
+        {
+          "key": "cookies-cream",
+          "label": "Cookies & Cream",
+          "sold": true
+        },
+        {
+          "key": "frutilla",
+          "label": "Frutilla",
+          "sold": true
+        },
+        {
+          "key": "banana",
+          "label": "Banana",
+          "sold": true
+        },
+        {
+          "key": "mango",
+          "label": "Mango",
+          "sold": false
+        },
+        {
+          "key": "pistacho",
+          "label": "Pistacho",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "proteina-star-platinum-2lb",
+      "option": "Sabor",
+      "sourcePage": "https://starnutrition.com.ar/products/platinum-whey-protein-chocolate-x-2-lbs",
+      "variants": [
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": true,
+          "fromSlug": "proteina-star-platinum-2lb"
+        },
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": true
+        },
+        {
+          "key": "cookies-cream",
+          "label": "Cookies & Cream",
+          "sold": true
+        },
+        {
+          "key": "frutilla",
+          "label": "Frutilla",
+          "sold": true
+        },
+        {
+          "key": "banana",
+          "label": "Banana",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "proteina-star-platinum-3-kg",
+      "option": "Sabor",
+      "sourcePage": "https://starnutrition.com.ar/products/premium-whey-protein-vainilla-x-3-kilos-zipper-pack",
+      "note": "Producto sin stock hoy: todos los sabores quedan sin stock.",
+      "variants": [
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": false,
+          "fromSlug": "proteina-star-platinum-3-kg"
+        },
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": false
+        },
+        {
+          "key": "cookies-cream",
+          "label": "Cookies & Cream",
+          "sold": false
+        },
+        {
+          "key": "frutilla",
+          "label": "Frutilla",
+          "sold": false
+        },
+        {
+          "key": "banana",
+          "label": "Banana",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "pre-entreno-star-nutricion",
+      "option": "Sabor",
+      "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr",
+      "note": "Tiendanube listaba Uva, Limón (sin stock), Sandía y Acaí. Coincidencia del producto inferida por nombre (280 g vs 285 g).",
+      "variants": [
+        {
+          "key": "watermelon",
+          "label": "Watermelon",
+          "sold": true,
+          "fromSlug": "pre-entreno-star-nutricion"
+        },
+        {
+          "key": "grape-attack",
+          "label": "Grape Attack",
+          "sold": true
+        },
+        {
+          "key": "acai-power",
+          "label": "Acaí Power",
+          "sold": true
+        },
+        {
+          "key": "lima-limon",
+          "label": "Lima Limón",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "bcaa-star-nutrition",
+      "option": "Sabor",
+      "sourcePage": "https://starnutrition.com.ar/products/mtor-bcaa-270g",
+      "note": "CONFIRMAR: Tiendanube listaba Limonada, Frutilla y Sandía (todo sin stock); coincidencia con Mtor BCAA inferida.",
+      "variants": [
+        {
+          "key": "fruit-punch",
+          "label": "Fruit Punch",
+          "sold": false,
+          "fromSlug": "bcaa-star-nutrition"
+        },
+        {
+          "key": "strawberry-lime",
+          "label": "Strawberry Lime",
+          "sold": false
+        },
+        {
+          "key": "green-lemonade",
+          "label": "Green Lemonade",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "colageno-hidrolizado-star-210g",
+      "option": "Sabor",
+      "sourcePage": "https://starnutrition.com.ar/products/collagen210gr",
+      "variants": [
+        {
+          "key": "frutos-rojos",
+          "label": "Frutos rojos",
+          "sold": true,
+          "fromSlug": "colageno-hidrolizado-star-210g"
+        },
+        {
+          "key": "limon",
+          "label": "Limón",
+          "sold": true
+        }
+      ]
+    },
+    {
+      "slug": "mutant-mass-1-5-kg",
+      "option": "Sabor",
+      "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-1-5kg",
+      "variants": [
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": true,
+          "fromSlug": "mutant-mass-1-5-kg"
+        },
+        {
+          "key": "frutilla",
+          "label": "Frutilla",
+          "sold": true
+        },
+        {
+          "key": "cookies-cream",
+          "label": "Cookies & Cream",
+          "sold": true
+        },
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": true
+        }
+      ]
+    },
+    {
+      "slug": "mutant-mass-5-kg",
+      "option": "Sabor",
+      "sourcePage": "https://starnutrition.com.ar/products/mutant-mass-5kg",
+      "note": "Producto sin stock hoy: todos los sabores quedan sin stock.",
+      "variants": [
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": false,
+          "fromSlug": "mutant-mass-5-kg"
+        },
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": false
+        },
+        {
+          "key": "frutilla",
+          "label": "Frutilla",
+          "sold": false
+        },
+        {
+          "key": "cookies-cream",
+          "label": "Cookies & Cream",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "proteina-gold-nutrition-2lb",
+      "option": "Sabor",
+      "sourcePage": "https://www.goldnutrition.com.ar/proteinas/100-whey-protein-2lb",
+      "note": "Oficial: Gourmet Milk Chocolate, Gourmet Vainilla, Strawberry Shake y Unflavored. Tiendanube listaba Chocolate suizo, Frutilla (sin stock) y Vainilla (sin stock).",
+      "variants": [
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": true,
+          "fromSlug": "proteina-gold-nutrition-2lb"
+        },
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": false
+        },
+        {
+          "key": "frutilla",
+          "label": "Frutilla",
+          "sold": false
+        },
+        {
+          "key": "sin-sabor",
+          "label": "Sin sabor",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "proteina-body-advance-1kg",
+      "option": "Sabor",
+      "sourcePage": "https://bodyadvancenutrition.com/?s=proteina&post_type=product",
+      "note": "Tiendanube: Chocolate y Dulce de leche sin stock.",
+      "variants": [
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": true,
+          "fromSlug": "proteina-body-advance-1kg"
+        },
+        {
+          "key": "frutos-rojos",
+          "label": "Frutos rojos",
+          "sold": true
+        },
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": false
+        },
+        {
+          "key": "dulce-de-leche",
+          "label": "Dulce de leche",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "proteina-body-advance-3-kg",
+      "option": "Sabor",
+      "sourcePage": "https://bodyadvancenutrition.com/?s=proteina&post_type=product",
+      "note": "Tiendanube: Dulce de leche sin stock.",
+      "variants": [
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": true,
+          "fromSlug": "proteina-body-advance-3-kg"
+        },
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": true
+        },
+        {
+          "key": "frutos-rojos",
+          "label": "Frutos rojos",
+          "sold": true
+        },
+        {
+          "key": "dulce-de-leche",
+          "label": "Dulce de leche",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "preentreno-beast-blood",
+      "option": "Sabor",
+      "sourcePage": "https://bodyadvancenutrition.com/?s=beast&post_type=product",
+      "variants": [
+        {
+          "key": "multifruta",
+          "label": "Multifruta",
+          "sold": true,
+          "fromSlug": "preentreno-beast-blood"
+        },
+        {
+          "key": "uva",
+          "label": "Uva",
+          "sold": true
+        }
+      ]
+    },
+    {
+      "slug": "proteina-xtrenght-2lb",
+      "option": "Sabor",
+      "sourcePage": "https://xtrenght-nutrition.com/shop/best-whey-pf00936-1698244313",
+      "note": "CONFIRMAR: los cinco sabores salen del texto de un combo oficial; Tiendanube listaba Chocolate y Vainilla sin stock y no listaba Banana.",
+      "variants": [
+        {
+          "key": "frutilla",
+          "label": "Frutilla",
+          "sold": true,
+          "fromSlug": "proteina-xtrenght-2lb"
+        },
+        {
+          "key": "cookies-cream",
+          "label": "Cookies & Cream",
+          "sold": true
+        },
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": false
+        },
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": false
+        },
+        {
+          "key": "banana",
+          "label": "Banana",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "proteina-one-fit-2lb",
+      "option": "Sabor",
+      "sourcePage": "https://tiendaxnutrition.com/products/classic-whey-protein-2-lbs",
+      "note": "Tiendanube: Vainilla sin stock. Lemon Pie y Dulce de leche solo en el sitio de la marca.",
+      "variants": [
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": true,
+          "fromSlug": "proteina-one-fit-2lb"
+        },
+        {
+          "key": "frutilla",
+          "label": "Frutilla",
+          "sold": true
+        },
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": false
+        },
+        {
+          "key": "lemon-pie",
+          "label": "Lemon Pie",
+          "sold": false
+        },
+        {
+          "key": "dulce-de-leche",
+          "label": "Dulce de leche",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "colageno-ena-sport-407g",
+      "option": "Sabor",
+      "sourcePage": "https://enasport.com/products/colageno-sport",
+      "note": "Producto sin stock hoy: ambos sabores quedan sin stock.",
+      "variants": [
+        {
+          "key": "naranja",
+          "label": "Naranja",
+          "sold": false,
+          "fromSlug": "colageno-ena-sport-407g"
+        },
+        {
+          "key": "fruit-punch",
+          "label": "Fruit Punch",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "creatina-ena-sport-300-gr",
+      "option": "Sabor",
+      "sourcePage": "https://enasport.com/products/creatina-monohidrato",
+      "note": "CONFIRMAR: el sitio oficial ofrece Neutro, Fruit Punch y Naranja; Tiendanube solo vendía la versión sin sabor.",
+      "variants": [
+        {
+          "key": "sin-sabor",
+          "label": "Sin sabor",
+          "sold": true,
+          "fromSlug": "creatina-ena-sport-300-gr"
+        },
+        {
+          "key": "fruit-punch",
+          "label": "Fruit Punch",
+          "sold": false
+        },
+        {
+          "key": "naranja",
+          "label": "Naranja",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "pre-entreno-painlabs",
+      "option": "Sabor",
+      "note": "CONFIRMAR: sin sitio oficial encontrado; lista tomada de Tiendanube (todo sin stock). Sin ficha oficial.",
+      "variants": [
+        {
+          "key": "blood-party",
+          "label": "Blood Party",
+          "sold": false,
+          "fromSlug": "pre-entreno-painlabs"
+        },
+        {
+          "key": "mango-naranja",
+          "label": "Mango Naranja",
+          "sold": false
+        },
+        {
+          "key": "uva",
+          "label": "Uva",
+          "sold": false
+        },
+        {
+          "key": "cotton-candy",
+          "label": "Cotton Candy",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "barritas-mervick-65g-banana",
+      "option": "Sabor",
+      "sourcePage": "https://tiendamervick.com.ar/p/barra-proteica-mervick-lab-whey-protein-bar-caja-x12-un-65-gr/03ef1dad-c836-4acc-8c1b-40dd5b12b801",
+      "name": "Barritas Mervick 65 g",
+      "mergeFrom": [
+        "barritas-mervick-65g-frutos-rojos",
+        "barritas-mervick-65g-chocolate"
+      ],
+      "note": "CONFIRMAR Frambuesa y Limón (listados como 'sabores disponibles' en una tienda que no se pudo verificar como oficial).",
+      "variants": [
+        {
+          "key": "banana",
+          "label": "Banana",
+          "sold": true,
+          "fromSlug": "barritas-mervick-65g-banana"
+        },
+        {
+          "key": "frutos-rojos",
+          "label": "Frutos rojos",
+          "sold": true,
+          "fromSlug": "barritas-mervick-65g-frutos-rojos"
+        },
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": true,
+          "fromSlug": "barritas-mervick-65g-chocolate"
+        },
+        {
+          "key": "frambuesa",
+          "label": "Frambuesa",
+          "sold": false
+        },
+        {
+          "key": "limon",
+          "label": "Limón",
+          "sold": false
+        }
+      ]
+    },
+    {
+      "slug": "barritas-proteicas-bravas-arandanos",
+      "option": "Sabor",
+      "sourcePage": "https://www.estoesbrava.com.ar/productos/",
+      "name": "Barritas proteicas Bravas",
+      "mergeFrom": [
+        "barritas-proteicas-bravas-datiles"
+      ],
+      "note": "El sitio oficial nombra los sabores distinto (Arándanos y Jengibre, Cacao); se mantienen los de Tiendanube.",
+      "variants": [
+        {
+          "key": "arandanos",
+          "label": "Arándanos",
+          "sold": true,
+          "fromSlug": "barritas-proteicas-bravas-arandanos"
+        },
+        {
+          "key": "datiles",
+          "label": "Dátiles",
+          "sold": true,
+          "fromSlug": "barritas-proteicas-bravas-datiles"
+        }
+      ]
+    },
+    {
+      "slug": "pancakes-proteicos-granger-vainilla",
+      "option": "Sabor",
+      "sourcePage": "https://www.grangernutricion.com/productos/",
+      "name": "Pancakes proteicos Granger",
+      "mergeFrom": [
+        "pancakes-proteicos-chocolate"
+      ],
+      "variants": [
+        {
+          "key": "vainilla",
+          "label": "Vainilla",
+          "sold": true,
+          "fromSlug": "pancakes-proteicos-granger-vainilla"
+        },
+        {
+          "key": "chocolate",
+          "label": "Chocolate",
+          "sold": true,
+          "fromSlug": "pancakes-proteicos-chocolate"
+        },
+        {
+          "key": "dulce-de-leche",
+          "label": "Dulce de leche",
+          "sold": false
+        },
+        {
+          "key": "limon",
+          "label": "Limón",
+          "sold": false
+        },
+        {
+          "key": "avellana",
+          "label": "Avellana",
+          "sold": false
+        }
+      ]
+    }
+  ]
+}

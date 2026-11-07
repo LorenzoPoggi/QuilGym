@@ -48,7 +48,7 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
     { label: "Precio cada 100 g", note: "Calculado con el peso que figura en el nombre. Verificá el rótulo.", cells: compared.map((product, index) => ({ text: weights[index] ? formatArs(pricePer100g(product.priceArs, weights[index].grams)) : "No aplica" })) },
     { label: "Presentación", cells: compared.map((product, index) => {
       const variant = details[index]?.variants.find((item) => item.id === product.variantId)?.label;
-      return { text: variant ?? weights[index]?.label ?? "Ver ficha" };
+      return { text: [variant, weights[index]?.label].filter(Boolean).join(" · ") || "Ver ficha" };
     }) },
     { label: "Marca", cells: compared.map((product) => ({ text: product.brand?.name ?? "—" })) },
     { label: "Categoría", cells: compared.map((product) => ({ text: product.category.name })) },

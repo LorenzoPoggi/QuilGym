@@ -77,6 +77,21 @@ export const productImages = pgTable("product_images", {
   ...timestamps,
 }, (table) => [index("product_images_product_idx").on(table.productId, table.position)]);
 
+/**
+ * Fotos propias de una variante (p. ej. cada sabor). Tabla aparte, como las de las migraciones opcionales:
+ * el código comprueba que exista (`tableExists`) y, si una variante no tiene fotos, usa `product_images`.
+ */
+export const variantImages = pgTable("variant_images", {
+  id: serial("id").primaryKey(),
+  variantId: integer("variant_id").notNull().references(() => productVariants.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  kind: productImageKind("kind").notNull().default("product"),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  position: integer("position").notNull().default(0),
+  ...timestamps,
+}, (table) => [index("variant_images_variant_idx").on(table.variantId, table.position)]);
+
 /** Carrito de invitado; el id (uuid aleatorio) viaja en una cookie HttpOnly. */
 export const carts = pgTable("carts", {
   id: uuid("id").primaryKey().defaultRandom(),

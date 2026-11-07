@@ -12,6 +12,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:sync-names": "tsx scripts/sync-product-names.ts",
     "db:sync-images": "tsx scripts/sync-product-images.ts",
+    "db:merge-flavors": "tsx scripts/merge-flavor-products.ts",
     "db:sync-descriptions": "tsx scripts/sync-product-descriptions.ts",
     "db:studio": "tsx scripts/check-db-write.ts && drizzle-kit studio",
     "typecheck": "tsc --noEmit --incremental false",
@@ -24,6 +25,7 @@
     "images:check": "node scripts/check-product-gallery.mjs",
     "images:fetch": "node scripts/fetch-product-images.mjs",
     "images:build": "node scripts/build-product-images.mjs",
+    "images:variants": "node scripts/build-variant-images.mjs",
     "images:official:fetch": "node scripts/fetch-official-photos.mjs",
     "images:official:build": "node scripts/build-product-images.mjs",
     "video:hero": "node scripts/build-hero-video.mjs"

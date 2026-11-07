@@ -210,3 +210,18 @@ html:has(.lightbox[open]) { overflow: hidden; }
 @media (max-width: 380px) {
   .buy-actions > div:last-child .button { font-size: .82rem; gap: 6px; }
 }
+
+/* Selector de sabor de la ficha */
+.option-group--flavors > span strong { color: var(--ink); font-weight: 700; }
+.option-group--flavors > div { gap: 8px; }
+.option-group--flavors button { min-height: 44px; padding: 8px 14px; font-weight: 600; }
+.option-group--flavors button:disabled { color: #8a9094; border-style: dashed; background: transparent; opacity: .6; cursor: not-allowed; text-decoration: line-through; text-decoration-thickness: 1px; }
+.option-group--flavors button:focus-visible { outline: 3px solid #1d2022; outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .option-group--flavors button { transition: background-color .18s ease, color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+  .option-group--flavors button:not(:disabled):hover { transform: translateY(-2px); border-color: #1d2022; box-shadow: 0 8px 18px rgba(31, 35, 37, .14); }
+  .option-group--flavors button:not(:disabled):active { transform: scale(.96); box-shadow: none; }
+  .option-group--flavors button.is-active { animation: flavor-pop .28s ease; }
+}
+@keyframes flavor-pop { 0% { transform: scale(.94); } 60% { transform: scale(1.05); } 100% { transform: scale(1); } }
+

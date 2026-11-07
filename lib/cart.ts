@@ -5,7 +5,7 @@ import { emptyCart, MAX_QUANTITY_PER_LINE, type Cart, type CartLine } from "./ca
 import { commerce, formatArs } from "./commerce";
 import { db } from "./db";
 import { brands, cartItems, carts, categories, coupons, products, productVariants } from "./db/schema";
-import { getPrimaryImages } from "./catalog";
+import { getPrimaryImages, getVariantPrimaryImages } from "./catalog";
 import { evaluateCoupon, maxQuantityFor } from "./pricing";
 
 const CART_COOKIE = "qg_cart";
@@ -88,29 +88,31 @@ export async function getCart(cartId?: string | null): Promise<Cart> {
     .orderBy(asc(cartItems.createdAt), asc(cartItems.id));
 
   const primaryImages = await getPrimaryImages(rows.map((row) => row.productId));
+  const variantPhotos = await getVariantPrimaryImages(rows.map((row) => row.variantId));
   const notices: string[] = [];
   const fixes: Promise<unknown>[] = [];
   let hasBlockingIssues = false;
   let hasPriceChanges = false;
 
   const lines: CartLine[] = rows.map((row) => {
+    const displayName = row.variantLabel ? `${row.name} (${row.variantLabel})` : row.name;
     const maxQuantity = row.status === "active" ? maxQuantityFor(row.stock, MAX_QUANTITY_PER_LINE) : 0;
     const available = maxQuantity > 0;
     let quantity = row.quantity;
 
     if (!available) {
       hasBlockingIssues = true;
-      notices.push(`${row.name} se quedó sin stock. Quitalo para continuar.`);
+      notices.push(`${displayName} se quedó sin stock. Quitalo para continuar.`);
     } else if (quantity > maxQuantity) {
       quantity = maxQuantity;
-      notices.push(`Ajustamos ${row.name} a ${maxQuantity} ${maxQuantity === 1 ? "unidad" : "unidades"} por stock disponible.`);
+      notices.push(`Ajustamos ${displayName} a ${maxQuantity} ${maxQuantity === 1 ? "unidad" : "unidades"} por stock disponible.`);
       fixes.push(db.update(cartItems).set({ quantity }).where(eq(cartItems.id, row.itemId)));
     }
 
     // El aviso se mantiene hasta que el cliente lo confirma (acknowledgeCartChanges).
     if (available && row.seenPriceArs !== row.priceArs) {
       hasPriceChanges = true;
-      notices.push(`El precio de ${row.name} cambió de ${formatArs(row.seenPriceArs)} a ${formatArs(row.priceArs)}.`);
+      notices.push(`El precio de ${displayName} cambió de ${formatArs(row.seenPriceArs)} a ${formatArs(row.priceArs)}.`);
     }
 
     return {
@@ -120,7 +122,7 @@ export async function getCart(cartId?: string | null): Promise<Cart> {
       variantLabel: row.variantLabel,
       brand: row.brandSlug && row.brandName ? { slug: row.brandSlug, name: row.brandName } : null,
       category: { slug: row.categorySlug, name: row.categoryName },
-      imageUrl: primaryImages.get(row.productId) ?? null,
+      imageUrl: variantPhotos.get(row.variantId) ?? primaryImages.get(row.productId) ?? null,
       unitPriceArs: row.priceArs,
       quantity,
       lineTotalArs: available ? row.priceArs * quantity : 0,

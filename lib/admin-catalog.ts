@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { db } from "./db";
-import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants, variantShipping } from "./db/schema";
+import { brands, categories, orderItems, productImages, products, productStockChanges, productVariants, variantImages, variantShipping } from "./db/schema";
 import { tableExists } from "./db/table-exists";
 import { normalizeText } from "./slugify";
 
@@ -9,8 +9,12 @@ export type AdminStatus = "active" | "draft" | "archived";
 export type AdminImageInput = { url: string; kind: "product" | "nutrition"; width: number; height: number };
 /** Peso y medidas de la variante para cotizar el envío. Todo opcional: vacío = se usa el estimado por categoría. */
 export type AdminShippingInput = { weightGrams: number | null; lengthCm: number | null; widthCm: number | null; heightCm: number | null };
-/** `shipping` ausente = no tocar lo guardado; con los cuatro valores en `null` se borra la fila de `variant_shipping`. */
-export type AdminVariantInput = { id?: number; sku: string; label: string; priceArs: number; compareAtPriceArs: number | null; stock: number | null; shipping?: AdminShippingInput };
+/**
+ * `shipping` ausente = no tocar lo guardado; con los cuatro valores en `null` se borra la fila de `variant_shipping`.
+ * `images` ausente = no tocar las fotos del sabor; una lista (incluso vacía) las reemplaza (requiere la migración 0012).
+ */
+export type AdminVariantInput = { id?: number; sku: string; label: string; priceArs: number; compareAtPriceArs: number | null; stock: number | null; shipping?: AdminShippingInput; images?: AdminImageInput[] };
+export const MAX_VARIANT_IMAGES = 8;
 export type AdminProductInput = {
   id?: number; name: string; brandId: number | null; categoryId: number; description: string;
   status: AdminStatus; isFeatured: boolean; variants: AdminVariantInput[]; defaultIndex: number;
@@ -84,11 +88,13 @@ export function validateProductInput(input: AdminProductInput): FieldErrors {
       if (sku.length < 2 || sku.length > 80 || !/^[A-Za-z0-9._/-]+$/.test(sku)) errors[key("sku")] = "SKU de 2 a 80 caracteres: letras, números, punto, guion o barra.";
       else if (skus.has(sku.toUpperCase())) errors[key("sku")] = `Repite el SKU de la variante ${skus.get(sku.toUpperCase())! + 1}.`;
       else skus.set(sku.toUpperCase(), index);
-      if (typeof variant.label !== "string" || variant.label.length > 120) errors[key("label")] = "La presentación admite hasta 120 caracteres.";
+      if (typeof variant.label !== "string" || variant.label.length > 120) errors[key("label")] = "El sabor admite hasta 120 caracteres.";
       if (!validInteger(variant.priceArs) || variant.priceArs > 100_000_000) errors[key("priceArs")] = "Ingresá un precio entero en pesos.";
       if (variant.compareAtPriceArs !== null && (!validInteger(variant.compareAtPriceArs) || variant.compareAtPriceArs <= variant.priceArs)) errors[key("compareAtPriceArs")] = "El precio anterior debe superar al actual.";
       if (variant.stock !== null && (!validInteger(variant.stock) || variant.stock > 1_000_000)) errors[key("stock")] = "El stock debe ser cero o un número positivo.";
       Object.assign(errors, validateShippingInput(variant.shipping, key));
+      if (variant.images !== undefined && (!Array.isArray(variant.images) || variant.images.length > MAX_VARIANT_IMAGES || variant.images.some(invalidImage)
+        || new Set(variant.images.map((image) => image.url)).size !== variant.images.length)) errors[key("images")] = `Revisá las fotos del sabor (máximo ${MAX_VARIANT_IMAGES}, sin repetidas).`;
     });
   }
   if (!Array.isArray(input.images) || input.images.length > 12 || input.images.some((image) => !image || !validImageUrl(image.url) || !["product", "nutrition"].includes(image.kind) || !validInteger(image.width, 1) || !validInteger(image.height, 1) || image.width > 6000 || image.height > 6000)) errors.images = "Revisá las imágenes (máximo 12).";
@@ -164,6 +170,11 @@ export async function getAdminCatalog() {
 }
 
 /** La tabla de peso y medidas llega con la migración 0010; sin ella el panel sigue funcionando. */
+/** La tabla de fotos por sabor llega con la migración 0012; sin ella el panel sigue funcionando. */
+export async function variantImagesAvailable(executor: { execute: (query: SQL) => PromiseLike<unknown> } = db) {
+  return tableExists(executor, "variant_images");
+}
+
 export async function variantShippingAvailable(executor: { execute: (query: SQL) => PromiseLike<unknown> } = db) {
   return tableExists(executor, "variant_shipping");
 }
@@ -177,22 +188,30 @@ export async function stockHistoryAvailable(executor: { execute: (query: SQL) =>
   } catch { return false; }
 }
 
+function invalidImage(image: AdminImageInput) {
+  return !image || !validImageUrl(image.url) || !["product", "nutrition"].includes(image.kind) || !validInteger(image.width, 1) || !validInteger(image.height, 1) || image.width > 6000 || image.height > 6000;
+}
+
 export async function getAdminProduct(id: number) {
   const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
   if (!product) return null;
-  const [variants, images, historyReady, shippingReady] = await Promise.all([
+  const [variants, images, historyReady, shippingReady, galleryReady] = await Promise.all([
     db.select().from(productVariants).where(eq(productVariants.productId, id)).orderBy(desc(productVariants.isDefault), asc(productVariants.position), asc(productVariants.id)),
     db.select().from(productImages).where(eq(productImages.productId, id)).orderBy(asc(productImages.position)),
     stockHistoryAvailable(),
     variantShippingAvailable(),
+    variantImagesAvailable(),
   ]);
+  const galleryRows = galleryReady && variants.length ? await db.select().from(variantImages).where(inArray(variantImages.variantId, variants.map((variant) => variant.id))).orderBy(asc(variantImages.position), asc(variantImages.id)) : [];
+  const galleryByVariant = new Map<number, AdminImageInput[]>();
+  for (const row of galleryRows) galleryByVariant.set(row.variantId, [...(galleryByVariant.get(row.variantId) ?? []), { url: row.url, kind: row.kind, width: row.width, height: row.height }]);
   const shippingRows = shippingReady && variants.length ? await db.select().from(variantShipping).where(inArray(variantShipping.variantId, variants.map((variant) => variant.id))) : [];
   const shippingByVariant = new Map(shippingRows.map((row) => [row.variantId, { weightGrams: row.weightGrams, lengthCm: row.lengthCm, widthCm: row.widthCm, heightCm: row.heightCm }]));
   const ordered = variants.length ? await db.selectDistinct({ variantId: orderItems.variantId }).from(orderItems).where(inArray(orderItems.variantId, variants.map((variant) => variant.id))) : [];
   const withOrders = new Set(ordered.map((row) => row.variantId));
   const stockHistory = historyReady ? await db.select({ id: productStockChanges.id, sku: productStockChanges.sku, previousStock: productStockChanges.previousStock, newStock: productStockChanges.newStock, changedBy: productStockChanges.changedBy, createdAt: productStockChanges.createdAt })
     .from(productStockChanges).where(eq(productStockChanges.productId, id)).orderBy(desc(productStockChanges.createdAt), desc(productStockChanges.id)).limit(20) : null;
-  return { product, variants: variants.map((variant) => ({ ...variant, hasOrders: withOrders.has(variant.id), shipping: shippingByVariant.get(variant.id) ?? null })), images, stockHistory, shippingAvailable: shippingReady };
+  return { product, variants: variants.map((variant) => ({ ...variant, hasOrders: withOrders.has(variant.id), shipping: shippingByVariant.get(variant.id) ?? null, images: galleryByVariant.get(variant.id) ?? [] })), images, stockHistory, shippingAvailable: shippingReady, variantImagesAvailable: galleryReady };
 }
 
 export async function getAdminTaxonomy() {
