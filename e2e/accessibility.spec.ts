@@ -5,6 +5,7 @@ const routes = [
   ["inicio", "/"],
   ["catálogo", "/productos"],
   ["catálogo filtrado", "/productos?categoria=proteinas"],
+  ["objetivo masa muscular", "/objetivos/masa-muscular"],
   ["ficha de producto", "/productos/proteina-body-advance-1kg"],
   ["ficha de combo", "/productos/combo-classic"],
   ["búsqueda", "/buscar"],

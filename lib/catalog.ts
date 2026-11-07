@@ -20,7 +20,7 @@ export async function getPrimaryImages(productIds: number[]) {
   if (productIds.length === 0) return new Map<number, string>();
   const slugs = await db.select({ id: products.id, slug: products.slug }).from(products).where(inArray(products.id, productIds));
   const rows = await db
-    .select({ productId: productImages.productId, url: productImages.url })
+    .select({ productId: productImages.productId, url: productImages.url, width: productImages.width })
     .from(productImages)
     .where(and(inArray(productImages.productId, productIds), eq(productImages.kind, "product")))
     .orderBy(asc(productImages.productId), asc(productImages.position));
@@ -56,18 +56,18 @@ export async function getVariantPrimaryImages(variantIds: number[]) {
   return primary;
 }
 
-/** Hasta `limit` fotos de producto (no rótulos) de cada id, en orden. */
+/** Hasta `limit` fotos de producto (no rótulos) de cada id: la portada y las siguientes solo si tienen buena resolución. */
 export async function getProductPhotos(productIds: number[], limit = 4) {
   const photos = new Map<number, string[]>();
   if (productIds.length === 0) return photos;
   const rows = await db
-    .select({ productId: productImages.productId, url: productImages.url })
+    .select({ productId: productImages.productId, url: productImages.url, width: productImages.width })
     .from(productImages)
     .where(and(inArray(productImages.productId, productIds), eq(productImages.kind, "product")))
     .orderBy(asc(productImages.productId), asc(productImages.position));
   for (const row of rows) {
     const list = photos.get(row.productId) ?? [];
-    if (list.length < limit) photos.set(row.productId, [...list, row.url]);
+    if (list.length < limit && (list.length === 0 || (row.width ?? 0) >= MIN_BACK_PHOTO_WIDTH)) photos.set(row.productId, [...list, row.url]);
   }
   return photos;
 }
@@ -139,7 +139,7 @@ const getActiveProducts = unstable_cache(async (): Promise<CatalogRow[]> => {
       categoryPosition: row.categoryPosition,
     };
   });
-}, ["catalog:active-products:v4"], { tags: [CATALOG_TAG], revalidate: 300 });
+}, ["catalog:active-products:v6"], { tags: [CATALOG_TAG], revalidate: 300 });
 
 function toSummary(row: CatalogRow): ProductSummary {
   const { id, variantId, slug, name, brand, category, priceArs, compareAtPriceArs, inStock, imageUrl, photoUrls, flavorCount } = row;
@@ -239,6 +239,20 @@ export async function getCategories() {
  * Un sabor con fotos propias pero sin rótulo nutricional muestra el rótulo común del producto al final
  * de su galería (la marca publica un solo rótulo por producto). Si el panel le carga uno propio, manda ese.
  */
+/** Mínimo de ancho para mostrar un dorso: una foto trasera borrosa se descarta. */
+const MIN_BACK_PHOTO_WIDTH = 1200;
+
+/**
+ * Galería compacta: portada (frente) + dorso solo si es de buena calidad + rótulo nutricional.
+ * Se descartan fotos ambientadas, repetidas o de baja resolución.
+ */
+export function trimGallery(images: ProductImage[]): ProductImage[] {
+  const products = images.filter((image) => image.kind === "product");
+  const label = images.find((image) => image.kind === "nutrition");
+  const back = products[1] && (products[1].width ?? 0) >= MIN_BACK_PHOTO_WIDTH ? products[1] : null;
+  return [products[0], back, label].filter((image): image is ProductImage => Boolean(image));
+}
+
 function withCommonLabel(own: ProductImage[], common: ProductImage[]): ProductImage[] {
   if (own.length === 0 || own.some((image) => image.kind === "nutrition")) return own;
   return [...own, ...common.filter((image) => image.kind === "nutrition").map(({ url, kind, width, height }) => ({ url, kind, width, height }))];
@@ -256,7 +270,7 @@ export const getProduct = unstable_cache(async (slug: string): Promise<ProductDe
   const defaultVariant = product.variants.find((variant) => variant.isDefault) ?? product.variants[0];
   const main = isAvailable(defaultVariant.stock) ? defaultVariant : product.variants.find((variant) => isAvailable(variant.stock)) ?? defaultVariant;
   const flavors = product.variants.filter((variant) => variant.label).length;
-  const photoUrls = product.images.filter((image) => image.kind === "product").slice(0, 4).map((image) => image.url);
+  const photoUrls = trimGallery(product.images).filter((image) => image.kind === "product").map((image) => image.url);
   return {
     id: product.id,
     variantId: main.id,
@@ -271,7 +285,7 @@ export const getProduct = unstable_cache(async (slug: string): Promise<ProductDe
     imageUrl: galleries.get(main.id)?.find((image) => image.kind === "product")?.url ?? photoUrls[0] ?? null,
     photoUrls,
     ...(flavors > 1 ? { flavorCount: flavors } : {}),
-    images: product.images.map(({ url, kind, width, height }) => ({ url, kind, width, height })),
-    variants: product.variants.map((variant) => ({ id: variant.id, sku: variant.sku, label: variant.label, priceArs: variant.priceArs, compareAtPriceArs: variant.compareAtPriceArs, inStock: isAvailable(variant.stock), maxQuantity: maxQuantityFor(variant.stock, MAX_QUANTITY_PER_LINE), images: withCommonLabel(galleries.get(variant.id) ?? [], product.images) })),
+    images: trimGallery(product.images.map(({ url, kind, width, height }) => ({ url, kind, width, height }))),
+    variants: product.variants.map((variant) => ({ id: variant.id, sku: variant.sku, label: variant.label, priceArs: variant.priceArs, compareAtPriceArs: variant.compareAtPriceArs, inStock: isAvailable(variant.stock), maxQuantity: maxQuantityFor(variant.stock, MAX_QUANTITY_PER_LINE), images: trimGallery(withCommonLabel(galleries.get(variant.id) ?? [], product.images)) })),
   };
-}, ["catalog:product:v3"], { tags: [CATALOG_TAG], revalidate: 300 });
+}, ["catalog:product:v5"], { tags: [CATALOG_TAG], revalidate: 300 });

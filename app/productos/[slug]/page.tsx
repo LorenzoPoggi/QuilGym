@@ -66,8 +66,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="product-title-row"><h1>{product.name}</h1><AdminEditProduct productId={product.id} name={product.name} currentSlug={product.slug}/><FavoriteButton productId={product.id} name={product.name}/></div>
         <VariantPriceBlock fallback={product}/>
         <ProductPurchase product={product}/>
-        <div className="shipping-calculator"><strong>Entrega</strong><p><Truck aria-hidden="true"/> Envíos a todo el país.</p><p><Store aria-hidden="true"/> Retiro en nuestro local de {commerce.pickupLocation}.</p></div>
         {product.category.slug !== "combos" ? <Link className="product-compare-link" href={compareHref({ slugs: [product.slug], categoria: product.category.slug })}><Scale aria-hidden="true"/>Comparar con otras {product.category.name.toLowerCase()}<ArrowRight aria-hidden="true"/></Link> : null}
+        <div className="shipping-calculator"><strong>Entrega</strong><p><Truck aria-hidden="true"/> Envíos a todo el país.</p><p><Store aria-hidden="true"/> Retiro en nuestro local de {commerce.pickupLocation}.</p></div>
         <TrustStrip/>
       </div>
     </section></ProductVariantProvider>

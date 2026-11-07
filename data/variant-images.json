@@ -259,6 +259,36 @@
       "sourcePage": "https://starnutrition.com.ar/products/pump-v8-285-gr"
     }
   ],
+  "proteina-body-advance-1kg#dulce-de-leche": [
+    {
+      "path": "/assets/products/proteina-body-advance-1kg/dulce-de-leche/01.webp",
+      "kind": "product",
+      "width": 706,
+      "height": 706,
+      "source": "https://bodyadvancenutrition.com/wp-content/uploads/2026/06/m910-DDL.png",
+      "sourcePage": "https://bodyadvancenutrition.com/product/advance-whey-protein-907-gr-dulce-de-leche/"
+    }
+  ],
+  "proteina-body-advance-1kg#frutos-rojos": [
+    {
+      "path": "/assets/products/proteina-body-advance-1kg/frutos-rojos/01.webp",
+      "kind": "product",
+      "width": 706,
+      "height": 706,
+      "source": "https://bodyadvancenutrition.com/wp-content/uploads/2026/06/m910-FRUTOS-ROJOS.png",
+      "sourcePage": "https://bodyadvancenutrition.com/product/advance-whey-protein-907-gr-frutos-rojos/"
+    }
+  ],
+  "proteina-body-advance-1kg#vainilla": [
+    {
+      "path": "/assets/products/proteina-body-advance-1kg/vainilla/01.webp",
+      "kind": "product",
+      "width": 706,
+      "height": 706,
+      "source": "https://bodyadvancenutrition.com/wp-content/uploads/2026/06/m910-VAI.png",
+      "sourcePage": "https://bodyadvancenutrition.com/product/advance-whey-protein-907-gr-vainilla/"
+    }
+  ],
   "proteina-star-2lb#banana": [
     {
       "path": "/assets/products/proteina-star-2lb/banana/01.webp",

@@ -18,6 +18,7 @@ export function Header({ showSearch = true, overlayOnHero = false }: { showSearc
         <Link href="/productos">Productos</Link>
         <Link href="/#objetivos">Objetivos</Link>
         <Link href="/#combos">Combos</Link>
+        <Link href="/comparar">Comparar</Link>
       </nav>
       {showSearch ? <form className="search" action="/buscar" role="search" aria-label="Buscar en la tienda">
         <SearchIcon />

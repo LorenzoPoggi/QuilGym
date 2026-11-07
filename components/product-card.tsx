@@ -48,8 +48,8 @@ export function ProductCard({ product, compact = false, priority = false, classN
         {commerce.transferDiscountPercent > 0 ? <p className="installments">{highlights}</p> : null}
         <div className="product-card__actions">
           {multiFlavor
-            ? <Link className="button button--dark product-card__add" href={href} aria-label={`Elegir sabor de ${product.name}`}>Elegir sabor</Link>
-            : <AddToCartButton variantId={product.variantId} name={product.name} inStock={product.inStock} className="button button--dark product-card__add"/>}
+            ? <Link className="button button--dark product-card__add" href={href} aria-label={`Comprar ${product.name}: elegir sabor`}>Comprar</Link>
+            : <AddToCartButton variantId={product.variantId} name={product.name} inStock={product.inStock} className="button button--dark product-card__add" label="Comprar"/>}
           <Link className="button button--outline product-card__link" href={href} aria-label={`Ver ${product.name}`}><ArrowUpRight aria-hidden="true"/></Link>
         </div>
       </div>

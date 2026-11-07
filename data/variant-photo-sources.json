@@ -405,6 +405,40 @@
           ]
         }
       }
+    },
+    "proteina-body-advance-1kg": {
+      "officialSites": [
+        "https://bodyadvancenutrition.com"
+      ],
+      "variants": {
+        "vainilla": {
+          "sources": [
+            {
+              "url": "https://bodyadvancenutrition.com/wp-content/uploads/2026/06/m910-VAI.png",
+              "kind": "product",
+              "sourcePage": "https://bodyadvancenutrition.com/product/advance-whey-protein-907-gr-vainilla/"
+            }
+          ]
+        },
+        "frutos-rojos": {
+          "sources": [
+            {
+              "url": "https://bodyadvancenutrition.com/wp-content/uploads/2026/06/m910-FRUTOS-ROJOS.png",
+              "kind": "product",
+              "sourcePage": "https://bodyadvancenutrition.com/product/advance-whey-protein-907-gr-frutos-rojos/"
+            }
+          ]
+        },
+        "dulce-de-leche": {
+          "sources": [
+            {
+              "url": "https://bodyadvancenutrition.com/wp-content/uploads/2026/06/m910-DDL.png",
+              "kind": "product",
+              "sourcePage": "https://bodyadvancenutrition.com/product/advance-whey-protein-907-gr-dulce-de-leche/"
+            }
+          ]
+        }
+      }
     }
   }
 }

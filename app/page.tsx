@@ -12,12 +12,12 @@ import { getBrands, getFeaturedProducts, getProductsByCategory } from "@/lib/cat
 import { commerce } from "@/lib/commerce";
 
 const objectives = [
-  { title: "Masa muscular", text: "Proteínas y ganadores de peso", tone: "orange", icon: Dumbbell, href: "/productos?categoria=proteinas" },
-  { title: "Rendimiento", text: "Creatina y soporte diario", tone: "blue", icon: Gauge, href: "/productos?categoria=creatinas" },
-  { title: "Energía", text: "Pre-entrenos para tu rutina", tone: "cyan", icon: Zap, href: "/productos?categoria=pre-entrenos" },
-  { title: "Recuperación", text: "Aminoácidos y descanso", tone: "amber", icon: RefreshCw, href: "/productos?categoria=aminoacidos" },
-  { title: "Definición", text: "Opciones para acompañar tu plan", tone: "teal", icon: Flame, href: "/productos?categoria=colageno" },
-  { title: "Bienestar", text: "Omega, vitaminas y minerales", tone: "red", icon: HeartPulse, href: "/productos?categoria=vitaminas-y-minerales" },
+  { title: "Masa muscular", text: "Proteínas, creatina y ganadores de peso", tone: "orange", icon: Dumbbell, href: "/objetivos/masa-muscular" },
+  { title: "Rendimiento", text: "Creatina y soporte para entrenar", tone: "blue", icon: Gauge, href: "/objetivos/rendimiento" },
+  { title: "Energía", text: "Pre-entrenos para tu rutina", tone: "cyan", icon: Zap, href: "/objetivos/energia" },
+  { title: "Recuperación", text: "Proteínas y aminoácidos", tone: "amber", icon: RefreshCw, href: "/objetivos/recuperacion" },
+  { title: "Definición", text: "Proteína para acompañar tu plan", tone: "teal", icon: Flame, href: "/objetivos/definicion" },
+  { title: "Bienestar", text: "Vitaminas, minerales y colágeno", tone: "red", icon: HeartPulse, href: "/objetivos/bienestar" },
 ];
 
 const benefits = [
@@ -88,7 +88,7 @@ export default async function Home() {
         </section>
 
         <section id="objetivos" className="section-pad container">
-          <SectionHeading eyebrow="ENCONTRÁ TU CAMINO" title="Elegí tu objetivo" copy="Navegá por una selección pensada para acompañar tu tipo de entrenamiento y tus preferencias." link="Ver todo el catálogo" />
+          <SectionHeading eyebrow="ENCONTRÁ TU CAMINO" title="Elegí tu objetivo" copy="Cada objetivo te muestra qué productos tienen respaldo científico y por qué." link="Ver todo el catálogo" />
           <div className="objectives-grid">{objectives.map(({ icon: Icon, ...item }) => <Link className={`objective objective--${item.tone}`} href={item.href} key={item.title}><span className="objective-icon"><Icon aria-hidden="true"/></span><div><h3>{item.title}</h3><p>{item.text}</p></div><ArrowUpRight className="objective-arrow" aria-hidden="true"/></Link>)}</div>
         </section>
 

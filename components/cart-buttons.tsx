@@ -73,10 +73,10 @@ export function ProductPurchase({ product }: { product: Pick<ProductDetail, "nam
     <>
       {product.variants.length > 1 ? (
         <div className="option-group option-group--flavors" role="radiogroup" aria-label="Sabor">
-          <span>Sabor: <strong>{variant.label ?? variant.sku}</strong>{variant.inStock ? "" : " · sin stock"}</span>
+          <span>Sabor: <strong>{variant.label ?? variant.sku}</strong></span>
           <div>{product.variants.map((item) => (
-            <button type="button" role="radio" aria-checked={item.id === variant.id} className={`${item.id === variant.id ? "is-active" : ""} ${item.inStock ? "" : "is-out"}`} onClick={() => { setVariantId(item.id); setQuantity(1); }} key={item.id}>
-              {item.label ?? item.sku}{item.inStock ? (pricesDiffer ? ` · ${formatArs(item.priceArs)}` : "") : <small> Sin stock</small>}
+            <button type="button" role="radio" aria-checked={item.id === variant.id} disabled={!item.inStock} aria-label={item.inStock ? undefined : `${item.label ?? item.sku}, no disponible`} className={item.id === variant.id ? "is-active" : ""} onClick={() => { setVariantId(item.id); setQuantity(1); }} key={item.id}>
+              {item.label ?? item.sku}{pricesDiffer ? ` · ${formatArs(item.priceArs)}` : ""}
             </button>
           ))}</div>
         </div>
